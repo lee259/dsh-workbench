@@ -18,6 +18,31 @@ test("open records a successful payload", async () => {
   assert.equal(state.error, "");
 });
 
+test("a view request cannot render a write payload as a diff", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: "written",
+    before: "original",
+    source: "dsh-write",
+    revision: 1,
+    size: 7,
+  }));
+  await store.open("a.ts", "view");
+  assert.equal(store.getSnapshot().payload?.source, "workspace");
+  assert.equal(store.getSnapshot().payload?.before, null);
+});
+
+test("reload preserves the current file open mode", async () => {
+  const modes = [];
+  const store = createFileStore(async (path, mode) => {
+    modes.push(mode);
+    return { path, content: "disk", before: null, source: "workspace", revision: 0, size: 4 };
+  });
+  await store.open("a.ts", "view");
+  await store.reload();
+  assert.deepEqual(modes, ["view", "view"]);
+});
+
 test("a failed open does not keep a stale payload", async () => {
   const store = createFileStore(async () => {
     throw new Error("boom");

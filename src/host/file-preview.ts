@@ -1,5 +1,5 @@
 import type { DiskFile } from "./workspace.js";
-import type { FilePayload, FileRevision } from "../shared/types.js";
+import type { FileOpenMode, FilePayload, FileRevision } from "../shared/types.js";
 
 function expandWriteAgainstDisk(disk: string, revision: FileRevision): { content: string; before: string | null } {
   const content = revision.content;
@@ -12,7 +12,17 @@ function expandWriteAgainstDisk(disk: string, revision: FileRevision): { content
   return { content, before };
 }
 
-export function toFilePayload(disk: DiskFile, revision: FileRevision | null): FilePayload {
+export function toFilePayload(disk: DiskFile, revision: FileRevision | null, mode: FileOpenMode = "auto"): FilePayload {
+  if (mode === "view") {
+    return {
+      path: disk.path,
+      content: disk.content,
+      before: null,
+      source: revision?.source === "dsh-read" ? "dsh-read" : "workspace",
+      revision: revision?.source === "dsh-read" ? revision.revision : 0,
+      size: disk.size,
+    };
+  }
   if (revision?.source === "dsh-write") {
     const expanded = expandWriteAgainstDisk(disk.content, revision);
     return {

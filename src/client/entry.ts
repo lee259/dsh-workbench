@@ -19,11 +19,11 @@ function createClient(require: DshRequire) {
   const ReactDOMClient = require("react-dom/client") as typeof import("react-dom/client");
   const store = createFileStore();
   const i18n = createLocaleStore();
-  installFileOpenCapture((path) => {
-    void store.open(path);
+  installFileOpenCapture((path, mode) => {
+    void store.open(path, mode);
   });
   const ui = createWorkbenchUi(React, store, i18n);
-  mountWorkbenchDrawer(React, ReactDOMClient.createRoot, ui.FileDrawer, document.body);
+  mountWorkbenchDrawer(React, ReactDOMClient.createRoot, ui.WorkbenchRoot, document.body);
   return {
     inject: ["slots", "locale"],
     apply(ctx: { locale: DshLocaleFace; slots: Parameters<typeof ui.apply>[0]["slots"] }) {

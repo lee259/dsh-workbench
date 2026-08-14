@@ -1,4 +1,5 @@
 export const FILE_API_PATH = "/api/dsh-workbench/file";
+export const ACTIVITY_API_PATH = "/api/dsh-workbench/activity";
 export const MAX_PREVIEW_BYTES = 800_000;
 
 export type WorkspaceErrorCode =
@@ -9,6 +10,7 @@ export const FILE_TOOLS = ["read", "write", "edit"] as const;
 
 export type FileToolName = (typeof FILE_TOOLS)[number];
 export type FileSource = "workspace" | "dsh-read" | "dsh-write";
+export type FileOpenMode = "auto" | "view" | "diff";
 
 export type FilePayload = {
   path: string;
@@ -26,6 +28,21 @@ export type FileRevision = {
   revision: number;
   sessionId: string;
   source: Exclude<FileSource, "workspace">;
+};
+
+export type ActivityKind = "tool" | "code";
+export type ActivityStatus = "running" | "done" | "error";
+
+export type ActivityRecord = {
+  id: string;
+  sessionId: string;
+  kind: ActivityKind;
+  name: string;
+  path: string | null;
+  summary: string | null;
+  status: ActivityStatus;
+  createdAt: number;
+  finishedAt: number | null;
 };
 
 export function isFileTool(name: string): name is FileToolName {

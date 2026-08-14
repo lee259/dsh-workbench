@@ -50,3 +50,17 @@ test("a DSH write overlays disk content and keeps the previous baseline", () => 
   assert.equal(payload.before, "old");
   assert.equal(payload.revision, 2);
 });
+
+test("a read request stays a view after the same file was written", () => {
+  const payload = toFilePayload(disk, {
+    path: "src/a.ts",
+    before: "old",
+    content: "written",
+    revision: 1,
+    sessionId: "s",
+    source: "dsh-write",
+  }, "view");
+  assert.equal(payload.source, "workspace");
+  assert.equal(payload.content, "disk");
+  assert.equal(payload.before, null);
+});

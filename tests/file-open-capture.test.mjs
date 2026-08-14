@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { filePathFromOpenHint } from "../lib/client/file-open-capture.js";
+import { fileOpenModeFromHint, filePathFromOpenHint } from "../lib/client/file-open-capture.js";
 
 test("produced-file chips open from the title path, not the basename", () => {
   assert.equal(filePathFromOpenHint({
@@ -34,4 +34,16 @@ test("official tool-row file links still open", () => {
     text: "src/client/styles.css",
     tool: "write",
   }), "src/client/styles.css");
+});
+
+test("read links open as views and write links open as diffs", () => {
+  assert.equal(fileOpenModeFromHint({ className: "row_fileLink", tool: "read", text: "a.ts" }), "view");
+  assert.equal(fileOpenModeFromHint({ className: "row_fileLink", tool: "write", text: "a.ts" }), "diff");
+  assert.equal(fileOpenModeFromHint({ className: "abc_fileMention", title: "a.ts" }), "view");
+  assert.equal(fileOpenModeFromHint({ className: "row_fileLink", text: "a.ts" }), "view");
+  assert.equal(fileOpenModeFromHint({ className: "row_fileLink", tool: "tool/write", text: "a.ts" }), "diff");
+});
+
+test("an explicit open mode wins over DOM tool inference", () => {
+  assert.equal(fileOpenModeFromHint({ className: "fileLink", tool: "write", mode: "view" }), "view");
 });
