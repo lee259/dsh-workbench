@@ -69,6 +69,42 @@ test("close clears the open file", async () => {
   assert.equal(store.getSnapshot().payload, null);
 });
 
+test("show and hide only change panel visibility", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 1,
+  }));
+  await store.open("a.ts");
+  store.hide();
+  assert.equal(store.getSnapshot().visible, false);
+  assert.deepEqual(store.getSnapshot().open, ["a.ts"]);
+  assert.equal(store.getSnapshot().active, "a.ts");
+  store.show();
+  assert.equal(store.getSnapshot().visible, true);
+  assert.equal(store.getSnapshot().payload?.content, "a.ts");
+});
+
+test("opening a file reopens a hidden panel", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 1,
+  }));
+  await store.open("a.ts");
+  store.hide();
+  await store.open("b.ts");
+  assert.equal(store.getSnapshot().visible, true);
+  assert.equal(store.getSnapshot().active, "b.ts");
+  assert.deepEqual(store.getSnapshot().open, ["a.ts", "b.ts"]);
+});
+
 test("open keeps a set and activates the latest path", async () => {
   const store = createFileStore(async (path) => ({
     path,

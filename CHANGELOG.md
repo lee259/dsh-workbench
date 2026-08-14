@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.4 - 2026-08-14
+
+### Fixes
+
+- Harden the file workspace interaction flow with coverage for panel toggling, resizing, tabs, refresh, copy actions, loading/errors, and read-vs-diff rendering.
+- Add accessible labels and state attributes for workspace controls and tabs.
+
+### Tests
+
+- Add component-level regression coverage for real read/edit tool rows and the right-side workspace.
+
 ## 0.2.3 - 2026-08-14
 
 ### Documentation

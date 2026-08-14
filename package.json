@@ -1,6 +1,6 @@
 {
   "name": "dsh-workbench",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "A Codex-like file workspace for DeepSeek Harness Web with read-only previews, real DSH write/edit diffs, tabs, shortcuts, and resizing.",
   "license": "MIT",
   "author": "lee259",

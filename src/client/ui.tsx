@@ -3,6 +3,16 @@ import { FILE_TOOLS } from "../shared/types.js";
 import { createEditorExtensions, mountCodeEditor } from "./code-mirror.js";
 import { editorSpec, viewKind } from "./editor-spec.js";
 import { WORKBENCH_CSS } from "./styles.generated.js";
+import {
+  DEFAULT_SIDEBAR_WIDTH,
+  MAX_SIDEBAR_WIDTH,
+  MIN_SIDEBAR_WIDTH,
+  readSidebarWidth,
+  sidebarWidthFromKey,
+  sidebarWidthFromPointer,
+  writeSidebarWidth,
+} from "./sidebar.js";
+import { shortcutAction } from "./shortcuts.js";
 import type { FileState, FileStore } from "./store.js";
 import { filePathFromBlock } from "./tool-path.js";
 
@@ -20,13 +30,9 @@ type ToolCallViewProps = {
   block?: unknown;
 };
 
-const DEFAULT_SIDEBAR_WIDTH = 520;
-const SIDEBAR_WIDTH_KEY = "dsh-workbench.sidebar-width";
-
 function savedSidebarWidth(): number {
   try {
-    const value = Number(window.localStorage.getItem(SIDEBAR_WIDTH_KEY));
-    return Number.isFinite(value) ? Math.max(360, Math.min(900, value)) : DEFAULT_SIDEBAR_WIDTH;
+    return readSidebarWidth(window.localStorage);
   } catch {
     return DEFAULT_SIDEBAR_WIDTH;
   }
@@ -94,36 +100,18 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
     const [pathCopied, setPathCopied] = React.useState(false);
     React.useEffect(() => {
       const onKey = (event: KeyboardEvent) => {
-        if (event.key === "Escape" && state.visible) {
-          store.hide();
-          return;
-        }
-        if (state.visible && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "w" && state.active) {
-          event.preventDefault();
-          store.close(state.active);
-          return;
-        }
-        if (state.visible && event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight") && state.open.length > 1) {
-          event.preventDefault();
-          const current = Math.max(0, state.open.indexOf(state.active));
-          const offset = event.key === "ArrowLeft" ? -1 : 1;
-          const next = state.open[(current + offset + state.open.length) % state.open.length];
-          if (next) void store.activate(next);
-          return;
-        }
-        if (state.visible && (event.metaKey || event.ctrlKey) && /^[1-9]$/.test(event.key)) {
-          const next = state.open[Number(event.key) - 1];
-          if (next) {
-            event.preventDefault();
-            void store.activate(next);
-          }
-          return;
-        }
-        if (event.key.toLowerCase() === "b" && event.altKey && (event.metaKey || event.ctrlKey)) {
+        const action = shortcutAction(event, state);
+        if (!action) return;
+        if (action.type === "toggle") {
           event.preventDefault();
           if (state.visible) store.hide();
           else store.show();
+          return;
         }
+        event.preventDefault();
+        if (action.type === "hide") store.hide();
+        else if (action.type === "close") store.close(action.path);
+        else void store.activate(action.path);
       };
       window.addEventListener("keydown", onKey);
       return () => window.removeEventListener("keydown", onKey);
@@ -132,11 +120,7 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
     React.useEffect(() => {
       document.body.classList.toggle("dsh-wb-sidebar-open", state.visible);
       document.body.style.setProperty("--dsh-wb-sidebar-width", `${width}px`);
-      try {
-        window.localStorage.setItem(SIDEBAR_WIDTH_KEY, String(width));
-      } catch {
-        // Storage can be unavailable in private or embedded contexts.
-      }
+      writeSidebarWidth(window.localStorage, width);
       return () => {
         document.body.classList.remove("dsh-wb-sidebar-open");
       };
@@ -145,8 +129,7 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
     const resizeStart = (event: React.PointerEvent<HTMLDivElement>) => {
       event.preventDefault();
       const onMove = (move: PointerEvent) => {
-        const next = Math.max(360, Math.min(900, window.innerWidth - move.clientX));
-        setWidth(next);
+        setWidth(sidebarWidthFromPointer(move.clientX, window.innerWidth));
       };
       const onUp = () => {
         window.removeEventListener("pointermove", onMove);
@@ -177,8 +160,8 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
             role="separator"
             aria-label={t("resize")}
             aria-orientation="vertical"
-            aria-valuemin={360}
-            aria-valuemax={900}
+            aria-valuemin={MIN_SIDEBAR_WIDTH}
+            aria-valuemax={MAX_SIDEBAR_WIDTH}
             aria-valuenow={width}
             tabIndex={0}
             title={t("resetWidth")}
@@ -187,8 +170,7 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
             onKeyDown={(event) => {
               if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
               event.preventDefault();
-              const delta = event.key === "ArrowLeft" ? 16 : -16;
-              setWidth((current) => Math.max(360, Math.min(900, current + delta)));
+              setWidth((current) => sidebarWidthFromKey(current, event.key));
             }}
           />
           <header className="dsh-wb-head">
@@ -199,6 +181,7 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
                 <button
                   className="dsh-wb-path"
                   type="button"
+                  aria-label={t(pathCopied ? "pathCopied" : "copyPath")}
                   title={t(pathCopied ? "pathCopied" : "copyPath")}
                   onClick={() => {
                     if (!navigator.clipboard) return;
@@ -214,17 +197,19 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
             </div>
             <div className="dsh-wb-actions">
               <button
-                className="dsh-wb-button dsh-wb-icon-button"
-                type="button"
-                title={t("refresh")}
+                  className="dsh-wb-button dsh-wb-icon-button"
+                  type="button"
+                  aria-label={t("refresh")}
+                  title={t("refresh")}
                 onClick={() => void store.reload()}
               >
                 ↻
               </button>
               <button
-                className="dsh-wb-button dsh-wb-icon-button"
-                type="button"
-                title={t(copied ? "copied" : "copy")}
+                  className="dsh-wb-button dsh-wb-icon-button"
+                  type="button"
+                  aria-label={t(copied ? "copied" : "copy")}
+                  title={t(copied ? "copied" : "copy")}
                 onClick={() => {
                   if (!payload || !navigator.clipboard) return;
                   void navigator.clipboard.writeText(payload.content).then(() => {
@@ -235,7 +220,7 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
               >
                 {copied ? "✓" : "□"}
               </button>
-              <button className="dsh-wb-button dsh-wb-text-button dsh-wb-close-button" type="button" title={t("hidePanel")} onClick={() => store.hide()}>
+              <button className="dsh-wb-button dsh-wb-text-button dsh-wb-close-button" type="button" aria-label={t("close")} title={t("hidePanel")} onClick={() => store.hide()}>
                 {t("close")}
               </button>
             </div>
