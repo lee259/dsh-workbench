@@ -20,10 +20,13 @@ jobs:
         with:
           node-version-file: .node-version
           cache: pnpm
+          registry-url: https://registry.npmjs.org
+      # The npm bundled with Node 22 is too old for OIDC trusted publishing.
+      - run: npm install -g npm@latest
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
       - name: Publish to npm
-        run: pnpm publish --no-git-checks
+        run: npm publish --provenance --access public
       - name: GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
