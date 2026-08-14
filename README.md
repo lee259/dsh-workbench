@@ -32,22 +32,36 @@ write/edit → captured DSH diff
 
 ## Install
 
+### Published package
+
+Install the released plugin into the `web` profile, then restart DSH Web:
+
 ```bash
-pnpm exec dsh plugin --profile web add dsh-workbench
+dsh plugin --profile web add dsh-workbench@0.2.2
+dsh web
 ```
 
-Then start DSH Web from the project you want to inspect:
+If the `dsh` command is not available yet, use the package-manager fallback:
 
 ```bash
-pnpm exec dsh web
-```
-
-If the DSH CLI is not available yet:
-
-```bash
-pnpm dlx @deepseek-ai/dsh plugin --profile web add dsh-workbench
+pnpm dlx @deepseek-ai/dsh plugin --profile web add dsh-workbench@0.2.2
 pnpm dlx @deepseek-ai/dsh web
 ```
+
+### Local development
+
+To run the version currently checked out from GitHub:
+
+```bash
+git clone https://github.com/lee259/dsh-workbench.git
+cd dsh-workbench
+pnpm install
+pnpm run build
+dsh plugin --profile web add "$(pwd)"
+dsh web
+```
+
+After changing the plugin, run `pnpm run build` again and restart `dsh web`.
 
 ## One-command local start
 

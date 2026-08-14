@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.3 - 2026-08-14
+
+### Documentation
+
+- Align installation and local development instructions with the standard DSH plugin workflow.
+
 ## 0.2.2 - 2026-08-14
 
 ### Fixes

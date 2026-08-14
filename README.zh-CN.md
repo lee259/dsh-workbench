@@ -32,22 +32,36 @@ write/edit → DSH 实际捕获到的 diff
 
 ## 安装
 
+### 安装已发布版本
+
+把已发布的插件安装到 `web` profile，然后重启 DSH Web：
+
 ```bash
-pnpm exec dsh plugin --profile web add dsh-workbench
+dsh plugin --profile web add dsh-workbench@0.2.2
+dsh web
 ```
 
-然后从要查看的项目目录启动 DSH Web：
+如果本机还没有 `dsh` 命令，可以使用包管理器临时运行：
 
 ```bash
-pnpm exec dsh web
-```
-
-如果还没有可用的 DSH CLI：
-
-```bash
-pnpm dlx @deepseek-ai/dsh plugin --profile web add dsh-workbench
+pnpm dlx @deepseek-ai/dsh plugin --profile web add dsh-workbench@0.2.2
 pnpm dlx @deepseek-ai/dsh web
 ```
+
+### 本地开发
+
+如果要运行 GitHub 当前检出的版本：
+
+```bash
+git clone https://github.com/lee259/dsh-workbench.git
+cd dsh-workbench
+pnpm install
+pnpm run build
+dsh plugin --profile web add "$(pwd)"
+dsh web
+```
+
+修改插件后重新执行 `pnpm run build`，然后重启 `dsh web`。
 
 ## 一键本地启动
 
