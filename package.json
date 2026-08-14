@@ -38,7 +38,8 @@
     "diff"
   ],
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "dsh": {
     "bundle": {

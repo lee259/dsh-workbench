@@ -53,5 +53,4 @@ To publish:
 
 GitHub setup:
 
-- Create the `npm` environment.
-- Add `NPM_TOKEN` (Automation token with publish rights to `@runtime-inspector`), or configure [npm trusted publishing](https://docs.npmjs.com/trusted-publishers) for this repository.
+- Configure [npm trusted publishing](https://docs.npmjs.com/trusted-publishers) for this repository: on npmjs.com, go to `@runtime-inspector/dsh-workbench` → Settings → Trusted Publishing, add `lee259/dsh-workbench` with workflow path `.github/workflows/publish.yml`.

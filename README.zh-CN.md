@@ -53,5 +53,4 @@ CI 会在 `main` 的 push / PR 上跑 `pnpm test`。
 
 GitHub 需要：
 
-- 创建 `npm` environment。
-- 配置 `NPM_TOKEN`（对 `@runtime-inspector` 有发布权限的 Automation token），或给这个仓库配置 [npm trusted publishing](https://docs.npmjs.com/trusted-publishers)。
+- 给这个仓库配置 [npm trusted publishing](https://docs.npmjs.com/trusted-publishers)：在 npmjs.com 上进入 `@runtime-inspector/dsh-workbench` → Settings → Trusted Publishing，添加 `lee259/dsh-workbench`，workflow 路径填 `.github/workflows/publish.yml`。

@@ -13,7 +13,6 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    environment: npm
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -26,8 +25,6 @@ jobs:
       - run: pnpm test
       - name: Publish to npm
         run: pnpm publish --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
