@@ -1,0 +1,55 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - name: Publish to npm
+        run: pnpm publish --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+          notes="$(mktemp)"
+          python3 - "$version" "$notes" <<'PY'
+          import pathlib, re, sys
+          version, dest = sys.argv[1], sys.argv[2]
+          text = pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8")
+          pattern = rf"^## \[?{re.escape(version)}\]?.*$"
+          lines = text.splitlines()
+          start = next((i for i, line in enumerate(lines) if re.match(pattern, line)), None)
+          if start is None:
+              pathlib.Path(dest).write_text(f"Release {version}\n", encoding="utf-8")
+              raise SystemExit(0)
+          end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+          pathlib.Path(dest).write_text("\n".join(lines[start:end]).strip() + "\n", encoding="utf-8")
+          PY
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" --title "$tag" --notes-file "$notes"
+          else
+            gh release create "$tag" --title "$tag" --notes-file "$notes" --verify-tag
+          fi

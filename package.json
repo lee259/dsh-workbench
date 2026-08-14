@@ -1,0 +1,105 @@
+{
+  "name": "@runtime-inspector/dsh-workbench",
+  "version": "0.1.0",
+  "description": "DeepSeek Harness Web plugin: clickable read/write/edit rows, file preview, and DSH write diffs.",
+  "license": "MIT",
+  "author": "lee259",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "LICENSE",
+    "README.md",
+    "README.zh-CN.md",
+    "AGENTS.md",
+    "CONTEXT.md"
+  ],
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lee259/dsh-workbench.git"
+  },
+  "homepage": "https://github.com/lee259/dsh-workbench#readme",
+  "bugs": {
+    "url": "https://github.com/lee259/dsh-workbench/issues"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "cordis",
+    "plugin",
+    "workbench",
+    "diff"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-tool"
+      ],
+      "platform": "web"
+    }
+  },
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "types": "./lib/client.d.ts",
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "rm -rf lib && node scripts/embed-css.mjs && tsc -p tsconfig.json && tsdown && mv lib/client.iife.js lib/client.js && rm -f lib/client.iife.js",
+    "prepare": "pnpm run build",
+    "test": "pnpm run build && node --test tests/*.test.mjs",
+    "start": "node scripts/start.mjs"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/dsh-client-locale": "*",
+    "@deepseek-ai/dsh-client-runtime": "*",
+    "@deepseek-ai/dsh-client-ui-conversation": "*",
+    "@deepseek-ai/dsh-client-ui-tool": "*",
+    "@deepseek-ai/dsh-session": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.0",
+    "react": "^18.2.0",
+    "tsdown": "^0.22.14",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.10.4",
+    "@codemirror/lang-css": "^6.3.1",
+    "@codemirror/lang-html": "^6.4.12",
+    "@codemirror/lang-javascript": "^6.2.5",
+    "@codemirror/lang-json": "^6.0.2",
+    "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/lang-python": "^6.2.1",
+    "@codemirror/lang-xml": "^6.1.0",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/legacy-modes": "^6.5.3",
+    "@codemirror/merge": "^6.12.2",
+    "@codemirror/state": "^6.7.1",
+    "@codemirror/view": "^6.43.8"
+  }
+}

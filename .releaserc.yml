@@ -1,0 +1,22 @@
+version:
+  file: package.json
+  path: $.version
+
+changelog:
+  files:
+    - path: CHANGELOG.md
+      lang: en
+    - path: CHANGELOG.zh-CN.md
+      lang: zh
+
+commit:
+  message: "chore: release v{version}"
+
+tag:
+  prefix: v
+  sign: false
+
+include:
+  - README.md
+  - README.zh-CN.md
+  - package.json

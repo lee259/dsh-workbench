@@ -1,0 +1,37 @@
+export const FILE_API_PATH = "/api/dsh-workbench/file";
+export const MAX_PREVIEW_BYTES = 800_000;
+
+export type WorkspaceErrorCode =
+  | "missing_path"
+  | "not_previewable"
+  | "file_not_found";
+export const FILE_TOOLS = ["read", "write", "edit"] as const;
+
+export type FileToolName = (typeof FILE_TOOLS)[number];
+export type FileSource = "workspace" | "dsh-read" | "dsh-write";
+
+export type FilePayload = {
+  path: string;
+  content: string;
+  before: string | null;
+  source: FileSource;
+  revision: number;
+  size: number;
+};
+
+export type FileRevision = {
+  path: string;
+  before: string | null;
+  content: string;
+  revision: number;
+  sessionId: string;
+  source: Exclude<FileSource, "workspace">;
+};
+
+export function isFileTool(name: string): name is FileToolName {
+  return FILE_TOOLS.includes(name as FileToolName);
+}
+
+export function normalizePath(path: string): string {
+  return path.replace(/^\.\//, "").replace(/\\/g, "/");
+}

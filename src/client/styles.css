@@ -1,0 +1,229 @@
+/* Source of truth for workbench styles. Edit this file, not generated TS. */
+
+/* ── Sidebar panel ───────────────────────────────────────────────── */
+
+.dsh-wb-sidebar {
+  position: fixed;
+  z-index: 1201;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(520px, 100vw);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--dsw-alias-label-primary, #20242d);
+  background: var(--dsw-alias-bg-base, #fff);
+  border-left: 1px solid var(--dsw-alias-border-l2, #eef0f3);
+  box-shadow: -4px 0 24px rgba(17, 24, 39, 0.08);
+  animation: dsh-wb-slide 0.2s ease both;
+}
+
+/* When the sidebar is open, nudge the page content to the left
+   (the panel itself is position: fixed on the right). */
+body.dsh-wb-sidebar-open {
+  margin-right: min(520px, 100vw);
+  transition: margin-right 0.2s ease;
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+
+.dsh-wb-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--dsw-alias-border-l2, #eef0f3);
+}
+
+.dsh-wb-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: var(--dsw-alias-brand-primary, #6c5ce7);
+  background: var(--dsw-alias-interactive-bg-selected, #efedff);
+  font-weight: 600;
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+}
+
+.dsh-wb-title {
+  min-width: 0;
+  flex: 1;
+}
+
+.dsh-wb-title strong,
+.dsh-wb-title span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dsh-wb-title strong {
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.dsh-wb-title span {
+  margin-top: 2px;
+  color: var(--dsw-alias-label-tertiary, #8b93a1);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.dsh-wb-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.dsh-wb-button {
+  border: 1px solid var(--dsw-alias-border-l1, #e5e7eb);
+  border-radius: 7px;
+  color: var(--dsw-alias-label-secondary, #737b88);
+  background: transparent;
+  cursor: pointer;
+}
+
+.dsh-wb-button:hover {
+  background: var(--dsw-alias-interactive-bg-hover-solid, #f5f6f8);
+  color: var(--dsw-alias-label-primary, #20242d);
+}
+
+.dsh-wb-icon-button {
+  width: 29px;
+  height: 29px;
+  font-size: 14px;
+}
+
+/* ── Meta bar (loading / line count) ─────────────────────────────── */
+
+.dsh-wb-meta-bar {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--dsw-alias-border-l2, #eef0f3);
+  background: var(--dsw-alias-bg-surface, #fbfcfd);
+}
+
+.dsh-wb-meta {
+  color: var(--dsw-alias-label-tertiary, #9aa1ad);
+  font-size: 11px;
+}
+
+/* ── Code area ───────────────────────────────────────────────────── */
+
+.dsh-wb-code {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--dsw-alias-markdown-code-block, #f8f9fb);
+}
+
+.dsh-wb-cm {
+  height: 100%;
+}
+
+.dsh-wb-cm .cm-editor {
+  height: 100%;
+}
+
+.dsh-wb-empty {
+  display: grid;
+  place-items: center;
+  min-height: 260px;
+  color: var(--dsw-alias-label-tertiary, #9299a8);
+  font-size: 12px;
+  text-align: center;
+}
+
+.dsh-wb-empty strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--dsw-alias-label-secondary, #5e6675);
+}
+
+.dsh-wb-error {
+  padding: 18px;
+  color: var(--dsw-alias-state-error-primary, #b04b5d);
+  font-size: 12px;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+
+.dsh-wb-foot {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 16px;
+  border-top: 1px solid var(--dsw-alias-border-l2, #eef0f3);
+  color: var(--dsw-alias-label-tertiary, #9aa1ad);
+  font-size: 10px;
+}
+
+.dsh-wb-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #75b99c;
+}
+
+/* ── Tool row in conversation ────────────────────────────────────── */
+
+.dsh-wb-tool-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  font-size: 13px;
+}
+
+.dsh-wb-tool-name {
+  color: var(--dsw-alias-label-secondary, #737b88);
+}
+
+.dsh-wb-tool-sep,
+.dsh-wb-tool-fallback,
+.dsh-wb-tool-status {
+  color: var(--dsw-alias-label-tertiary, #9aa1ad);
+}
+
+.dsh-wb-tool-status {
+  margin-left: auto;
+  font-size: 11px;
+}
+
+.dsh-wb-tool-status[data-kind="error"] {
+  color: var(--dsw-alias-state-error-primary, #b04b5d);
+}
+
+.dsh-wb-tool-path {
+  padding: 0;
+  border: 0;
+  color: var(--dsw-alias-brand-primary, #6555b5);
+  background: transparent;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: rgba(101, 85, 181, 0.27);
+  text-underline-offset: 3px;
+}
+
+.dsh-wb-tool-path:hover {
+  color: var(--dsw-alias-brand-primary-hover, #5142b2);
+}
+
+/* ── Animations ──────────────────────────────────────────────────── */
+
+@keyframes dsh-wb-slide {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
