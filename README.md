@@ -15,7 +15,7 @@ It is a normal Cordis bundle: the host half watches the session log and serves f
 ## Install
 
 ```bash
-pnpm exec dsh plugin --profile web add @runtime-inspector/dsh-workbench
+pnpm exec dsh plugin --profile web add @shizhelee/dsh-workbench
 ```
 
 If `dsh` is not installed, replace `pnpm exec dsh` with `npx @deepseek-ai/dsh`.
@@ -25,7 +25,7 @@ If `dsh` is not installed, replace `pnpm exec dsh` with `npx @deepseek-ai/dsh`.
 Start DSH from the project you want to inspect (process cwd is the default workspace):
 
 ```bash
-pnpm exec dsh plugin --profile web add @runtime-inspector/dsh-workbench
+pnpm exec dsh plugin --profile web add @shizhelee/dsh-workbench
 pnpm exec dsh --profile web web
 ```
 
@@ -49,8 +49,8 @@ To publish:
 
 1. Bump `package.json` and add a section to `CHANGELOG.md` / `CHANGELOG.zh-CN.md`.
 2. Commit, then tag and push: `git tag v0.1.0 && git push origin main --tags`.
-3. The `Publish` workflow publishes `@runtime-inspector/dsh-workbench` to npm and opens a GitHub Release.
+3. The `Publish` workflow publishes `@shizhelee/dsh-workbench` to npm and opens a GitHub Release.
 
 GitHub setup:
 
-- Configure [npm trusted publishing](https://docs.npmjs.com/trusted-publishers) for this repository: on npmjs.com, go to `@runtime-inspector/dsh-workbench` → Settings → Trusted Publishing, add `lee259/dsh-workbench` with workflow path `.github/workflows/publish.yml`.
+- Configure [npm trusted publishing](https://docs.npmjs.com/trusted-publishers) for this repository: on npmjs.com, go to `@shizhelee/dsh-workbench` → Settings → Trusted Publishing, add `lee259/dsh-workbench` with workflow path `.github/workflows/publish.yml`.

@@ -15,7 +15,7 @@
 ## 安装
 
 ```bash
-pnpm exec dsh plugin --profile web add @runtime-inspector/dsh-workbench
+pnpm exec dsh plugin --profile web add @shizhelee/dsh-workbench
 ```
 
 没有全局 / 本地 `dsh` 时，把 `pnpm exec dsh` 换成 `npx @deepseek-ai/dsh`。
@@ -25,7 +25,7 @@ pnpm exec dsh plugin --profile web add @runtime-inspector/dsh-workbench
 在你要查看的项目目录启动 DSH（进程 cwd 就是默认工作区）：
 
 ```bash
-pnpm exec dsh plugin --profile web add @runtime-inspector/dsh-workbench
+pnpm exec dsh plugin --profile web add @shizhelee/dsh-workbench
 pnpm exec dsh --profile web web
 ```
 
@@ -49,8 +49,8 @@ CI 会在 `main` 的 push / PR 上跑 `pnpm test`。
 
 1. 改 `package.json` 版本，并在 `CHANGELOG.md` / `CHANGELOG.zh-CN.md` 补一节。
 2. 提交后打 tag 推送：`git tag v0.1.0 && git push origin main --tags`。
-3. `Publish` 工作流会把 `@runtime-inspector/dsh-workbench` 发到 npm，并创建 GitHub Release。
+3. `Publish` 工作流会把 `@shizhelee/dsh-workbench` 发到 npm，并创建 GitHub Release。
 
 GitHub 需要：
 
-- 给这个仓库配置 [npm trusted publishing](https://docs.npmjs.com/trusted-publishers)：在 npmjs.com 上进入 `@runtime-inspector/dsh-workbench` → Settings → Trusted Publishing，添加 `lee259/dsh-workbench`，workflow 路径填 `.github/workflows/publish.yml`。
+- 给这个仓库配置 [npm trusted publishing](https://docs.npmjs.com/trusted-publishers)：在 npmjs.com 上进入 `@shizhelee/dsh-workbench` → Settings → Trusted Publishing，添加 `lee259/dsh-workbench`，workflow 路径填 `.github/workflows/publish.yml`。

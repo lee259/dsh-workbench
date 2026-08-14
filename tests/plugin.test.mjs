@@ -82,5 +82,5 @@ test("client bundle registers with DSH ModuleLoader as a classic script", async 
   // DSH injects client.js as a classic <script>. The page already has
   // window.top, so a bare `const top` at script scope fails to register.
   new Function("window", "top", client)(window, {});
-  assert.deepEqual(registered, ["@runtime-inspector/dsh-workbench"]);
+  assert.deepEqual(registered, ["@shizhelee/dsh-workbench"]);
 });
