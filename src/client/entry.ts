@@ -34,6 +34,6 @@ function createClient(require: DshRequire) {
 }
 
 window.__ModuleLoader__.load({
-  id: "@shizhelee/dsh-workbench",
+  id: "dsh-workbench",
   factory: createClient,
 });

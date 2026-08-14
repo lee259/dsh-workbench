@@ -1,4 +1,4 @@
 # Mount DSH Workbench in the host-side DSH runtime.
 - insert:
     - id: dsh-workbench
-      name: '@shizhelee/dsh-workbench'
+      name: 'dsh-workbench'
