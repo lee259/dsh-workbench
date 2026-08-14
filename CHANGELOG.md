@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2 - 2026-08-14
+
+### Fixes
+
+- Align the documented DSH Web startup command with the current CLI syntax.
+- Make the one-command starter avoid shell-specific execution on Unix.
+
 ## 0.2.1 - 2026-08-14
 
 ### Fixes

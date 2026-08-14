@@ -39,14 +39,14 @@ pnpm exec dsh plugin --profile web add dsh-workbench
 Then start DSH Web from the project you want to inspect:
 
 ```bash
-pnpm exec dsh --profile web web
+pnpm exec dsh web
 ```
 
 If the DSH CLI is not available yet:
 
 ```bash
 pnpm dlx @deepseek-ai/dsh plugin --profile web add dsh-workbench
-pnpm dlx @deepseek-ai/dsh --profile web web
+pnpm dlx @deepseek-ai/dsh web
 ```
 
 ## One-command local start

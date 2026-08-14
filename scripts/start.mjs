@@ -9,7 +9,14 @@ const prefix = dsh === "pnpm" || dsh.endsWith("/pnpm") ? ["dlx", "@deepseek-ai/d
 
 function run(command, args, cwd = target) {
   return new Promise((resolveExit, reject) => {
-    const child = spawn(command, args, { cwd, stdio: "inherit", shell: true });
+    const child = spawn(command, args, {
+      cwd,
+      stdio: "inherit",
+      // Keep argument boundaries intact on Unix. The DSH CLI may be a
+      // regular executable path (DSH_BIN), so routing it through /bin/sh
+      // makes the local start path fail in restricted environments.
+      shell: process.platform === "win32",
+    });
     child.on("error", reject);
     child.on("exit", (code) => {
       if (code === 0) resolveExit();

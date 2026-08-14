@@ -39,14 +39,14 @@ pnpm exec dsh plugin --profile web add dsh-workbench
 然后从要查看的项目目录启动 DSH Web：
 
 ```bash
-pnpm exec dsh --profile web web
+pnpm exec dsh web
 ```
 
 如果还没有可用的 DSH CLI：
 
 ```bash
 pnpm dlx @deepseek-ai/dsh plugin --profile web add dsh-workbench
-pnpm dlx @deepseek-ai/dsh --profile web web
+pnpm dlx @deepseek-ai/dsh web
 ```
 
 ## 一键本地启动
