@@ -4,8 +4,8 @@ import { fileURLToPath } from "node:url";
 
 const plugin = fileURLToPath(new URL("..", import.meta.url));
 const target = resolve(process.argv.slice(2).find((arg) => arg !== "--") ?? process.cwd());
-const dsh = process.env.DSH_BIN ?? "npx";
-const prefix = dsh === "npx" || dsh.endsWith("/npx") ? ["--yes", "@deepseek-ai/dsh"] : [];
+const dsh = process.env.DSH_BIN ?? "pnpm";
+const prefix = dsh === "pnpm" || dsh.endsWith("/pnpm") ? ["dlx", "@deepseek-ai/dsh"] : [];
 
 function run(command, args, cwd = target) {
   return new Promise((resolveExit, reject) => {
