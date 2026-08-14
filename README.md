@@ -37,14 +37,14 @@ write/edit → captured DSH diff
 Install the released plugin into the `web` profile, then restart DSH Web:
 
 ```bash
-dsh plugin --profile web add dsh-workbench@0.2.2
+dsh plugin --profile web add dsh-workbench@0.2.4
 dsh web
 ```
 
 If the `dsh` command is not available yet, use the package-manager fallback:
 
 ```bash
-pnpm dlx @deepseek-ai/dsh plugin --profile web add dsh-workbench@0.2.2
+pnpm dlx @deepseek-ai/dsh plugin --profile web add dsh-workbench@0.2.4
 pnpm dlx @deepseek-ai/dsh web
 ```
 
