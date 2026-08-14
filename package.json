@@ -1,6 +1,6 @@
 {
   "name": "dsh-workbench",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "DeepSeek Harness Web plugin: clickable read/write/edit rows, file preview, and DSH write diffs.",
   "license": "MIT",
   "author": "lee259",
