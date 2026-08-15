@@ -345,7 +345,9 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
         title={`${label} · ${t("shortcutHint")}`}
         onClick={() => (state.visible ? store.hide() : store.show())}
       >
-        <span className="dsh-wb-toggle-icon" aria-hidden="true" />
+        <style>{WORKBENCH_CSS}</style>
+        <Icon name={state.visible ? "panelClose" : "panelOpen"} />
+        <span className="dsh-wb-toggle-label">{t("workbench")}</span>
       </button>
     );
   }
@@ -386,7 +388,7 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
     FileDrawer,
     WorkbenchToggle,
     WorkbenchRoot() {
-      return <><FileDrawer /><WorkbenchToggle /></>;
+      return <FileDrawer />;
     },
     FileToolRow,
     apply(ctx: SlotContext) {
@@ -398,6 +400,10 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
           );
         }
       });
+      ctx.slots.inject("conversation.session.header.utilities", () => ctx.slots.register(
+        { name: "conversation.session.header.utilities", id: "dsh-workbench", order: 10 },
+        WorkbenchToggle,
+      ));
     },
   };
 }

@@ -27,7 +27,7 @@ write/edit → captured DSH diff
 - See real DSH write/edit changes, with the captured before/after content.
 - Read files as normal source code—no fake Git HEAD diff and no noisy activity timeline.
 - Open several files, switch between tabs, refresh them, copy content or paths, and resize the panel. A tree or Quick Open click uses one italic preview tab (like VS Code); double-click the file or tab to keep it. Conversation writes still open a kept tab.
-- Use desktop-style shortcuts: `⌥⌘B` to toggle the panel, `⌘⇧E` (or the tab-bar control) to show or hide the file tree, `⌘P` to open a file, tree search to locate a file without opening it, `⌘F` / `⌘L` to find or jump in the preview, `⌘W` to close a file, and `⌘1`–`⌘9` to switch tabs. Collapse every folder from the tree toolbar, or drag / right-click a file to insert its path into the chat input.
+- Use desktop-style shortcuts: `⌥⌘B` (or the Session header Workbench control next to Session log) to toggle the panel, `⌘⇧E` (or the tab-bar control) to show or hide the file tree, `⌘P` to open a file, tree search to locate a file without opening it, `⌘F` / `⌘L` to find or jump in the preview, `⌘W` to close a file, and `⌘1`–`⌘9` to switch tabs. Collapse every folder from the tree toolbar, or drag / right-click a file to insert its path into the chat input.
 - UI copy follows the DSH language setting (中文 / English).
 
 ## Install

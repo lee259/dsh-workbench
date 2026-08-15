@@ -76,6 +76,25 @@ function toolRow(toolName, store) {
   });
 }
 
+function collectSlotRegistrations(ui) {
+  const registrations = [];
+  ui.apply({
+    slots: {
+      inject(_name, factory) {
+        const result = factory();
+        if (result && typeof result.next === "function") {
+          for (const _item of result) {}
+        }
+      },
+      register(slot, component) {
+        registrations.push({ slot, component });
+        return () => {};
+      },
+    },
+  });
+  return registrations;
+}
+
 test("workbench toggle opens and closes the panel", async () => {
   const store = createFileStore(async (path) => ({
     path,
@@ -95,6 +114,23 @@ test("workbench toggle opens and closes the panel", async () => {
   assert.equal(openedToggle.props["aria-label"], "Hide sidebar");
   openedToggle.props.onClick();
   assert.equal(store.getSnapshot().visible, false);
+});
+
+test("apply registers the header utility beside Session log", () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 1,
+  }));
+  const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
+  const header = collectSlotRegistrations(ui).find((entry) => entry.slot.name === "conversation.session.header.utilities");
+  assert.ok(header);
+  assert.equal(header.slot.id, "dsh-workbench");
+  assert.equal(header.component, ui.WorkbenchToggle);
+  assert.equal(findElement(ui.WorkbenchRoot(), (node) => node.props?.className === "dsh-wb-toggle"), undefined);
 });
 
 test("file drawer close button hides the panel", async () => {

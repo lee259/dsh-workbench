@@ -66,7 +66,8 @@ export type MessageKey =
   | "showTree"
   | "hideTree"
   | "findInFile"
-  | "goToLine";
+  | "goToLine"
+  | "workbench";
 
 const zh: Record<MessageKey, string> = {
   loadingTitle: "正在读取文件",
@@ -135,6 +136,7 @@ const zh: Record<MessageKey, string> = {
   hideTree: "隐藏文件树",
   findInFile: "在文件中查找",
   goToLine: "跳转到行",
+  workbench: "工作台",
 };
 
 const en: Record<MessageKey, string> = {
@@ -204,6 +206,7 @@ const en: Record<MessageKey, string> = {
   hideTree: "Hide file tree",
   findInFile: "Find in file",
   goToLine: "Go to line",
+  workbench: "Workbench",
 };
 
 const catalogs: Record<Locale, Record<MessageKey, string>> = { zh, en };
