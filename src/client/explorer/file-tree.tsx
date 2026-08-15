@@ -14,7 +14,9 @@ import {
   directoriesToReveal,
   emptyTree,
   flattenVisibleRows,
+  foldersAreExpanded,
   mergeOpenDirectories,
+  nextFolderExpansion,
   readTreeOpen,
   readTreeWidth,
   treeFileOpenMode,
@@ -139,7 +141,7 @@ export function createFileTree(React: ReactNs, store: FileStore, i18n: LocaleSto
 
     React.useEffect(() => {
       if (fileState.visible) refreshTree();
-    }, [fileState.visible, fileState.payload?.revision, fileState.disk, refreshTree]);
+    }, [fileState.visible, fileState.disk, refreshTree]);
 
     React.useEffect(() => {
       if (fileState.reveal === lastReveal.current) return;
@@ -270,6 +272,12 @@ export function createFileTree(React: ReactNs, store: FileStore, i18n: LocaleSto
 
     const menuPath = contextMenu?.path ?? "";
     const menuIsDirectory = tree.directories.includes(menuPath);
+    const foldersExpanded = foldersAreExpanded(open, tree.directories);
+    const toggleFolders = () => {
+      const next = nextFolderExpansion(open, tree.directories);
+      setOpen(next);
+      persistTreeOpen(next);
+    };
 
     return <>
       <div className="dsh-wb-tree-resize" role="separator" aria-label={t("resizeTree")} aria-orientation="vertical"
@@ -318,11 +326,8 @@ export function createFileTree(React: ReactNs, store: FileStore, i18n: LocaleSto
               }} />
             {normalizedQuery ? <button type="button" className="dsh-wb-tree-search-clear" aria-label={t("clearSearch")} onClick={() => setQuery("")}><Icon name="close" /></button> : null}
           </div>
-          <button type="button" className="dsh-wb-button dsh-wb-icon-button" aria-label={t("collapseFolders")} title={t("collapseFolders")} disabled={open.length === 0}
-            onClick={() => {
-              setOpen([]);
-              persistTreeOpen([]);
-            }}><Icon name="collapse" /></button>
+          <button type="button" className="dsh-wb-button dsh-wb-icon-button" aria-label={t(foldersExpanded ? "collapseFolders" : "expandFolders")} title={t(foldersExpanded ? "collapseFolders" : "expandFolders")} disabled={tree.directories.length === 0}
+            onClick={toggleFolders}><Icon name={foldersExpanded ? "collapse" : "expand"} /></button>
           <button type="button" className="dsh-wb-button dsh-wb-icon-button dsh-wb-tree-refresh" aria-label={t("refresh")} title={t("refresh")} data-loading={loading ? "true" : "false"} onClick={refreshTree}><Icon name="refresh" /></button>
         </div>
         {filtering ? <div id="dsh-wb-tree-hits" className="dsh-wb-tree-hits" role="listbox" aria-label={t("treeFilter")} ref={listRef}

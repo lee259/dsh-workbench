@@ -54,6 +54,7 @@ export type MessageKey =
   | "revealInTree"
   | "insertPathAction"
   | "collapseFolders"
+  | "expandFolders"
   | "tabDiff"
   | "workspaceTree"
   | "openFile"
@@ -123,6 +124,7 @@ const zh: Record<MessageKey, string> = {
   revealInTree: "在树中显示",
   insertPathAction: "插入路径到输入框",
   collapseFolders: "折叠全部文件夹",
+  expandFolders: "展开全部文件夹",
   tabDiff: "对比",
   workspaceTree: "工作区文件树",
   openFile: "打开文件",
@@ -193,6 +195,7 @@ const en: Record<MessageKey, string> = {
   revealInTree: "Reveal in tree",
   insertPathAction: "Insert path into input",
   collapseFolders: "Collapse folders",
+  expandFolders: "Expand folders",
   tabDiff: "diff",
   workspaceTree: "Workspace files",
   openFile: "Open file",

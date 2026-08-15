@@ -88,6 +88,14 @@ export function mergeOpenDirectories(current: string[], paths: string[]): string
   return [...new Set([...current, ...paths.filter(Boolean)])];
 }
 
+export function foldersAreExpanded(open: readonly string[], directories: readonly string[]): boolean {
+  return directories.length > 0 && directories.every((path) => open.includes(path));
+}
+
+export function nextFolderExpansion(open: readonly string[], directories: readonly string[]): string[] {
+  return foldersAreExpanded(open, directories) ? [] : [...directories];
+}
+
 export function breadcrumbTargets(path: string): BreadcrumbTarget[] {
   const parts = path.split("/").filter(Boolean);
   const items: BreadcrumbTarget[] = [{ label: "/", path: "", kind: "root" }];

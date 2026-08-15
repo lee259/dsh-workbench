@@ -14,7 +14,7 @@ import {
 } from "./chrome/sidebar.js";
 import { createFileTree, clampTreeWidth, type TreeCommands } from "./explorer/file-tree.js";
 import { createSearchPanel } from "./explorer/search-panel.js";
-import { visibleBreadcrumbTargets } from "./explorer/tree-model.js";
+import { readTreeVisible, visibleBreadcrumbTargets, writeTreeVisible } from "./explorer/tree-model.js";
 import { createCodeView } from "./preview/code-view.js";
 import { viewKind } from "./preview/editor-spec.js";
 import type { PreviewCommands } from "./preview/preview-nav.js";
@@ -44,6 +44,14 @@ function savedSidebarWidth(): number {
   }
 }
 
+function savedTreeVisible(): boolean {
+  try {
+    return readTreeVisible(window.localStorage);
+  } catch {
+    return true;
+  }
+}
+
 function toolLabelKey(name: string) {
   if (name === "read") return "toolRead" as const;
   if (name === "edit") return "toolEdit" as const;
@@ -51,7 +59,6 @@ function toolLabelKey(name: string) {
 }
 
 export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: LocaleStore) {
-  const h = React.createElement;
   const { Fragment } = React;
   const CodeView = createCodeView(React, i18n);
   const SearchPanel = createSearchPanel(React, store, i18n);
@@ -71,17 +78,24 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
     const { t } = useLocale();
     const [width, setWidth] = React.useState(savedSidebarWidth);
     const [treeWidth, setTreeWidth] = React.useState(readTreeWidth);
-    const [treeVisible, setTreeVisible] = React.useState(true);
+    const [treeVisible, setTreeVisible] = React.useState(savedTreeVisible);
     const [revealPath, setRevealPath] = React.useState("");
     const [copied, setCopied] = React.useState(false);
     const [pathCopied, setPathCopied] = React.useState(false);
     const [searchOpen, setSearchOpen] = React.useState(false);
+    const [mounted, setMounted] = React.useState(state.visible);
+    const [closing, setClosing] = React.useState(false);
     const previewCommands = React.useRef<PreviewCommands | null>(null);
     const treeCommands = React.useRef<TreeCommands | null>(null);
     const sidebarRef = React.useRef<HTMLElement | null>(null);
 
     const setTreeOpen = (next: boolean) => {
       setTreeVisible(next);
+      try {
+        writeTreeVisible(window.localStorage, next);
+      } catch {
+        // Storage can be unavailable in private or embedded contexts.
+      }
     };
 
     const showTreeAt = (path: string) => {
@@ -108,7 +122,7 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
         if (action.type === "toggleTree") {
           event.preventDefault();
           if (!state.visible) store.show();
-          setTreeVisible((current) => !current);
+          setTreeOpen(!treeVisible);
           return;
         }
         if (action.type === "find") {
@@ -125,8 +139,8 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
         }
         event.preventDefault();
         if (action.type === "hide") {
-          if (treeCommands.current?.consumeEscape()) return;
           if (searchOpen) setSearchOpen(false);
+          else if (treeCommands.current?.consumeEscape()) return;
           else store.hide();
         }
         else if (action.type === "close") store.close(action.path);
@@ -134,7 +148,7 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
       };
       window.addEventListener("keydown", onKey);
       return () => window.removeEventListener("keydown", onKey);
-    }, [state.visible, state.active, state.open, searchOpen]);
+    }, [state.visible, state.active, state.open, searchOpen, treeVisible]);
 
     React.useEffect(() => followWorkspaceEvents(() => {
       store.noteDiskChange();
@@ -142,12 +156,29 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
     }), []);
 
     React.useEffect(() => {
+      if (state.visible) {
+        setMounted(true);
+        setClosing(false);
+        return;
+      }
+      if (!mounted) return;
+      setClosing(true);
+      const timer = window.setTimeout(() => setMounted(false), 160);
+      return () => window.clearTimeout(timer);
+    }, [state.visible, mounted]);
+
+    React.useEffect(() => {
+      document.body.classList.add("dsh-wb-sidebar-transition");
+      return () => {
+        document.body.classList.remove("dsh-wb-sidebar-transition");
+        document.body.classList.remove("dsh-wb-sidebar-open");
+      };
+    }, []);
+
+    React.useEffect(() => {
       document.body.classList.toggle("dsh-wb-sidebar-open", state.visible);
       document.body.style.setProperty("--dsh-wb-sidebar-width", `${width}px`);
       writeSidebarWidth(window.localStorage, width);
-      return () => {
-        document.body.classList.remove("dsh-wb-sidebar-open");
-      };
     }, [state.visible, width]);
 
     const resizeStart = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -163,7 +194,7 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
       window.addEventListener("pointerup", onUp, { once: true });
     };
 
-    if (!state.visible) return null;
+    if (!mounted) return null;
 
     const payload = state.payload;
     const lineCount = payload?.content.split("\n").length ?? 0;
@@ -178,7 +209,7 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
     const node = (
       <>
         <style>{WORKBENCH_CSS}</style>
-        <aside ref={sidebarRef} className="dsh-wb-sidebar" style={{ width: `${width}px` }} aria-label={t("ariaWorkspace")}>
+        <aside ref={sidebarRef} className="dsh-wb-sidebar" data-state={closing ? "closing" : "open"} style={{ width: `${width}px` }} aria-label={t("ariaWorkspace")}>
           <div
             className="dsh-wb-resize-handle"
             role="separator"
@@ -197,7 +228,6 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
               setWidth((current) => sidebarWidthFromKey(current, event.key));
             }}
           />
-          {searchOpen ? <SearchPanel onClose={() => setSearchOpen(false)} /> : null}
           <nav className="dsh-wb-tabs" aria-label={t("openFiles")} role="tablist">
               <div className="dsh-wb-tabstrip">
                 {state.open.map((path) => {
@@ -228,13 +258,14 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
                   title={t(treeVisible ? "hideTree" : "showTree")}
                   onClick={() => setTreeOpen(!treeVisible)}
                 >
-                  <Icon name={treeVisible ? "panelClose" : "panelOpen"} />
+                  <Icon name="panel" />
                 </button>
                 <button
                   className="dsh-wb-button dsh-wb-icon-button"
                   type="button"
                   aria-label={t("refresh")}
                   title={t("refresh")}
+                  data-loading={state.loading ? "true" : "false"}
                   onClick={() => void store.reload()}
                 >
                   <Icon name="refresh" />
@@ -252,7 +283,7 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
                     });
                   }}
                 >
-                  <Icon name="copy" />
+                  <Icon name={copied ? "check" : "copy"} />
                 </button>
                 <button className="dsh-wb-button dsh-wb-icon-button dsh-wb-close-button" type="button" aria-label={t("close")} title={t("hidePanel")} onClick={() => store.hide()}>
                   <Icon name="close" />
@@ -298,7 +329,7 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
                     });
                   }}
                 >
-                  <Icon name="copy" />
+                  <Icon name={pathCopied ? "check" : "copy"} />
                 </button>
                 <span className="dsh-wb-meta">{meta}</span>
               </nav>
@@ -320,9 +351,8 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
               />
             ) : null}
           </div>
+          {searchOpen ? <div className="dsh-wb-search-overlay"><SearchPanel onClose={() => setSearchOpen(false)} /></div> : null}
           <footer className="dsh-wb-foot">
-            <span className="dsh-wb-dot" />
-            <span>{t("footerBrand")}</span>
             <span>{t(payload && viewKind(payload.source) === "diff" ? "footerDiff" : "footerView")}</span>
           </footer>
         </aside>
@@ -346,8 +376,8 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
         onClick={() => (state.visible ? store.hide() : store.show())}
       >
         <style>{WORKBENCH_CSS}</style>
-        <Icon name={state.visible ? "panelClose" : "panelOpen"} />
         <span className="dsh-wb-toggle-label">{t("workbench")}</span>
+        <Icon name="panel" />
       </button>
     );
   }

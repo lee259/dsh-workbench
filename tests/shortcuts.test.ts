@@ -34,3 +34,10 @@ test("shortcut modifiers and inactive states are respected", () => {
   expect(shortcutAction({ key: "w", metaKey: true }, { ...state, active: "" })).toBe(null);
   expect(shortcutAction({ key: "ArrowLeft", altKey: true }, { ...state, open: ["a.ts"] })).toBe(null);
 });
+
+test("shortcuts do not steal keys from editable controls or handled editor events", () => {
+  expect(shortcutAction({ key: "p", metaKey: true, target: { tagName: "INPUT" } as EventTarget }, state)).toBe(null);
+  expect(shortcutAction({ key: "Escape", target: { tagName: "TEXTAREA" } as EventTarget }, state)).toBe(null);
+  expect(shortcutAction({ key: "e", metaKey: true, shiftKey: true, target: { isContentEditable: true } as EventTarget }, state)).toBe(null);
+  expect(shortcutAction({ key: "Escape", defaultPrevented: true }, state)).toBe(null);
+});

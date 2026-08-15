@@ -5,10 +5,12 @@ import {
   breadcrumbTargets,
   clampTreeWidth,
   directoriesToReveal,
+  foldersAreExpanded,
   consumeTreeEscape,
   flattenVisibleRows,
   mergeOpenDirectories,
   moveTreeFocus,
+  nextFolderExpansion,
   readTreeVisible,
   treeFileOpenMode,
   treeKeyAction,
@@ -49,6 +51,13 @@ test("ancestor directories expand just enough to reveal a path", () => {
   expect(ancestorDirectories("src/client/ui.tsx")).toEqual(["src", "src/client"]);
   expect(directoriesToReveal("src/client")).toEqual(["src", "src/client"]);
   expect(mergeOpenDirectories(["src"], ["src", "src/client"])).toEqual(["src", "src/client"]);
+});
+
+test("folder control expands all folders, then collapses them", () => {
+  expect(foldersAreExpanded([], tree.directories)).toBe(false);
+  expect(nextFolderExpansion([], tree.directories)).toEqual(tree.directories);
+  expect(foldersAreExpanded(tree.directories, tree.directories)).toBe(true);
+  expect(nextFolderExpansion(tree.directories, tree.directories)).toEqual([]);
 });
 
 test("visible tree rows flatten open directories and keep files collapsed", () => {

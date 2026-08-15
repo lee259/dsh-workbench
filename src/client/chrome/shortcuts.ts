@@ -6,6 +6,8 @@ export type ShortcutState = {
 
 export type ShortcutEvent = Pick<KeyboardEvent, "key" | "altKey" | "ctrlKey" | "metaKey"> & {
   shiftKey?: boolean;
+  target?: EventTarget | null;
+  defaultPrevented?: boolean;
 };
 
 export type ShortcutAction =
@@ -23,7 +25,15 @@ function hasMod(event: ShortcutEvent): boolean {
   return Boolean(event.metaKey || event.ctrlKey);
 }
 
+function isEditableTarget(target: EventTarget | null | undefined): boolean {
+  if (!target || typeof target !== "object") return false;
+  const element = target as { tagName?: string; isContentEditable?: boolean; getAttribute?: (name: string) => string | null };
+  const tag = element.tagName?.toLowerCase();
+  return tag === "input" || tag === "textarea" || tag === "select" || element.isContentEditable === true || element.getAttribute?.("contenteditable") === "true";
+}
+
 export function shortcutAction(event: ShortcutEvent, state: ShortcutState): ShortcutAction {
+  if (event.defaultPrevented || isEditableTarget(event.target)) return null;
   if (event.key === "Escape" && state.visible) return { type: "hide" };
   if (state.visible && hasMod(event) && event.key.toLowerCase() === "w" && state.active) {
     return { type: "close", path: state.active };

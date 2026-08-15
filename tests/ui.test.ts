@@ -407,6 +407,8 @@ test("workbench controls expose accurate accessibility state", async () => {
   expect(toggle.props["aria-expanded"]).toBe(false);
   expect(toggle.props["data-open"]).toBe("false");
   expect(toggle.props.title).toMatch(/Shortcut/);
+  expect(toggle.props.children[1].type).toBe("span");
+  expect(toggle.props.children[2].props.name).toBe("panel");
   await store.open("src/example.ts");
   const separator = findElement(ui.FileDrawer(), (node) => node.props?.role === "separator");
   expect(separator).toBeTruthy();
@@ -443,7 +445,7 @@ test("file drawer plus button and breadcrumbs are wired", async () => {
   expect(panel).toBeTruthy();
   const tree = panel.type(panel.props);
   expect(findElement(tree, (node) => node.props?.["aria-label"] === "Hide file tree")).toBe(undefined);
-  expect(findElement(tree, (node) => node.props?.["aria-label"] === "Collapse folders")).toBeTruthy();
+  expect(findElement(tree, (node) => node.props?.["aria-label"] === "Expand folders")).toBeTruthy();
   expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree-rail")).toBe(undefined);
 });
 
