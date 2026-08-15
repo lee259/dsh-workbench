@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.1 - 2026-08-15
+
+### Features
+
+- Put the Workbench toggle in the Session header next to Session log.
+
+### Fixes
+
+- Skip `node_modules` and other dependency directories when starting the workspace file watcher, so Linux CI no longer hangs in `pnpm test`.
+
 ## 0.3.0 - 2026-08-15
 
 ### Features
