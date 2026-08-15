@@ -48,9 +48,14 @@ export function apply(ctx: HostContext): void {
     return located.ok ? located.display : normalizePath(path);
   });
   const pump = createChangePump();
-  startWorkspaceWatch(process.cwd(), (filename) => {
-    pump.notify(filename);
-  });
+  let watching = false;
+  const ensureWatch = () => {
+    if (watching) return;
+    watching = true;
+    startWorkspaceWatch(process.cwd(), (filename) => {
+      pump.notify(filename);
+    });
+  };
 
   ctx.webServer.register({
     kind: "exact",
@@ -95,6 +100,7 @@ export function apply(ctx: HostContext): void {
       res.setHeader("cache-control", "no-cache");
       res.setHeader("connection", "keep-alive");
       res.write(":\n\n");
+      ensureWatch();
       const stop = pump.subscribe(() => {
         res.write("event: change\ndata: {}\n\n");
       });

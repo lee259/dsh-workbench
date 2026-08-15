@@ -56,7 +56,7 @@ src/
 | `treeFileOpenMode` | tree / Quick Open → `view` | Browse the workspace file; do not overlay a captured DSH write diff |
 | `treeKeyAction` / `consumeTreeEscape` | key + visible rows → move/toggle/open | Home/End, parent/child arrows, Esc closes menu then filter |
 | `createChangePump` | `notify` / `subscribe` | Debounced workspace change events; skips dependency directories |
-| `startWorkspaceWatch` | root + onChange | Recursive disk watch that never attaches to `node_modules` / `lib` / `.git` |
+| `startWorkspaceWatch` | root + onChange | Recursive disk watch that never attaches to `node_modules` / `lib` / `.git`. Host `apply` starts it only when a client opens the change SSE. |
 | `insertDraftText` / `spliceDraftValue` | draft + path → updated input | Insert a workspace path into the conversation composer |
 | `mountWorkbenchDrawer` | React + createRoot + FileDrawer | Mount the sidebar host on `document.body` |
 | `languageForPath` | path → LanguageId or null | Extension / basename → canonical language identifier (for CodeMirror language selection) |
