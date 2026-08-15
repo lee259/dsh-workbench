@@ -37,14 +37,14 @@ write/edit → DSH 实际捕获到的 diff
 把已发布的插件安装到 `web` profile，然后重启 DSH Web：
 
 ```bash
-dsh plugin --profile web add dsh-workbench@0.3.2
+dsh plugin --profile web add dsh-workbench
 dsh web
 ```
 
 如果本机还没有 `dsh` 命令，可以使用包管理器临时运行：
 
 ```bash
-pnpm dlx @deepseek-ai/dsh plugin --profile web add dsh-workbench@0.3.2
+pnpm dlx @deepseek-ai/dsh plugin --profile web add dsh-workbench
 pnpm dlx @deepseek-ai/dsh web
 ```
 
