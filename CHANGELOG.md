@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0 - 2026-08-15
+
+### Features
+
+- Add a workspace file tree with breadcrumbs, hide/show, keyboard navigation, collapse-all, and tree search that locates without opening.
+- Add Quick Open (`⌘/Ctrl+P`) and a VS Code-style italic preview tab; double-click pins the file. Conversation writes still open a kept tab.
+- Add in-file find / go-to-line, conversation `:line` / `#Lline` targets, and drag or right-click path insert into the composer.
+- Add syntax highlighting, folding, and live refresh when workspace files change on disk.
+
+### Documentation
+
+- Refresh the demo screenshot and point the roadmap at a Codex-class file workspace.
+
 ## 0.2.4 - 2026-08-14
 
 ### Fixes
