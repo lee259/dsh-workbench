@@ -13,6 +13,7 @@ src/
 │   ├── path-identity.ts
 │   ├── workspace.ts
 │   ├── change-pump.ts       # 磁盘变更防抖
+│   ├── workspace-watch.ts   # 跳过 node_modules 的递归监听
 │   ├── write-history.ts
 │   └── activity.ts          # 会话工具活动（API）
 ├── shared/                  # 两端共享
@@ -55,6 +56,7 @@ src/
 | `treeFileOpenMode` | tree / Quick Open → `view` | Browse the workspace file; do not overlay a captured DSH write diff |
 | `treeKeyAction` / `consumeTreeEscape` | key + visible rows → move/toggle/open | Home/End, parent/child arrows, Esc closes menu then filter |
 | `createChangePump` | `notify` / `subscribe` | Debounced workspace change events; skips dependency directories |
+| `startWorkspaceWatch` | root + onChange | Recursive disk watch that never attaches to `node_modules` / `lib` / `.git` |
 | `insertDraftText` / `spliceDraftValue` | draft + path → updated input | Insert a workspace path into the conversation composer |
 | `mountWorkbenchDrawer` | React + createRoot + FileDrawer | Mount the sidebar host on `document.body` |
 | `languageForPath` | path → LanguageId or null | Extension / basename → canonical language identifier (for CodeMirror language selection) |
@@ -68,7 +70,7 @@ src/
 
 ## Client
 
-- Slots: `tool.call.toolview` for `read` / `write` / `edit` at `priority: -1` (lowest renders; shadows the shipped rows at 0). Path clicks on tool rows, produced-file chips, and markdown file mentions open the workbench sidebar, not the host default app. Mentions with `:line` or `#Lline` jump to that line in the preview. The sidebar mounts on `document.body` via `react-dom/client` as a fixed right-side panel (no backdrop); opening it toggles `body.dsh-wb-sidebar-open` which reserves the right margin so the host conversation reflows like a Codex side panel. The workspace file tree sits to the right of the preview, starts open, and can be hidden with `⌘⇧E` or the tab-bar toggle. Tree search locates a row without opening it; `⌘P` opens a file. Workbench chrome uses the host `--dsw-alias-*` / `--dsw-specific-*` / `--dsw-font-*` / `--dsw-shadow-*` tokens. Write/edit uses CodeMirror `unifiedMergeView`; other opens use a read-only CodeMirror view. Folding comes from `@codemirror/language` `foldGutter`. In-file find / go-to-line use `@codemirror/search` and only steal those keys when focus is inside the sidebar. Syntax highlighting via CodeMirror language extensions with GitHub-like `defaultHighlightStyle`.
+- Slots: `tool.call.toolview` for `read` / `write` / `edit` at `priority: -1` (lowest renders; shadows the shipped rows at 0). The Session header toggle registers on the host list `conversation.session.header.utilities` (`id: dsh-workbench`, `order: 10`) so it sits with Session log; do not take the single `conversation.session.header` seat. Path clicks on tool rows, produced-file chips, and markdown file mentions open the workbench sidebar, not the host default app. Mentions with `:line` or `#Lline` jump to that line in the preview. The sidebar mounts on `document.body` via `react-dom/client` as a fixed right-side panel (no backdrop); opening it toggles `body.dsh-wb-sidebar-open` which reserves the right margin so the host conversation reflows like a Codex side panel. The workspace file tree sits to the right of the preview, starts open, and can be hidden with `⌘⇧E` or the tab-bar toggle. Tree search locates a row without opening it; `⌘P` opens a file. Workbench chrome uses the host `--dsw-alias-*` / `--dsw-specific-*` / `--dsw-font-*` / `--dsw-shadow-*` tokens. Write/edit uses CodeMirror `unifiedMergeView`; other opens use a read-only CodeMirror view. Folding comes from `@codemirror/language` `foldGutter`. In-file find / go-to-line use `@codemirror/search` and only steal those keys when focus is inside the sidebar. Syntax highlighting via CodeMirror language extensions with GitHub-like `defaultHighlightStyle`.
 - A true layout-slot sidebar (`conversation.details.tool`) is not used: it is a `single` slot already occupied by `@deepseek-ai/dsh-client-ui-tool` at the same priority, and registering there throws (`single slot "conversation.details.tool" already has a registration at priority 0`). The body-margin sidebar avoids the host slot conflict entirely.
 - Locale follows the DSH settings language via `ctx.locale` / `locale/change`
 

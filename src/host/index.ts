@@ -1,11 +1,11 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { watch } from "node:fs";
 import { toFilePayload } from "./file-preview.js";
 import { sendJson } from "./http.js";
 import { createPathIdentity } from "./path-identity.js";
 import { ACTIVITY_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, normalizePath, type FileOpenMode } from "../shared/types.js";
 import { createChangePump } from "./change-pump.js";
 import { createWorkspace } from "./workspace.js";
+import { startWorkspaceWatch } from "./workspace-watch.js";
 import { WriteHistory, type SessionEvent } from "./write-history.js";
 import { ActivityStore } from "./activity.js";
 
@@ -48,15 +48,9 @@ export function apply(ctx: HostContext): void {
     return located.ok ? located.display : normalizePath(path);
   });
   const pump = createChangePump();
-  try {
-    const watcher = watch(process.cwd(), { recursive: true }, (_event, filename) => {
-      pump.notify(filename != null ? String(filename) : null);
-    });
-    watcher.on("error", () => {});
-    watcher.unref();
-  } catch {
-    // Recursive watching is not available on every platform.
-  }
+  startWorkspaceWatch(process.cwd(), (filename) => {
+    pump.notify(filename);
+  });
 
   ctx.webServer.register({
     kind: "exact",
