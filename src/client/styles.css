@@ -843,6 +843,83 @@ body.dsh-wb-sidebar-open {
   height: 100%;
 }
 
+.dsh-wb-preview-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.dsh-wb-preview-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--dsw-alias-border-l2);
+  background: var(--ds-specific-sidebar-fill, var(--dsw-specific-sidebar-fill));
+}
+
+.dsh-wb-markdown-toggle {
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: 5px;
+  padding: 3px 8px;
+  color: var(--dsw-alias-label-secondary);
+  background: transparent;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.dsh-wb-markdown-toggle:hover {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-fill-tsp-white-main);
+}
+
+.dsh-wb-image-preview {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  overflow: auto;
+  padding: 24px;
+  box-sizing: border-box;
+  background: var(--dsw-specific-sidebar-fill);
+}
+
+.dsh-wb-image-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.dsh-wb-markdown-preview {
+  flex: 1;
+  height: 100%;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 20px 24px 32px;
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-specific-sidebar-fill);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.dsh-wb-markdown-preview h1,
+.dsh-wb-markdown-preview h2,
+.dsh-wb-markdown-preview h3,
+.dsh-wb-markdown-preview h4,
+.dsh-wb-markdown-preview h5,
+.dsh-wb-markdown-preview h6 { margin: 1.1em 0 .45em; line-height: 1.25; }
+.dsh-wb-markdown-preview p { margin: .7em 0; }
+.dsh-wb-markdown-preview ul,
+.dsh-wb-markdown-preview ol { padding-left: 1.5em; }
+.dsh-wb-markdown-preview blockquote { margin: .8em 0; padding-left: 12px; border-left: 3px solid var(--dsw-alias-border-l1); color: var(--dsw-alias-label-secondary); }
+.dsh-wb-markdown-preview pre { overflow: auto; padding: 10px 12px; border-radius: 6px; background: var(--dsw-alias-markdown-code-block); }
+.dsh-wb-markdown-preview code { padding: 1px 4px; border-radius: 3px; background: var(--dsw-alias-markdown-code-block); font-family: var(--ds-font-family-code, ui-monospace, monospace); }
+.dsh-wb-markdown-preview pre code { padding: 0; background: transparent; }
+.dsh-wb-markdown-preview img { max-width: 100%; height: auto; }
+.dsh-wb-markdown-preview a { color: var(--dsw-alias-label-link); }
+
 .dsh-wb-cm .cm-editor {
   height: 100%;
 }

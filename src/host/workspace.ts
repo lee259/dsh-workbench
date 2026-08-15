@@ -1,7 +1,7 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { createPathIdentity, type PathIdentity } from "./path-identity.js";
-import { MAX_PREVIEW_BYTES, type WorkspaceErrorCode, type WorkspaceFile, type WorkspaceTree } from "../shared/types.js";
+import { MAX_IMAGE_PREVIEW_BYTES, MAX_PREVIEW_BYTES, type WorkspaceErrorCode, type WorkspaceFile, type WorkspaceTree } from "../shared/types.js";
 
 export type WorkspaceError = {
   ok: false;
@@ -53,10 +53,12 @@ export function createWorkspace(options: {
   paths?: PathIdentity;
   fs?: DiskReader;
   maxBytes?: number;
+  imageMaxBytes?: number;
 }): Workspace {
   const paths = options.paths ?? createPathIdentity(resolve(options.root));
   const reader = options.fs ?? nodeReader;
   const maxBytes = options.maxBytes ?? MAX_PREVIEW_BYTES;
+  const imageMaxBytes = options.imageMaxBytes ?? MAX_IMAGE_PREVIEW_BYTES;
   const root = resolve(options.root);
   const ignoredDirectories = new Set([
     ".git",
@@ -88,7 +90,9 @@ export function createWorkspace(options: {
 
       try {
         const info = await reader.stat(located.absolute);
-        if (!info.isFile || info.size > maxBytes) {
+        const extension = located.relative.toLowerCase().split(".").pop() ?? "";
+        const isImage = ["png", "jpg", "jpeg", "gif", "webp", "svg", "avif", "bmp", "ico"].includes(extension);
+        if (!info.isFile || info.size > (isImage ? imageMaxBytes : maxBytes)) {
           return { ok: false, status: 413, error: "not_previewable" };
         }
         const content = await reader.readFile(located.absolute);

@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { apply, inject, name } from "../src/index.js";
-import { ACTIVITY_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH } from "../src/shared/types.js";
+import { ACTIVITY_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH } from "../src/shared/types.js";
 import { expect, test } from "vitest";
 
 test("host plugin exports the Cordis contract", () => {
@@ -24,7 +24,7 @@ test("apply registers the file route and records session events", async () => {
       listeners.push({ event, handler });
     },
   });
-  expect(routes.map((route) => route.path)).toEqual([FILES_API_PATH, FILE_API_PATH, ACTIVITY_API_PATH, EVENTS_API_PATH]);
+  expect(routes.map((route) => route.path)).toEqual([FILES_API_PATH, FILE_API_PATH, ACTIVITY_API_PATH, EVENTS_API_PATH, FILE_ASSET_API_PATH]);
   expect(listeners.map((listener) => listener.event)).toEqual(["session/created", "session/event"]);
 });
 

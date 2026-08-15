@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.0 - 2026-08-16
+
+### Features
+
+- Add previews for workspace images and rendered Markdown files, including relative Markdown images.
+- Add a Markdown preview/source mode toggle while keeping CodeMirror for raw Markdown inspection.
+- Use `marked` for GFM rendering and DOMPurify for sanitizing rendered HTML.
+
+### Fixes
+
+- Allow images up to 12 MB to pass through the dedicated asset preview route while retaining the text preview limit.
+
 ## 0.3.2 - 2026-08-15
 
 ### Fixes

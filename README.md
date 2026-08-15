@@ -12,6 +12,8 @@ DSH Workbench turns file operations in [DeepSeek Harness](https://deepseek-harne
 
 Click a file path in a DSH Web session and inspect it in a persistent right-side panel—without losing the conversation context.
 
+If this project is helpful to you, please consider giving it a star.
+
 ![DSH Workbench in DeepSeek Harness Web](./assets/dsh-workbench-demo.png)
 
 The demo shows a real DSH Web session with the conversation on the left and the Workbench showing a captured `package.json` diff, multiple tabs, file search, and a workspace tree on the right. Read-only files stay readable as source; captured writes and edits open as focused diffs.
@@ -114,6 +116,7 @@ The target is a Codex-class file workspace beside the DSH conversation: inspect,
 - Quick Open (`⌘/Ctrl+P`) and tree search that locates without opening
 - Workspace file tree with breadcrumbs, hide/show, keyboard navigation, collapse-all, and path insert into the composer
 - Syntax highlighting, folding, and live refresh when the workspace changes on disk
+- Image previews and rendered Markdown previews, including relative Markdown images
 
 ### Next
 
@@ -122,7 +125,7 @@ The target is a Codex-class file workspace beside the DSH conversation: inspect,
 - Follow the agent: auto-open or reveal files as DSH writes them, and keep the tree in sync
 - Workspace content search (`⌘/Ctrl+⇧+F`) in addition to filename Quick Open
 - Attach a file or folder from the tree as composer context, not only insert a path
-- Richer previews for images and rendered Markdown
+- Detect and associate the Git worktree for the current workspace, showing worktree metadata without inventing a Git `HEAD` diff
 
 ### Exploring
 
@@ -130,17 +133,6 @@ The target is a Codex-class file workspace beside the DSH conversation: inspect,
 - Inline comments on a diff line that send guidance back to the composer
 - Native DSH panel controls and layout slots, if the host exposes a usable one
 - Pluggable workspace panels (Files / Review, and later DSH tools)
-
-## Release
-
-CI runs `pnpm test` on pushes and pull requests to `main`. Publishing is triggered by pushing a `v*` tag:
-
-```bash
-git tag v0.2.0
-git push origin main --tags
-```
-
-The publish workflow uses npm Trusted Publishing with GitHub Actions provenance. Configure it on npmjs.com for `lee259/dsh-workbench` and `.github/workflows/publish.yml`.
 
 ## License
 

@@ -75,6 +75,15 @@ test("reads a workspace file", async () => {
   expect(result.content).toBe("ok");
 });
 
+test("allows normal-sized images above the text preview limit", async () => {
+  const workspace = createWorkspace({
+    root: "/repo",
+    fs: memoryFs({ "/repo/image.png": { isFile: true, content: "x".repeat(900_000) } }),
+  });
+  const result = await workspace.read("image.png");
+  expect(result.ok).toBe(true);
+});
+
 test("lists matching workspace files while skipping dependency directories", async () => {
   const workspace = createWorkspace({
     root: "/repo",

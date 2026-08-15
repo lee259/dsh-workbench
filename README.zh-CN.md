@@ -12,6 +12,8 @@ DSH Workbench 把 [DeepSeek Harness](https://deepseek-harness.github.io/deepseek
 
 在 DSH Web 会话里点击文件路径，右侧就会打开常驻工作区；对话上下文保留在左侧，文件查看和变更检查集中在右侧。
 
+如果本项目对你有所帮助，麻烦帮忙点一个 Star。
+
 ![DSH Workbench 在 DeepSeek Harness Web 中运行](./assets/dsh-workbench-demo.png)
 
 这张演示图展示了真实 DSH Web 会话的工作流：左侧保留对话，右侧 Workbench 展示捕获到的 `package.json` Diff、多文件标签、文件搜索和工作区文件树。读取内容保持普通源码预览，真实捕获到的写入和编辑则进入聚焦的 Diff 视图。
@@ -77,10 +79,10 @@ pnpm start -- /绝对路径/你的项目
 
 | DSH 操作 | 工作区展示 |
 | --- | --- |
-| `read` | 只读 CodeMirror 源码视图 |
+| `read` | 只读视图；图片和 Markdown 使用专用渲染预览，其它文件使用 CodeMirror 源码视图 |
 | `write` | 基于 DSH 捕获基线的 Diff |
 | `edit` | 基于 DSH 捕获基线的 Diff |
-| 工作区文件提及 | 只读源码视图 |
+| 工作区文件提及 | 只读视图；图片和 Markdown 使用专用渲染预览 |
 
 Host 监听官方会话事件：`tool/call`、`tool/result` 和 `tool/code-dispatch`。如果 `dsh-tool-fs` 提供了 `meta.diffs`，插件会优先使用它。没有捕获到 DSH 写入时，不会凭空生成 Git `HEAD` diff。
 
@@ -114,6 +116,7 @@ pnpm start -- /绝对路径/你的项目
 - Quick Open（`⌘/Ctrl+P`）和只定位不打开的树搜索
 - 工作区文件树：面包屑、显隐、键盘导航、一键折叠，以及把路径插入输入框
 - 语法高亮、代码折叠，以及磁盘变更后的实时刷新
+- 图片预览和渲染后的 Markdown 预览（支持 Markdown 中的相对图片）
 
 ### 近期计划
 
@@ -122,7 +125,7 @@ pnpm start -- /绝对路径/你的项目
 - 跟随 agent：DSH 写入时自动打开或在树中揭示文件，并保持文件树同步
 - 工作区内容搜索（`⌘/Ctrl+⇧+F`），补齐现在只有文件名 Quick Open 的缺口
 - 从文件树把文件或目录挂到输入框当上下文，而不只是插入路径
-- 图片和渲染后的 Markdown 预览
+- 识别并关联当前工作区对应的 Git worktree，展示 worktree 信息（不生成虚假的 Git `HEAD` diff）
 
 ### 探索方向
 
@@ -130,17 +133,6 @@ pnpm start -- /绝对路径/你的项目
 - 在 Diff 行上写批注并送回对话输入框
 - 在宿主提供可用 slot 的前提下，接入 DSH 原生面板控制和布局
 - 可插拔工作区面板（Files / Review，以及后续 DSH 工具）
-
-## 发版
-
-CI 会在 `main` 的 push 和 Pull Request 上执行 `pnpm test`。推送 `v*` tag 会触发发布：
-
-```bash
-git tag v0.2.0
-git push origin main --tags
-```
-
-发布工作流使用 GitHub Actions 的 npm Trusted Publishing 和 provenance。请在 npmjs.com 为 `lee259/dsh-workbench` 配置 `.github/workflows/publish.yml`。
 
 ## License
 

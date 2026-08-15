@@ -1,8 +1,9 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { readFile, stat } from "node:fs/promises";
 import { toFilePayload } from "./file-preview.js";
 import { sendJson } from "./http.js";
 import { createPathIdentity } from "./path-identity.js";
-import { ACTIVITY_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, normalizePath, type FileOpenMode } from "../shared/types.js";
+import { ACTIVITY_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH, MAX_IMAGE_PREVIEW_BYTES, normalizePath, type FileOpenMode } from "../shared/types.js";
 import { createChangePump } from "./change-pump.js";
 import { createWorkspace } from "./workspace.js";
 import { startWorkspaceWatch } from "./workspace-watch.js";
@@ -105,6 +106,31 @@ export function apply(ctx: HostContext): void {
         res.write("event: change\ndata: {}\n\n");
       });
       req.on("close", stop);
+    },
+  });
+
+  ctx.webServer.register({
+    kind: "exact",
+    path: FILE_ASSET_API_PATH,
+    handler: async (req, res) => {
+      const requested = new URL(req.url ?? "/", "http://dsh.local").searchParams.get("path") ?? "";
+      const located = workspace.resolve(requested);
+      if (!located.ok) return sendJson(res, located.status, { error: located.error });
+      try {
+        const info = await stat(located.absolute);
+        if (!info.isFile() || info.size > MAX_IMAGE_PREVIEW_BYTES) return sendJson(res, 413, { error: "not_previewable" });
+        const content = await readFile(located.absolute);
+        const extension = located.relative.toLowerCase().split(".").pop() ?? "";
+        const types: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", avif: "image/avif", bmp: "image/bmp", ico: "image/x-icon" };
+        const type = types[extension];
+        if (!type) return sendJson(res, 415, { error: "not_previewable" });
+        res.statusCode = 200;
+        res.setHeader("content-type", type);
+        res.setHeader("cache-control", "no-cache");
+        res.end(content);
+      } catch {
+        sendJson(res, 404, { error: "file_not_found" });
+      }
     },
   });
 

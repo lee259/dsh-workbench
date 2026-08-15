@@ -68,7 +68,9 @@ export type MessageKey =
   | "hideTree"
   | "findInFile"
   | "goToLine"
-  | "workbench";
+  | "workbench"
+  | "markdownPreview"
+  | "markdownSource";
 
 const zh: Record<MessageKey, string> = {
   loadingTitle: "正在读取文件",
@@ -139,6 +141,8 @@ const zh: Record<MessageKey, string> = {
   findInFile: "在文件中查找",
   goToLine: "跳转到行",
   workbench: "工作台",
+  markdownPreview: "预览 Markdown",
+  markdownSource: "查看原始 Markdown",
 };
 
 const en: Record<MessageKey, string> = {
@@ -210,6 +214,8 @@ const en: Record<MessageKey, string> = {
   findInFile: "Find in file",
   goToLine: "Go to line",
   workbench: "Workbench",
+  markdownPreview: "Preview Markdown",
+  markdownSource: "View raw Markdown",
 };
 
 const catalogs: Record<Locale, Record<MessageKey, string>> = { zh, en };
