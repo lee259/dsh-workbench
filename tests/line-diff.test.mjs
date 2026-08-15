@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { diffLines, previewLines } from "../lib/client/line-diff.js";
+import { diffLines, previewLines } from "../lib/client/preview/line-diff.js";
 
 test("preview keeps every line in order", () => {
   assert.deepEqual(previewLines("a\nb"), [

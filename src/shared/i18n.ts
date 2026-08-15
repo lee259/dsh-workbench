@@ -16,6 +16,7 @@ export type MessageKey =
   | "workspaceTitle"
   | "footerView"
   | "footerDiff"
+  | "footerBrand"
   | "file"
   | "toolRead"
   | "toolWrite"
@@ -35,7 +36,37 @@ export type MessageKey =
   | "openFiles"
   | "closeFile"
   | "shortcutHint"
-  | "resetWidth";
+  | "resetWidth"
+  | "searchFiles"
+  | "searchPlaceholder"
+  | "searching"
+  | "searchNoResults"
+  | "searchHint"
+  | "searchError"
+  | "searchTypeHint"
+  | "recentFiles"
+  | "treeFilter"
+  | "treeFilterPlaceholder"
+  | "clearSearch"
+  | "treeNoMatches"
+  | "treeMatchCount"
+  | "treeEmpty"
+  | "revealInTree"
+  | "insertPathAction"
+  | "collapseFolders"
+  | "tabDiff"
+  | "workspaceTree"
+  | "openFile"
+  | "newTab"
+  | "filePath"
+  | "resizeTree"
+  | "fileMenu"
+  | "openFileAction"
+  | "copyPathAction"
+  | "showTree"
+  | "hideTree"
+  | "findInFile"
+  | "goToLine";
 
 const zh: Record<MessageKey, string> = {
   loadingTitle: "正在读取文件",
@@ -53,6 +84,7 @@ const zh: Record<MessageKey, string> = {
   workspaceTitle: "文件工作区",
   footerView: "只读查看 · 当前工作区内容",
   footerDiff: "只读查看 · 基于 DSH write/edit 输出",
+  footerBrand: "DSH 工作台",
   file: "文件",
   toolRead: "读取",
   toolWrite: "写入",
@@ -73,6 +105,36 @@ const zh: Record<MessageKey, string> = {
   closeFile: "关闭文件",
   shortcutHint: "快捷键：⌥⌘B",
   resetWidth: "双击恢复默认宽度",
+  searchFiles: "打开文件",
+  searchPlaceholder: "输入文件名…",
+  searching: "正在搜索…",
+  searchNoResults: "没有匹配的文件",
+  searchHint: "⌘/Ctrl+P 打开文件",
+  searchError: "文件搜索失败",
+  searchTypeHint: "输入文件名以打开",
+  recentFiles: "最近打开",
+  treeFilter: "在文件树中定位",
+  treeFilterPlaceholder: "筛选并定位到文件…",
+  clearSearch: "清除搜索",
+  treeNoMatches: "没有匹配的文件",
+  treeMatchCount: "{count} 个匹配",
+  treeEmpty: "工作区是空的",
+  revealInTree: "在树中显示",
+  insertPathAction: "插入路径到输入框",
+  collapseFolders: "折叠全部文件夹",
+  tabDiff: "对比",
+  workspaceTree: "工作区文件树",
+  openFile: "打开文件",
+  newTab: "新建标签页",
+  filePath: "文件路径",
+  resizeTree: "调整文件树宽度",
+  fileMenu: "文件操作",
+  openFileAction: "打开文件",
+  copyPathAction: "复制路径",
+  showTree: "显示文件树",
+  hideTree: "隐藏文件树",
+  findInFile: "在文件中查找",
+  goToLine: "跳转到行",
 };
 
 const en: Record<MessageKey, string> = {
@@ -91,6 +153,7 @@ const en: Record<MessageKey, string> = {
   workspaceTitle: "File workspace",
   footerView: "Read-only · current workspace content",
   footerDiff: "Read-only · from DSH write/edit output",
+  footerBrand: "DSH Workbench",
   file: "File",
   toolRead: "Read",
   toolWrite: "Write",
@@ -111,6 +174,36 @@ const en: Record<MessageKey, string> = {
   closeFile: "Close file",
   shortcutHint: "Shortcut: ⌥⌘B",
   resetWidth: "Double-click to reset width",
+  searchFiles: "Open file",
+  searchPlaceholder: "Type a file name…",
+  searching: "Searching…",
+  searchNoResults: "No matching files",
+  searchHint: "⌘/Ctrl+P to open a file",
+  searchError: "File search failed",
+  searchTypeHint: "Type a file name to open it",
+  recentFiles: "Recent",
+  treeFilter: "Locate in file tree",
+  treeFilterPlaceholder: "Filter and locate a file…",
+  clearSearch: "Clear search",
+  treeNoMatches: "No matching files",
+  treeMatchCount: "{count} matches",
+  treeEmpty: "Workspace is empty",
+  revealInTree: "Reveal in tree",
+  insertPathAction: "Insert path into input",
+  collapseFolders: "Collapse folders",
+  tabDiff: "diff",
+  workspaceTree: "Workspace files",
+  openFile: "Open file",
+  newTab: "New tab",
+  filePath: "File path",
+  resizeTree: "Resize file tree",
+  fileMenu: "File actions",
+  openFileAction: "Open file",
+  copyPathAction: "Copy path",
+  showTree: "Show file tree",
+  hideTree: "Hide file tree",
+  findInFile: "Find in file",
+  goToLine: "Go to line",
 };
 
 const catalogs: Record<Locale, Record<MessageKey, string>> = { zh, en };

@@ -11,6 +11,8 @@ test("zh and en resolve from language tags", () => {
 test("translate fills placeholders from the active catalog", () => {
   assert.equal(translate("zh", "linesWorkspace", { count: 12 }), "12 行 · 当前工作区");
   assert.equal(translate("en", "linesWorkspace", { count: 12 }), "12 lines · workspace");
+  assert.equal(translate("zh", "footerBrand"), "DSH 工作台");
+  assert.equal(translate("en", "footerBrand"), "DSH Workbench");
 });
 
 test("locale store switches catalogs", () => {

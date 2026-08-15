@@ -1,8 +1,10 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { watch } from "node:fs";
 import { toFilePayload } from "./file-preview.js";
 import { sendJson } from "./http.js";
 import { createPathIdentity } from "./path-identity.js";
-import { ACTIVITY_API_PATH, FILE_API_PATH, normalizePath, type FileOpenMode } from "../shared/types.js";
+import { ACTIVITY_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, normalizePath, type FileOpenMode } from "../shared/types.js";
+import { createChangePump } from "./change-pump.js";
 import { createWorkspace } from "./workspace.js";
 import { WriteHistory, type SessionEvent } from "./write-history.js";
 import { ActivityStore } from "./activity.js";
@@ -45,6 +47,31 @@ export function apply(ctx: HostContext): void {
     const located = paths.identify(path);
     return located.ok ? located.display : normalizePath(path);
   });
+  const pump = createChangePump();
+  try {
+    const watcher = watch(process.cwd(), { recursive: true }, (_event, filename) => {
+      pump.notify(filename != null ? String(filename) : null);
+    });
+    watcher.on("error", () => {});
+    watcher.unref();
+  } catch {
+    // Recursive watching is not available on every platform.
+  }
+
+  ctx.webServer.register({
+    kind: "exact",
+    path: FILES_API_PATH,
+    handler: async (req, res) => {
+      const url = new URL(req.url ?? "/", "http://dsh.local");
+      const query = (url.searchParams.get("q") ?? "").trim().toLowerCase();
+      if (query) return sendJson(res, 200, { directories: [], files: await workspace.list(query) });
+      const tree = await workspace.tree();
+      sendJson(res, 200, {
+        directories: tree.directories,
+        files: tree.files,
+      });
+    },
+  });
 
   ctx.webServer.register({
     kind: "exact",
@@ -63,6 +90,22 @@ export function apply(ctx: HostContext): void {
     kind: "exact",
     path: ACTIVITY_API_PATH,
     handler: (_req, res) => sendJson(res, 200, { records: activity.getAll() }),
+  });
+
+  ctx.webServer.register({
+    kind: "exact",
+    path: EVENTS_API_PATH,
+    handler: (req, res) => {
+      res.statusCode = 200;
+      res.setHeader("content-type", "text/event-stream; charset=utf-8");
+      res.setHeader("cache-control", "no-cache");
+      res.setHeader("connection", "keep-alive");
+      res.write(":\n\n");
+      const stop = pump.subscribe(() => {
+        res.write("event: change\ndata: {}\n\n");
+      });
+      req.on("close", stop);
+    },
   });
 
   const hydrate = (session: SessionLike) => {

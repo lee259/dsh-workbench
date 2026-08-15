@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { fileOpenModeFromHint, filePathFromOpenHint } from "../lib/client/file-open-capture.js";
+import { fileOpenModeFromHint, fileOpenTargetFromHint, filePathFromOpenHint } from "../lib/client/capture/file-open-capture.js";
+import { parseOpenTarget } from "../lib/client/capture/open-target.js";
 
 test("produced-file chips open from the title path, not the basename", () => {
   assert.equal(filePathFromOpenHint({
@@ -46,4 +47,21 @@ test("read links open as views and write links open as diffs", () => {
 
 test("an explicit open mode wins over DOM tool inference", () => {
   assert.equal(fileOpenModeFromHint({ className: "fileLink", tool: "write", mode: "view" }), "view");
+});
+
+test("file mentions keep the path and expose a line target", () => {
+  assert.deepEqual(parseOpenTarget("src/foo.ts:12"), { path: "src/foo.ts", line: 12 });
+  assert.deepEqual(parseOpenTarget("src/foo.ts#L8"), { path: "src/foo.ts", line: 8 });
+  assert.deepEqual(parseOpenTarget("src/foo.ts:8:2"), { path: "src/foo.ts", line: 8 });
+  assert.deepEqual(parseOpenTarget("./src/foo.ts"), { path: "src/foo.ts" });
+  assert.equal(filePathFromOpenHint({
+    className: "abc_fileMention",
+    title: "src/client/ui.tsx:40",
+    text: "ui.tsx:40",
+  }), "src/client/ui.tsx");
+  assert.deepEqual(fileOpenTargetFromHint({
+    className: "abc_fileMention",
+    title: "src/client/ui.tsx#L40",
+    text: "ui.tsx",
+  }), { path: "src/client/ui.tsx", line: 40 });
 });

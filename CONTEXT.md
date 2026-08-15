@@ -12,27 +12,29 @@ src/
 │   ├── file-preview.ts
 │   ├── path-identity.ts
 │   ├── workspace.ts
-│   └── write-history.ts
+│   ├── change-pump.ts       # 磁盘变更防抖
+│   ├── write-history.ts
+│   └── activity.ts          # 会话工具活动（API）
 ├── shared/                  # 两端共享
 │   ├── types.ts
 │   ├── i18n.ts              # zh / en UI copy, following DSH settings
 │   └── jsx.d.ts
 ├── client/                  # 客户端（browser bundle）
 │   ├── entry.ts             # bundle 入口（被 src/client.ts 转导）
-│   ├── ui.tsx               # 组件：FileDrawer、FileToolRow
+│   ├── ui.tsx               # 组装：FileDrawer、FileToolRow
 │   ├── store.ts             # FileStore：open / activate / close
 │   ├── mount.ts             # mountWorkbenchDrawer：挂载到 document.body
-│   ├── code-mirror.ts       # CodeMirror 编辑器集成
-│   ├── editor-spec.ts       # view/diff 判断 + CodeMirror 语言映射
-│   ├── lang-map.ts          # 扩展名 → 语言标识（editor-spec 使用）
-│   ├── line-diff.ts         # diffLines：LCS 行 diff
-│   ├── tool-path.ts         # 从 tool call block 提取文件路径
-│   ├── file-open-capture.ts # 捕获文件打开事件
+│   ├── react-bridge.ts      # 把宿主 React 交给非 JSX 模块
+│   ├── workspace-events.ts  # 磁盘变更 SSE
 │   ├── styles.css           # 样式源文件
-│   └── styles.generated.ts  # 自动生成（由 embed-css.mjs 从 styles.css 生成）
+│   ├── styles.generated.ts  # 自动生成（由 embed-css.mjs 从 styles.css 生成）
+│   ├── chrome/              # 侧栏宽度、快捷键、tab 集合、图标
+│   ├── explorer/            # 文件树 / Quick Open / 路径插入
+│   ├── preview/             # CodeMirror 预览、diff、跳行
+│   └── capture/             # 对话里的文件打开捕获
 ├── client.ts                # 转导层 → ./client/entry.js（tsdown entry）
 ├── index.ts                 # 转导层 → ./host/index.js（package.json main）
-└── tests/                   # 测试（平行于 src）
+└── tests/                   # 测试（平行于 src，按模块接口）
 ```
 
 ## Seams
@@ -43,10 +45,17 @@ src/
 | `WriteHistory` | `record(event, sessionId)`, `replay(events, sessionId)`, `get(path)` | File revisions from the session log. `replay` rebuilds from an existing log; `record` follows live events. An edit without a prior read still records `dsh-write` from `old_string` / `new_string`. **Note:** real DSH `tool/result` has no top-level `callId` — the call identity lives in `message.content[0].toolCallId` (ToolResultBlock). `recordResult` extracts it via `resultBlockOf()`. |
 | `createWorkspace` | `read(path)` | File reads (relative to start cwd, or any absolute path). Uses `createPathIdentity`. |
 | `toFilePayload` | disk + revision → preview DTO | Overlay DSH writes on disk content |
-| `createFileStore` | `open` / `activate` / `close` | Open set + active file. `path` is the active path so the sidebar can stay single-file. |
+| `createFileStore` | `open` / `activate` / `pin` / `close` | Open set + active file + optional preview `line`. `open(..., reveal)` bumps `reveal` so the tree can scroll only for conversation / Quick Open, not tab switches. Tree / Quick Open use a single italic preview tab; double-click or a conversation open pins it. |
+| `nextOpenTabs` | open + preview + path + kind → next tabs | Preview replaces the transient tab; kept tabs stay |
 | `createLocaleStore` | `t` / `setLocale` / `followDshLocale` | zh / en UI copy, following DSH settings |
 | `diffLines` | before / after → rows | Line diff helper |
 | `editorSpec` / `viewKind` | payload source → view or diff | Write/edit opens CodeMirror merge; everything else is a read-only view |
+| `rankSearchHits` / `treeSearchHits` | query → ordered hits | Quick Open ranks basename matches first; tree search locates without opening |
+| `visibleBreadcrumbTargets` | path → crumbs without a `/` root | Explorer chrome shows `src / file`, not `/ / src / file` |
+| `treeFileOpenMode` | tree / Quick Open → `view` | Browse the workspace file; do not overlay a captured DSH write diff |
+| `treeKeyAction` / `consumeTreeEscape` | key + visible rows → move/toggle/open | Home/End, parent/child arrows, Esc closes menu then filter |
+| `createChangePump` | `notify` / `subscribe` | Debounced workspace change events; skips dependency directories |
+| `insertDraftText` / `spliceDraftValue` | draft + path → updated input | Insert a workspace path into the conversation composer |
 | `mountWorkbenchDrawer` | React + createRoot + FileDrawer | Mount the sidebar host on `document.body` |
 | `languageForPath` | path → LanguageId or null | Extension / basename → canonical language identifier (for CodeMirror language selection) |
 
@@ -59,7 +68,7 @@ src/
 
 ## Client
 
-- Slots: `tool.call.toolview` for `read` / `write` / `edit` at `priority: -1` (lowest renders; shadows the shipped rows at 0). Path clicks on tool rows, produced-file chips, and markdown file mentions open the workbench sidebar, not the host default app. The sidebar mounts on `document.body` via `react-dom/client` as a fixed right-side panel (no backdrop); opening it toggles `body.dsh-wb-sidebar-open` which reserves the right margin so the host conversation reflows like a Codex side panel. Write/edit uses CodeMirror `unifiedMergeView`; other opens use a read-only CodeMirror view. Folding comes from `@codemirror/language` `foldGutter`. Syntax highlighting via CodeMirror language extensions with GitHub-like `defaultHighlightStyle`.
+- Slots: `tool.call.toolview` for `read` / `write` / `edit` at `priority: -1` (lowest renders; shadows the shipped rows at 0). Path clicks on tool rows, produced-file chips, and markdown file mentions open the workbench sidebar, not the host default app. Mentions with `:line` or `#Lline` jump to that line in the preview. The sidebar mounts on `document.body` via `react-dom/client` as a fixed right-side panel (no backdrop); opening it toggles `body.dsh-wb-sidebar-open` which reserves the right margin so the host conversation reflows like a Codex side panel. The workspace file tree sits to the right of the preview, starts open, and can be hidden with `⌘⇧E` or the tab-bar toggle. Tree search locates a row without opening it; `⌘P` opens a file. Workbench chrome uses the host `--dsw-alias-*` / `--dsw-specific-*` / `--dsw-font-*` / `--dsw-shadow-*` tokens. Write/edit uses CodeMirror `unifiedMergeView`; other opens use a read-only CodeMirror view. Folding comes from `@codemirror/language` `foldGutter`. In-file find / go-to-line use `@codemirror/search` and only steal those keys when focus is inside the sidebar. Syntax highlighting via CodeMirror language extensions with GitHub-like `defaultHighlightStyle`.
 - A true layout-slot sidebar (`conversation.details.tool`) is not used: it is a `single` slot already occupied by `@deepseek-ai/dsh-client-ui-tool` at the same priority, and registering there throws (`single slot "conversation.details.tool" already has a registration at priority 0`). The body-margin sidebar avoids the host slot conflict entirely.
 - Locale follows the DSH settings language via `ctx.locale` / `locale/change`
 

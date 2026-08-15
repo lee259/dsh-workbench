@@ -23,7 +23,7 @@ Do not use npm. The lockfile is `pnpm-lock.yaml`.
 - Do not invent a Git HEAD diff when no DSH write was captured.
 - UI strings go through `src/i18n.ts`. Do not hardcode user-facing Chinese or English in components.
 - Client styles live in `src/client/styles.css`. Do not put CSS in a TypeScript string.
-- Tests assert behaviour at module interfaces (`createPathIdentity`, `WriteHistory`, `createWorkspace`, `createFileStore`, `diffLines`, `followDshLocale`, `filePathFromOpenHint`, `editorSpec`, `mountWorkbenchDrawer`). Do not scan source text.
+- Tests assert behaviour at module interfaces (`createPathIdentity`, `WriteHistory`, `createWorkspace`, `createFileStore`, `nextOpenTabs`, `diffLines`, `followDshLocale`, `filePathFromOpenHint`, `parseOpenTarget`, `breadcrumbTargets`, `visibleBreadcrumbTargets`, `flattenVisibleRows`, `treeFileOpenMode`, `treeKeyAction`, `rankSearchHits`, `createChangePump`, `spliceDraftValue`, `shortcutAction`, `editorSpec`, `mountWorkbenchDrawer`). Do not scan source text.
 
 ## Docs
 

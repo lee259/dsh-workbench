@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { editorSpec, viewKind } from "../lib/client/editor-spec.js";
-import { languageForPath } from "../lib/client/lang-map.js";
+import { editorSpec, viewKind } from "../lib/client/preview/editor-spec.js";
+import { languageForPath } from "../lib/client/preview/lang-map.js";
 
 test("write and edit open as a diff", () => {
   assert.equal(viewKind("dsh-write"), "diff");

@@ -41,12 +41,18 @@ importers:
       '@codemirror/merge':
         specifier: ^6.12.2
         version: 6.12.2
+      '@codemirror/search':
+        specifier: ^6.6.0
+        version: 6.7.1
       '@codemirror/state':
         specifier: ^6.7.1
         version: 6.7.1
       '@codemirror/view':
         specifier: ^6.43.8
         version: 6.43.8
+      lucide:
+        specifier: ^1.31.0
+        version: 1.31.0
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -107,6 +113,9 @@ packages:
 
   '@codemirror/merge@6.12.2':
     resolution: {integrity: sha512-V8JvyAPjHbPupqP7BeMcsdsYCbyPij74jxIbaIJDORI+VZzW44zFmon8bF+oxGWvOKhcRmkiUMXd8MxHr3YA2w==}
+
+  '@codemirror/search@6.7.1':
+    resolution: {integrity: sha512-uMe5UO6PamJtSHrXhhHOzSX3ReWtiJrva6GnPMwSOrZtiExb5X5eExhr2OUZQVvdxPsKpY3Ro2mFbQadpPWmHA==}
 
   '@codemirror/state@6.7.1':
     resolution: {integrity: sha512-9QzNDgE4EYDnAHfrTlR2lwiPciiOymLtwKK+8yHQzCc7GXhAP9xdEbEJFy2IWB1j9UGUl9BsgMmTo/ImA02T7A==}
@@ -452,6 +461,9 @@ packages:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
 
+  lucide@1.31.0:
+    resolution: {integrity: sha512-iPJC7py8o990ZSmvFZlS+4+bNasP+ANDkD0IeDOGgQZjTm3p85F2Ldut7leM1yhYavr1pmoPfigm9MDHyyCOrw==}
+
   obug@2.1.4:
     resolution: {integrity: sha512-4a+OsYv9UktOJKE+l1A4OufDgdRF9PifWj+tJnHURo/P+WOxpG4GzUFL9qCalmWauao6ogiG+QvnCovwPoyAWA==}
     engines: {node: '>=12.20.0'}
@@ -674,6 +686,12 @@ snapshots:
       '@codemirror/view': 6.43.8
       '@lezer/highlight': 1.2.3
       style-mod: 4.1.3
+
+  '@codemirror/search@6.7.1':
+    dependencies:
+      '@codemirror/state': 6.7.1
+      '@codemirror/view': 6.43.8
+      crelt: 1.0.7
 
   '@codemirror/state@6.7.1':
     dependencies:
@@ -909,6 +927,8 @@ snapshots:
   loose-envify@1.4.0:
     dependencies:
       js-tokens: 4.0.0
+
+  lucide@1.31.0: {}
 
   obug@2.1.4: {}
 

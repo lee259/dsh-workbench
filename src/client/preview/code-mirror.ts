@@ -18,6 +18,7 @@ import { standardSQL } from "@codemirror/legacy-modes/mode/sql";
 import { toml } from "@codemirror/legacy-modes/mode/toml";
 import { yaml } from "@codemirror/legacy-modes/mode/yaml";
 import { unifiedMergeView } from "@codemirror/merge";
+import { search, searchKeymap } from "@codemirror/search";
 import { EditorState, type Extension } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers } from "@codemirror/view";
 
@@ -28,13 +29,13 @@ const workbenchTheme = EditorView.theme({
     backgroundColor: "transparent",
   },
   ".cm-scroller": {
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-    lineHeight: "21px",
+    fontFamily: "var(--ds-font-family-code, ui-monospace, SFMono-Regular, Menlo, monospace)",
+    lineHeight: "22px",
   },
   ".cm-gutters": {
     backgroundColor: "transparent",
     border: "none",
-    color: "#a8afba",
+    color: "var(--dsw-alias-label-tertiary)",
   },
   ".cm-content": {
     padding: "8px 0",
@@ -100,7 +101,8 @@ export function createEditorExtensions(options: {
   const extensions: Extension[] = [
     lineNumbers(),
     foldGutter(),
-    keymap.of(foldKeymap),
+    search({ top: true }),
+    keymap.of([...foldKeymap, ...searchKeymap]),
     syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
     EditorView.editable.of(false),
     EditorState.readOnly.of(true),
@@ -119,10 +121,10 @@ export function createEditorExtensions(options: {
   return extensions;
 }
 
-export function mountCodeEditor(parent: HTMLElement, doc: string, extensions: Extension[]): { destroy(): void } {
+export function mountCodeEditor(parent: HTMLElement, doc: string, extensions: Extension[]): { view: EditorView; destroy(): void } {
   const view = new EditorView({
     parent,
     state: EditorState.create({ doc, extensions }),
   });
-  return { destroy: () => view.destroy() };
+  return { view, destroy: () => view.destroy() };
 }

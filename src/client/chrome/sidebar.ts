@@ -1,5 +1,5 @@
-export const DEFAULT_SIDEBAR_WIDTH = 520;
-export const MIN_SIDEBAR_WIDTH = 360;
+export const DEFAULT_SIDEBAR_WIDTH = 600;
+export const MIN_SIDEBAR_WIDTH = 520;
 export const MAX_SIDEBAR_WIDTH = 900;
 export const SIDEBAR_WIDTH_KEY = "dsh-workbench.sidebar-width";
 

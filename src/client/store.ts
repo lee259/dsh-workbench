@@ -1,13 +1,20 @@
-import { FILE_API_PATH, normalizePath, type FileOpenMode, type FilePayload } from "../shared/types.js";
+import { FILE_API_PATH, FILES_API_PATH, normalizePath, type FileOpenMode, type FilePayload, type WorkspaceFile, type WorkspaceTree } from "../shared/types.js";
+import { nextOpenTabs, type TabOpenKind } from "./chrome/tab-model.js";
+import { viewKind, type ViewKind } from "./preview/editor-spec.js";
 
 export type FileState = {
   open: string[];
   active: string;
   path: string;
+  line: number | null;
   loading: boolean;
   payload: FilePayload | null;
   error: string;
   visible: boolean;
+  reveal: number;
+  disk: number;
+  views: Record<string, ViewKind>;
+  preview: string;
 };
 
 export type FileLoader = (path: string, mode?: FileOpenMode) => Promise<FilePayload>;
@@ -15,22 +22,29 @@ export type FileLoader = (path: string, mode?: FileOpenMode) => Promise<FilePayl
 export type FileStore = {
   getSnapshot(): FileState;
   subscribe(listener: () => void): () => void;
-  open(path: string, mode?: FileOpenMode): Promise<void>;
-  activate(path: string, mode?: FileOpenMode): Promise<void>;
+  open(path: string, mode?: FileOpenMode, line?: number, reveal?: boolean, kind?: TabOpenKind): Promise<void>;
+  activate(path: string, mode?: FileOpenMode, line?: number): Promise<void>;
+  pin(path: string): void;
   close(path?: string): void;
   reload(): Promise<void>;
   show(): void;
   hide(): void;
+  noteDiskChange(): void;
 };
 
 const empty: FileState = {
   open: [],
   active: "",
   path: "",
+  line: null,
   loading: false,
   payload: null,
   error: "",
   visible: false,
+  reveal: 0,
+  disk: 0,
+  views: {},
+  preview: "",
 };
 
 export async function fetchWorkspaceFile(path: string, mode: FileOpenMode = "auto"): Promise<FilePayload> {
@@ -38,6 +52,20 @@ export async function fetchWorkspaceFile(path: string, mode: FileOpenMode = "aut
   const payload = await response.json() as FilePayload & { error?: string };
   if (!response.ok) throw new Error(payload.error || "read_failed");
   return payload;
+}
+
+export async function fetchWorkspaceFiles(query = ""): Promise<WorkspaceFile[]> {
+  const response = await fetch(`${FILES_API_PATH}?q=${encodeURIComponent(query)}`);
+  const payload = await response.json() as { files?: WorkspaceFile[]; error?: string };
+  if (!response.ok) throw new Error(payload.error || "read_failed");
+  return payload.files ?? [];
+}
+
+export async function fetchWorkspaceTree(): Promise<WorkspaceTree> {
+  const response = await fetch(FILES_API_PATH);
+  const payload = await response.json() as WorkspaceTree & { error?: string };
+  if (!response.ok) throw new Error(payload.error || "read_failed");
+  return { files: payload.files ?? [], directories: payload.directories ?? [] };
 }
 
 function payloadForMode(payload: FilePayload, mode: FileOpenMode): FilePayload {
@@ -64,24 +92,41 @@ export function createFileStore(load: FileLoader = fetchWorkspaceFile): FileStor
     emit();
   };
 
-  const remember = (path: string): string[] => (
-    state.open.includes(path) ? state.open : [...state.open, path]
-  );
-
-  const loadActive = async (path: string, mode: FileOpenMode = "auto") => {
+  const loadActive = async (path: string, mode: FileOpenMode = "auto", line: number | null = null, bumpReveal = false, kind?: TabOpenKind) => {
     const id = requestId + 1;
     requestId = id;
-    set({ ...withActive(remember(path), path, { loading: true, payload: null, error: "" }), visible: true });
+    const tabs = kind != null
+      ? nextOpenTabs(state.open, state.preview, path, kind)
+      : { open: state.open.includes(path) ? state.open : [...state.open, path], preview: state.preview };
+    const reveal = bumpReveal ? state.reveal + 1 : state.reveal;
+    const disk = state.disk;
+    const views = { ...state.views };
+    if (state.preview && state.preview !== tabs.preview) delete views[state.preview];
+    set({ ...withActive(tabs.open, path, { loading: true, payload: null, error: "", line, reveal, disk, views, preview: tabs.preview }), visible: true });
     try {
       const payload = payloadForMode(await load(path, mode), mode);
       if (requestId !== id) return;
-      set({ ...withActive(state.open, path, { loading: false, payload, error: "" }), visible: true });
+      set({ ...withActive(state.open, path, {
+        loading: false,
+        payload,
+        error: "",
+        line,
+        reveal,
+        disk,
+        views: { ...state.views, [path]: viewKind(payload.source) },
+        preview: state.preview,
+      }), visible: true });
     } catch (error) {
       if (requestId !== id) return;
       set({ ...withActive(state.open, path, {
         loading: false,
         payload: null,
         error: error instanceof Error ? error.message : "read_failed",
+        line,
+        reveal,
+        disk,
+        views,
+        preview: state.preview,
       }), visible: true });
     }
   };
@@ -94,20 +139,43 @@ export function createFileStore(load: FileLoader = fetchWorkspaceFile): FileStor
         listeners.delete(listener);
       };
     },
-    open(path, mode = "auto") {
+    open(path, mode = "auto", line, reveal = true, kind = "keep") {
       const key = normalizePath(path);
+      const target = line ?? null;
       modes.set(key, mode);
-      return loadActive(key, mode);
+      if (state.active === key && state.payload && !state.loading && target != null) {
+        const tabs = nextOpenTabs(state.open, state.preview, key, kind);
+        set({
+          ...state,
+          open: tabs.open,
+          preview: tabs.preview,
+          line: target,
+          visible: true,
+          reveal: reveal ? state.reveal + 1 : state.reveal,
+        });
+        return Promise.resolve();
+      }
+      return loadActive(key, mode, target, reveal, kind);
     },
-    activate(path, mode = "auto") {
+    pin(path) {
       const key = normalizePath(path);
-      if (!state.open.includes(key) || state.active === key) return Promise.resolve();
-      modes.set(key, mode);
-      return loadActive(key, mode);
+      if (state.preview !== key) return;
+      set({ ...state, preview: "" });
+    },
+    activate(path, mode, line) {
+      const key = normalizePath(path);
+      if (!state.open.includes(key)) return Promise.resolve();
+      if (state.active === key) {
+        if (line != null && line !== state.line) set({ ...state, line });
+        return Promise.resolve();
+      }
+      const nextMode = mode ?? modes.get(key) ?? "auto";
+      modes.set(key, nextMode);
+      return loadActive(key, nextMode, line ?? null);
     },
     reload() {
       if (!state.active) return Promise.resolve();
-      return loadActive(state.active, modes.get(state.active) ?? "auto");
+      return loadActive(state.active, modes.get(state.active) ?? "auto", state.line);
     },
     close(path) {
       if (path == null || path === "") {
@@ -124,19 +192,27 @@ export function createFileStore(load: FileLoader = fetchWorkspaceFile): FileStor
         set(empty);
         return;
       }
+      const preview = state.preview === key ? "" : state.preview;
       if (state.active !== key) {
-        set({ ...state, open });
+        const views = { ...state.views };
+        delete views[key];
+        set({ ...state, open, views, preview });
         return;
       }
       const next = open[open.length - 1] ?? "";
-      set(withActive(open, next, { loading: true, payload: null, error: "" }));
-      void loadActive(next);
+      const views = { ...state.views };
+      delete views[key];
+      set(withActive(open, next, { loading: true, payload: null, error: "", line: null, reveal: state.reveal, disk: state.disk, views, preview }));
+      void loadActive(next, modes.get(next) ?? "auto");
     },
     show() {
       if (!state.visible) set({ ...state, visible: true });
     },
     hide() {
       if (state.visible) set({ ...state, visible: false });
+    },
+    noteDiskChange() {
+      set({ ...state, disk: state.disk + 1 });
     },
   };
 }

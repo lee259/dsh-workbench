@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { filePathFromBlock } from "../lib/client/tool-path.js";
+import { filePathFromBlock } from "../lib/client/capture/tool-path.js";
 
 test("filePathFromBlock reads a running call's path", () => {
   assert.equal(filePathFromBlock({ argsRaw: JSON.stringify({ path: "src/index.ts" }) }), "src/index.ts");

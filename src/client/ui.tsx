@@ -1,8 +1,8 @@
 import type { LocaleStore } from "../shared/i18n.js";
 import { FILE_TOOLS } from "../shared/types.js";
-import { createEditorExtensions, mountCodeEditor } from "./code-mirror.js";
-import { editorSpec, viewKind } from "./editor-spec.js";
-import { WORKBENCH_CSS } from "./styles.generated.js";
+import { filePathFromBlock } from "./capture/tool-path.js";
+import { FileTypeIcon, Icon, EmptyFileIcon, NewTabIcon } from "./chrome/icons.js";
+import { shortcutAction } from "./chrome/shortcuts.js";
 import {
   DEFAULT_SIDEBAR_WIDTH,
   MAX_SIDEBAR_WIDTH,
@@ -11,10 +11,16 @@ import {
   sidebarWidthFromKey,
   sidebarWidthFromPointer,
   writeSidebarWidth,
-} from "./sidebar.js";
-import { shortcutAction } from "./shortcuts.js";
-import type { FileState, FileStore } from "./store.js";
-import { filePathFromBlock } from "./tool-path.js";
+} from "./chrome/sidebar.js";
+import { createFileTree, clampTreeWidth, type TreeCommands } from "./explorer/file-tree.js";
+import { createSearchPanel } from "./explorer/search-panel.js";
+import { visibleBreadcrumbTargets } from "./explorer/tree-model.js";
+import { createCodeView } from "./preview/code-view.js";
+import { viewKind } from "./preview/editor-spec.js";
+import type { PreviewCommands } from "./preview/preview-nav.js";
+import { type FileState, type FileStore } from "./store.js";
+import { WORKBENCH_CSS } from "./styles.generated.js";
+import { followWorkspaceEvents } from "./workspace-events.js";
 
 type ReactNs = typeof import("react");
 
@@ -38,11 +44,6 @@ function savedSidebarWidth(): number {
   }
 }
 
-function fileExtension(path: string): string {
-  const value = path.split(".").pop()?.toUpperCase() || "FILE";
-  return value.length > 4 ? "FILE" : value;
-}
-
 function toolLabelKey(name: string) {
   if (name === "read") return "toolRead" as const;
   if (name === "edit") return "toolEdit" as const;
@@ -52,6 +53,9 @@ function toolLabelKey(name: string) {
 export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: LocaleStore) {
   const h = React.createElement;
   const { Fragment } = React;
+  const CodeView = createCodeView(React, i18n);
+  const SearchPanel = createSearchPanel(React, store, i18n);
+  const { WorkspaceTreePanel, readTreeWidth, writeTreeWidth } = createFileTree(React, store, i18n);
 
   function useFileState(): FileState {
     return React.useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
@@ -62,60 +66,80 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
     return { locale, t: i18n.t, setLocale: i18n.setLocale };
   }
 
-  function CodeView({ state }: { state: FileState }) {
-    const { t } = useLocale();
-    const hostRef = React.useRef<HTMLDivElement | null>(null);
-    React.useEffect(() => {
-      const host = hostRef.current;
-      const payload = state.payload;
-      if (!host || !payload || state.loading || state.error) return undefined;
-      const spec = editorSpec(payload);
-      const editor = mountCodeEditor(
-        host,
-        payload.content,
-        createEditorExtensions({ language: spec.language, original: spec.original }),
-      );
-      return () => editor.destroy();
-    }, [state.payload, state.loading, state.error]);
-    if (state.loading) {
-      return (
-        <div className="dsh-wb-empty">
-          <div>
-            <strong>{t("loadingTitle")}</strong>
-            <span>{t("loadingHint")}</span>
-          </div>
-        </div>
-      );
-    }
-    if (state.error) return <div className="dsh-wb-error">{t(state.error)}</div>;
-    if (!state.payload) return null;
-    return <div className="dsh-wb-cm" ref={hostRef} />;
-  }
-
   function FileDrawer() {
     const state = useFileState();
     const { t } = useLocale();
     const [width, setWidth] = React.useState(savedSidebarWidth);
+    const [treeWidth, setTreeWidth] = React.useState(readTreeWidth);
+    const [treeVisible, setTreeVisible] = React.useState(true);
+    const [revealPath, setRevealPath] = React.useState("");
     const [copied, setCopied] = React.useState(false);
     const [pathCopied, setPathCopied] = React.useState(false);
+    const [searchOpen, setSearchOpen] = React.useState(false);
+    const previewCommands = React.useRef<PreviewCommands | null>(null);
+    const treeCommands = React.useRef<TreeCommands | null>(null);
+    const sidebarRef = React.useRef<HTMLElement | null>(null);
+
+    const setTreeOpen = (next: boolean) => {
+      setTreeVisible(next);
+    };
+
+    const showTreeAt = (path: string) => {
+      setTreeOpen(true);
+      setRevealPath(path);
+    };
+
     React.useEffect(() => {
       const onKey = (event: KeyboardEvent) => {
         const action = shortcutAction(event, state);
         if (!action) return;
+        if (action.type === "search") {
+          event.preventDefault();
+          if (!state.visible) store.show();
+          setSearchOpen(true);
+          return;
+        }
         if (action.type === "toggle") {
           event.preventDefault();
           if (state.visible) store.hide();
           else store.show();
           return;
         }
+        if (action.type === "toggleTree") {
+          event.preventDefault();
+          if (!state.visible) store.show();
+          setTreeVisible((current) => !current);
+          return;
+        }
+        if (action.type === "find") {
+          if (!(event.target instanceof Node) || !sidebarRef.current?.contains(event.target)) return;
+          event.preventDefault();
+          previewCommands.current?.find();
+          return;
+        }
+        if (action.type === "gotoLine") {
+          if (!(event.target instanceof Node) || !sidebarRef.current?.contains(event.target)) return;
+          event.preventDefault();
+          previewCommands.current?.goToLine();
+          return;
+        }
         event.preventDefault();
-        if (action.type === "hide") store.hide();
+        if (action.type === "hide") {
+          if (treeCommands.current?.consumeEscape()) return;
+          if (searchOpen) setSearchOpen(false);
+          else store.hide();
+        }
         else if (action.type === "close") store.close(action.path);
         else void store.activate(action.path);
       };
       window.addEventListener("keydown", onKey);
       return () => window.removeEventListener("keydown", onKey);
-    }, [state.visible]);
+    }, [state.visible, state.active, state.open, searchOpen]);
+
+    React.useEffect(() => followWorkspaceEvents(() => {
+      store.noteDiskChange();
+      if (store.getSnapshot().active) void store.reload();
+    }), []);
 
     React.useEffect(() => {
       document.body.classList.toggle("dsh-wb-sidebar-open", state.visible);
@@ -154,7 +178,7 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
     const node = (
       <>
         <style>{WORKBENCH_CSS}</style>
-        <aside className="dsh-wb-sidebar" style={{ width: `${width}px` }} aria-label={t("ariaWorkspace")}>
+        <aside ref={sidebarRef} className="dsh-wb-sidebar" style={{ width: `${width}px` }} aria-label={t("ariaWorkspace")}>
           <div
             className="dsh-wb-resize-handle"
             role="separator"
@@ -173,11 +197,94 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
               setWidth((current) => sidebarWidthFromKey(current, event.key));
             }}
           />
-          <header className="dsh-wb-head">
-            <div className="dsh-wb-icon">{state.path ? fileExtension(state.path) : "DSH"}</div>
-            <div className="dsh-wb-title">
-              <strong>{state.path?.split("/").pop() || t("workspaceTitle")}</strong>
-              {state.path ? (
+          {searchOpen ? <SearchPanel onClose={() => setSearchOpen(false)} /> : null}
+          <nav className="dsh-wb-tabs" aria-label={t("openFiles")} role="tablist">
+              <div className="dsh-wb-tabstrip">
+                {state.open.map((path) => {
+                  const kind = state.views[path] ?? "view";
+                  return (
+                    <div className={`dsh-wb-tab is-${kind}${path === state.active ? " is-active" : ""}${path === state.preview ? " is-preview" : ""}`} key={path} role="presentation">
+                      <FileTypeIcon path={path} />
+                      <button className="dsh-wb-tab-name" type="button" role="tab" aria-selected={path === state.active} title={path} onClick={() => void store.activate(path)} onDoubleClick={() => store.pin(path)}>
+                        {path.split("/").pop() || path}
+                      </button>
+                      {kind === "diff" ? <span className="dsh-wb-tab-kind">{t("tabDiff")}</span> : null}
+                      <button className="dsh-wb-tab-close" type="button" title={t("closeFile")} aria-label={`${t("closeFile")}: ${path}`} onClick={() => store.close(path)}>
+                        ×
+                      </button>
+                    </div>
+                  );
+                })}
+                <button type="button" className="dsh-wb-tabbar-add" aria-label={t("newTab")} title={t("searchHint")} onClick={() => setSearchOpen(true)}>
+                  <NewTabIcon />
+                </button>
+              </div>
+              <div className="dsh-wb-tab-actions">
+                <button
+                  className={`dsh-wb-button dsh-wb-icon-button${treeVisible ? " is-on" : ""}`}
+                  type="button"
+                  aria-label={t(treeVisible ? "hideTree" : "showTree")}
+                  aria-pressed={treeVisible}
+                  title={t(treeVisible ? "hideTree" : "showTree")}
+                  onClick={() => setTreeOpen(!treeVisible)}
+                >
+                  <Icon name={treeVisible ? "panelClose" : "panelOpen"} />
+                </button>
+                <button
+                  className="dsh-wb-button dsh-wb-icon-button"
+                  type="button"
+                  aria-label={t("refresh")}
+                  title={t("refresh")}
+                  onClick={() => void store.reload()}
+                >
+                  <Icon name="refresh" />
+                </button>
+                <button
+                  className="dsh-wb-button dsh-wb-icon-button"
+                  type="button"
+                  aria-label={t(copied ? "copied" : "copy")}
+                  title={t(copied ? "copied" : "copy")}
+                  onClick={() => {
+                    if (!payload || !navigator.clipboard) return;
+                    void navigator.clipboard.writeText(payload.content).then(() => {
+                      setCopied(true);
+                      window.setTimeout(() => setCopied(false), 1400);
+                    });
+                  }}
+                >
+                  <Icon name="copy" />
+                </button>
+                <button className="dsh-wb-button dsh-wb-icon-button dsh-wb-close-button" type="button" aria-label={t("close")} title={t("hidePanel")} onClick={() => store.hide()}>
+                  <Icon name="close" />
+                </button>
+              </div>
+            </nav>
+            {state.path ? (
+              <nav className="dsh-wb-pathbar" aria-label={t("filePath")}>
+                <button
+                  type="button"
+                  className="dsh-wb-path-root"
+                  aria-label={t("workspaceTitle")}
+                  title={t("workspaceTitle")}
+                  onClick={() => showTreeAt("")}
+                >
+                  <Icon name="folder" />
+                </button>
+                {visibleBreadcrumbTargets(state.path).map((item, index) => (
+                  <Fragment key={`${item.path}-${index}`}>
+                    {index > 0 ? <span className="dsh-wb-path-separator">/</span> : null}
+                    <button
+                      type="button"
+                      className={`dsh-wb-path-segment${item.kind === "file" ? " is-current" : ""}`}
+                      onClick={() => {
+                        if (item.kind === "file") void store.activate(item.path);
+                        showTreeAt(item.path);
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  </Fragment>
+                ))}
                 <button
                   className="dsh-wb-path"
                   type="button"
@@ -191,63 +298,31 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
                     });
                   }}
                 >
-                  {state.path}
+                  <Icon name="copy" />
                 </button>
-              ) : null}
-            </div>
-            <div className="dsh-wb-actions">
-              <button
-                  className="dsh-wb-button dsh-wb-icon-button"
-                  type="button"
-                  aria-label={t("refresh")}
-                  title={t("refresh")}
-                onClick={() => void store.reload()}
-              >
-                ↻
-              </button>
-              <button
-                  className="dsh-wb-button dsh-wb-icon-button"
-                  type="button"
-                  aria-label={t(copied ? "copied" : "copy")}
-                  title={t(copied ? "copied" : "copy")}
-                onClick={() => {
-                  if (!payload || !navigator.clipboard) return;
-                  void navigator.clipboard.writeText(payload.content).then(() => {
-                    setCopied(true);
-                    window.setTimeout(() => setCopied(false), 1400);
-                  });
+                <span className="dsh-wb-meta">{meta}</span>
+              </nav>
+            ) : null}
+          <div className={`dsh-wb-main${treeVisible ? "" : " is-tree-hidden"}`}>
+            <main className="dsh-wb-code">
+              {state.path ? <CodeView state={state} commandsRef={previewCommands} /> : <div className="dsh-wb-empty"><div className="dsh-wb-empty-icon"><EmptyFileIcon /></div><strong>{t("openFile")}</strong><span>{t("selectFile")}</span></div>}
+            </main>
+            {treeVisible ? (
+              <WorkspaceTreePanel
+                width={treeWidth}
+                revealPath={revealPath}
+                commandsRef={treeCommands}
+                onResize={(next) => {
+                  const value = clampTreeWidth(next);
+                  setTreeWidth(value);
+                  writeTreeWidth(value);
                 }}
-              >
-                {copied ? "✓" : "□"}
-              </button>
-              <button className="dsh-wb-button dsh-wb-text-button dsh-wb-close-button" type="button" aria-label={t("close")} title={t("hidePanel")} onClick={() => store.hide()}>
-                {t("close")}
-              </button>
-            </div>
-          </header>
-          {state.open.length > 0 ? (
-            <nav className="dsh-wb-tabs" aria-label={t("openFiles")} role="tablist">
-              {state.open.map((path) => (
-                <div className={`dsh-wb-tab${path === state.active ? " is-active" : ""}`} key={path} role="presentation">
-                  <button className="dsh-wb-tab-name" type="button" role="tab" aria-selected={path === state.active} title={path} onClick={() => void store.activate(path)}>
-                    {path.split("/").pop() || path}
-                  </button>
-                  <button className="dsh-wb-tab-close" type="button" title={t("closeFile")} aria-label={`${t("closeFile")}: ${path}`} onClick={() => store.close(path)}>
-                    ×
-                  </button>
-                </div>
-              ))}
-            </nav>
-          ) : null}
-          <div className="dsh-wb-meta-bar">
-            <span className="dsh-wb-meta">{meta}</span>
+              />
+            ) : null}
           </div>
-          <main className="dsh-wb-code">
-            {state.path ? <CodeView state={state} /> : <div className="dsh-wb-empty">{t("selectFile")}</div>}
-          </main>
           <footer className="dsh-wb-foot">
             <span className="dsh-wb-dot" />
-            <span>DSH Workbench</span>
+            <span>{t("footerBrand")}</span>
             <span>{t(payload && viewKind(payload.source) === "diff" ? "footerDiff" : "footerView")}</span>
           </footer>
         </aside>
@@ -259,7 +334,6 @@ export function createWorkbenchUi(React: ReactNs, store: FileStore, i18n: Locale
   function WorkbenchToggle() {
     const state = useFileState();
     const { t } = useLocale();
-    if (state.visible) return null;
     const label = state.visible ? t("hidePanel") : t("showPanel");
     return (
       <button

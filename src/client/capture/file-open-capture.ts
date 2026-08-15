@@ -1,6 +1,6 @@
 import { isFileToolName } from "./tool-path.js";
-import { normalizePath } from "../shared/types.js";
-import type { FileOpenMode } from "../shared/types.js";
+import { parseOpenTarget, type OpenTarget } from "./open-target.js";
+import type { FileOpenMode } from "../../shared/types.js";
 
 export type OpenButtonHint = {
   className: string;
@@ -18,22 +18,27 @@ export function fileOpenModeFromHint(hint: OpenButtonHint): FileOpenMode {
   return "auto";
 }
 
-function usablePath(value: string | undefined): string | undefined {
-  const path = value?.trim() ?? "";
-  if (!path || path === "." || path.includes("\n") || path.includes("\0")) return undefined;
-  return normalizePath(path);
+function usableTarget(value: string | undefined): OpenTarget | undefined {
+  const raw = value?.trim() ?? "";
+  if (!raw || raw === "." || raw.includes("\n") || raw.includes("\0")) return undefined;
+  const target = parseOpenTarget(raw);
+  return target.path ? target : undefined;
+}
+
+export function fileOpenTargetFromHint(hint: OpenButtonHint): OpenTarget | undefined {
+  const classes = hint.className.split(/\s+/);
+  if (classes.includes("dsh-wb-tool-path")) return usableTarget(hint.text);
+  if (hint.producedRow) {
+    if (hint.className.includes("showFolder")) return undefined;
+    return usableTarget(hint.title);
+  }
+  if (hint.className.includes("fileMention")) return usableTarget(hint.title);
+  if (isFileToolName(hint.tool ?? null) || hint.className.includes("fileLink")) return usableTarget(hint.text);
+  return undefined;
 }
 
 export function filePathFromOpenHint(hint: OpenButtonHint): string | undefined {
-  const classes = hint.className.split(/\s+/);
-  if (classes.includes("dsh-wb-tool-path")) return usablePath(hint.text);
-  if (hint.producedRow) {
-    if (hint.className.includes("showFolder")) return undefined;
-    return usablePath(hint.title);
-  }
-  if (hint.className.includes("fileMention")) return usablePath(hint.title);
-  if (isFileToolName(hint.tool ?? null) || hint.className.includes("fileLink")) return usablePath(hint.text);
-  return undefined;
+  return fileOpenTargetFromHint(hint)?.path;
 }
 
 export function filePathFromOpenTarget(target: EventTarget | null): string | undefined {
@@ -54,15 +59,15 @@ function openButtonHintFromTarget(target: EventTarget | null): OpenButtonHint | 
   };
 }
 
-export function installFileOpenCapture(open: (path: string, mode: FileOpenMode) => void): () => void {
+export function installFileOpenCapture(open: (path: string, mode: FileOpenMode, line?: number) => void): () => void {
   const onClick = (event: MouseEvent) => {
     const hint = openButtonHintFromTarget(event.target);
     if (hint?.className.split(/\s+/).includes("dsh-wb-tool-path")) return;
-    const path = hint ? filePathFromOpenHint(hint) : undefined;
-    if (!path) return;
+    const target = hint ? fileOpenTargetFromHint(hint) : undefined;
+    if (!target?.path) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    open(path, fileOpenModeFromHint(hint as OpenButtonHint));
+    open(target.path, fileOpenModeFromHint(hint as OpenButtonHint), target.line);
   };
   document.addEventListener("click", onClick, true);
   return () => document.removeEventListener("click", onClick, true);

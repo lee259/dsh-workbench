@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { shortcutAction } from "../lib/client/shortcuts.js";
+import { shortcutAction } from "../lib/client/chrome/shortcuts.js";
 
 const state = { visible: true, active: "b.ts", open: ["a.ts", "b.ts", "c.ts"] };
 
@@ -8,6 +8,8 @@ test("panel shortcuts hide and toggle visibility", () => {
   assert.deepEqual(shortcutAction({ key: "Escape" }, state), { type: "hide" });
   assert.deepEqual(shortcutAction({ key: "b", altKey: true, metaKey: true }, state), { type: "toggle" });
   assert.equal(shortcutAction({ key: "Escape" }, { ...state, visible: false }), null);
+  assert.deepEqual(shortcutAction({ key: "p", metaKey: true }, state), { type: "search" });
+  assert.deepEqual(shortcutAction({ key: "p", ctrlKey: true }, state), { type: "search" });
 });
 
 test("file shortcuts close and activate tabs", () => {
@@ -16,6 +18,15 @@ test("file shortcuts close and activate tabs", () => {
   assert.deepEqual(shortcutAction({ key: "9", ctrlKey: true }, state), null);
   assert.deepEqual(shortcutAction({ key: "ArrowLeft", altKey: true }, state), { type: "activate", path: "a.ts" });
   assert.deepEqual(shortcutAction({ key: "ArrowRight", altKey: true }, state), { type: "activate", path: "c.ts" });
+});
+
+test("preview and tree shortcuts stay scoped to the file pane", () => {
+  assert.deepEqual(shortcutAction({ key: "e", metaKey: true, shiftKey: true }, state), { type: "toggleTree" });
+  assert.deepEqual(shortcutAction({ key: "f", metaKey: true }, state), { type: "find" });
+  assert.deepEqual(shortcutAction({ key: "l", ctrlKey: true }, state), { type: "gotoLine" });
+  assert.equal(shortcutAction({ key: "f", metaKey: true }, { ...state, visible: false }), null);
+  assert.equal(shortcutAction({ key: "l", metaKey: true }, { ...state, active: "" }), null);
+  assert.equal(shortcutAction({ key: "p", metaKey: true, shiftKey: true }, state), null);
 });
 
 test("shortcut modifiers and inactive states are respected", () => {

@@ -14,7 +14,7 @@ Click a file path in a DSH Web session and inspect it in a persistent right-side
 
 ![DSH Workbench in DeepSeek Harness Web](./assets/dsh-workbench-demo.png)
 
-The demo shows a real DSH Web session with the conversation on the left and the Workbench reading `package.json` on the right. Read-only files stay readable as source; captured writes and edits open as focused diffs.
+The demo shows a real DSH Web session with the conversation on the left and the Workbench showing a captured `package.json` diff, multiple tabs, file search, and a workspace tree on the right. Read-only files stay readable as source; captured writes and edits open as focused diffs.
 
 ```text
 read       → read-only source view
@@ -26,8 +26,8 @@ write/edit → captured DSH diff
 - Keep the conversation and the file you are inspecting visible together.
 - See real DSH write/edit changes, with the captured before/after content.
 - Read files as normal source code—no fake Git HEAD diff and no noisy activity timeline.
-- Open several files, switch between tabs, refresh them, copy content or paths, and resize the panel.
-- Use desktop-style shortcuts: `⌥⌘B` to toggle the panel, `⌘W` to close a file, and `⌘1`–`⌘9` to switch tabs.
+- Open several files, switch between tabs, refresh them, copy content or paths, and resize the panel. A tree or Quick Open click uses one italic preview tab (like VS Code); double-click the file or tab to keep it. Conversation writes still open a kept tab.
+- Use desktop-style shortcuts: `⌥⌘B` to toggle the panel, `⌘⇧E` (or the tab-bar control) to show or hide the file tree, `⌘P` to open a file, tree search to locate a file without opening it, `⌘F` / `⌘L` to find or jump in the preview, `⌘W` to close a file, and `⌘1`–`⌘9` to switch tabs. Collapse every folder from the tree toolbar, or drag / right-click a file to insert its path into the chat input.
 - UI copy follows the DSH language setting (中文 / English).
 
 ## Install
@@ -101,26 +101,35 @@ The plugin follows the standard Cordis contract:
 
 ## Roadmap
 
+The target is a Codex-class file workspace beside the DSH conversation: inspect, navigate, and review what the agent touched. It stays a workspace, not an IDE, and it never invents a Git `HEAD` diff when no DSH write was captured.
+
 ### Done
 
 - Read-only previews for `read` and file mentions
 - Captured DSH diffs for `write` / `edit`
-- Persistent, resizable right-side workspace
-- Multi-file tabs, refresh, copy actions, and desktop shortcuts
+- Persistent, resizable right-side workspace aligned with the host conversation chrome
+- Multi-file tabs with a VS Code-style italic preview tab, refresh, copy, and desktop shortcuts
+- In-file find / go-to-line, plus conversation `:line` / `#Lline` targets
 - Chinese / English UI following DSH locale
+- Quick Open (`⌘/Ctrl+P`) and tree search that locates without opening
+- Workspace file tree with breadcrumbs, hide/show, keyboard navigation, collapse-all, and path insert into the composer
+- Syntax highlighting, folding, and live refresh when the workspace changes on disk
 
 ### Next
 
-- Browser-level interaction tests for the sidebar and real DSH tool rows
-- Better integration with native DSH panel controls and layout slots
-- File search and quick navigation inside the workspace
-- More precise diff navigation and change summaries
+- Last-turn / session change review: a file list of captured DSH writes with `+/−`, jump between them (Codex Review’s “Last turn”, from session events rather than Git)
+- Diff hunk navigation and a short change summary on each captured write
+- Follow the agent: auto-open or reveal files as DSH writes them, and keep the tree in sync
+- Workspace content search (`⌘/Ctrl+⇧+F`) in addition to filename Quick Open
+- Attach a file or folder from the tree as composer context, not only insert a path
+- Richer previews for images and rendered Markdown
 
 ### Exploring
 
-- Optional lightweight file tree for the active workspace
-- Open-in-editor and reveal-in-folder actions
-- Pluggable workspace panels for future DSH tools
+- Open-in-editor and reveal-in-folder
+- Inline comments on a diff line that send guidance back to the composer
+- Native DSH panel controls and layout slots, if the host exposes a usable one
+- Pluggable workspace panels (Files / Review, and later DSH tools)
 
 ## Release
 

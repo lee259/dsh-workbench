@@ -1,4 +1,4 @@
-import { FILE_TOOLS, normalizePath, type FileToolName } from "../shared/types.js";
+import { FILE_TOOLS, normalizePath, type FileToolName } from "../../shared/types.js";
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" ? value as Record<string, unknown> : null;

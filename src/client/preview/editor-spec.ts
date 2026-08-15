@@ -1,4 +1,4 @@
-import type { FilePayload, FileSource } from "../shared/types.js";
+import type { FilePayload, FileSource } from "../../shared/types.js";
 import { languageForPath, type LanguageId } from "./lang-map.js";
 
 export type ViewKind = "view" | "diff";

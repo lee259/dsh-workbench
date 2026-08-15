@@ -9,7 +9,7 @@ import {
   sidebarWidthFromKey,
   sidebarWidthFromPointer,
   writeSidebarWidth,
-} from "../lib/client/sidebar.js";
+} from "../lib/client/chrome/sidebar.js";
 
 test("sidebar width clamps saved and interactive values", () => {
   assert.equal(clampSidebarWidth(MIN_SIDEBAR_WIDTH - 1), MIN_SIDEBAR_WIDTH);
@@ -24,11 +24,11 @@ test("dragging the separator derives width from the viewport edge", () => {
 });
 
 test("keyboard resize moves in fixed steps and ignores other keys", () => {
-  assert.equal(sidebarWidthFromKey(520, "ArrowLeft"), 536);
-  assert.equal(sidebarWidthFromKey(520, "ArrowRight"), 504);
+  assert.equal(sidebarWidthFromKey(600, "ArrowLeft"), 616);
+  assert.equal(sidebarWidthFromKey(600, "ArrowRight"), 584);
   assert.equal(sidebarWidthFromKey(MIN_SIDEBAR_WIDTH, "ArrowRight"), MIN_SIDEBAR_WIDTH);
   assert.equal(sidebarWidthFromKey(MAX_SIDEBAR_WIDTH, "ArrowLeft"), MAX_SIDEBAR_WIDTH);
-  assert.equal(sidebarWidthFromKey(520, "Enter"), 520);
+  assert.equal(sidebarWidthFromKey(600, "Enter"), 600);
 });
 
 test("sidebar width persists through the bounded storage seam", () => {
@@ -42,5 +42,5 @@ test("sidebar width persists through the bounded storage seam", () => {
   writeSidebarWidth(storage, 1200);
   assert.equal(readSidebarWidth(storage), MAX_SIDEBAR_WIDTH);
   values.set("dsh-workbench.sidebar-width", "not-a-number");
-  assert.equal(readSidebarWidth(storage), 520);
+  assert.equal(readSidebarWidth(storage), 600);
 });

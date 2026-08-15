@@ -23,10 +23,21 @@ const React = {
   useRef(initial) {
     return { current: initial };
   },
+  useCallback(fn) {
+    return fn;
+  },
 };
 
 function findElement(node, predicate) {
-  if (!node || typeof node !== "object") return undefined;
+  if (node == null || typeof node === "boolean") return undefined;
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const found = findElement(child, predicate);
+      if (found) return found;
+    }
+    return undefined;
+  }
+  if (typeof node !== "object") return undefined;
   if (predicate(node)) return node;
   const children = node.props?.children;
   for (const child of Array.isArray(children) ? children : [children]) {
@@ -37,7 +48,12 @@ function findElement(node, predicate) {
 }
 
 function findElements(node, predicate, matches = []) {
-  if (!node || typeof node !== "object") return matches;
+  if (node == null || typeof node === "boolean") return matches;
+  if (Array.isArray(node)) {
+    for (const child of node) findElements(child, predicate, matches);
+    return matches;
+  }
+  if (typeof node !== "object") return matches;
   if (predicate(node)) matches.push(node);
   const children = node.props?.children;
   for (const child of Array.isArray(children) ? children : [children]) findElements(child, predicate, matches);
@@ -60,7 +76,7 @@ function toolRow(toolName, store) {
   });
 }
 
-test("workbench toggle opens a hidden panel without rendering over the drawer", async () => {
+test("workbench toggle opens and closes the panel", async () => {
   const store = createFileStore(async (path) => ({
     path,
     content: path,
@@ -75,7 +91,10 @@ test("workbench toggle opens a hidden panel without rendering over the drawer", 
   assert.equal(toggle.props["aria-label"], "Show sidebar");
   toggle.props.onClick();
   assert.equal(store.getSnapshot().visible, true);
-  assert.equal(ui.WorkbenchToggle(), null);
+  const openedToggle = ui.WorkbenchToggle();
+  assert.equal(openedToggle.props["aria-label"], "Hide sidebar");
+  openedToggle.props.onClick();
+  assert.equal(store.getSnapshot().visible, false);
 });
 
 test("file drawer close button hides the panel", async () => {
@@ -91,7 +110,7 @@ test("file drawer close button hides the panel", async () => {
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const close = findElement(ui.FileDrawer(), (node) => node.props?.className?.includes("dsh-wb-close-button"));
   assert.ok(close);
-  assert.equal(close.props.children, "Close");
+  assert.equal(close.props["aria-label"], "Close");
   close.props.onClick();
   assert.equal(store.getSnapshot().visible, false);
 });
@@ -120,6 +139,44 @@ test("file drawer tabs activate and close individual files", async () => {
   closeButtons[0].props.onClick();
   assert.deepEqual(store.getSnapshot().open, ["b.ts"]);
   assert.equal(store.getSnapshot().active, "b.ts");
+});
+
+test("file drawer tabs distinguish read views from captured diffs", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: path === "a.ts" ? "old" : null,
+    source: path === "a.ts" ? "dsh-write" : "workspace",
+    revision: path === "a.ts" ? 1 : 0,
+    size: 1,
+  }));
+  await store.open("a.ts");
+  await store.open("b.ts", "view");
+  const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
+  const tabs = findElements(ui.FileDrawer(), (node) => typeof node.props?.className === "string" && node.props.className.split(/\s+/).includes("dsh-wb-tab"));
+  assert.equal(tabs.length, 2);
+  assert.match(tabs[0].props.className, /\bis-diff\b/);
+  assert.match(tabs[1].props.className, /\bis-view\b/);
+  assert.match(tabs[1].props.className, /\bis-active\b/);
+  assert.match(textContent(tabs[0]), /diff/);
+});
+
+test("file drawer marks the transient preview tab", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 1,
+  }));
+  await store.open("a.ts", "view", undefined, false, "keep");
+  await store.open("b.ts", "view", undefined, false, "preview");
+  const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
+  const tabs = findElements(ui.FileDrawer(), (node) => typeof node.props?.className === "string" && node.props.className.split(/\s+/).includes("dsh-wb-tab"));
+  assert.equal(tabs.length, 2);
+  assert.doesNotMatch(tabs[0].props.className, /\bis-preview\b/);
+  assert.match(tabs[1].props.className, /\bis-preview\b/);
 });
 
 test("file drawer tabs expose active and close states", async () => {
@@ -225,7 +282,7 @@ test("file drawer copies content and path", async () => {
 });
 
 test("file drawer resize handle supports keyboard steps and reset", async () => {
-  let width = 520;
+  let width = 600;
   let stateCalls = 0;
   const TrackedReact = {
     ...React,
@@ -251,9 +308,9 @@ test("file drawer resize handle supports keyboard steps and reset", async () => 
   const separator = findElement(ui.FileDrawer(), (node) => node.props?.role === "separator");
   assert.ok(separator);
   separator.props.onKeyDown({ key: "ArrowLeft", preventDefault() {} });
-  assert.equal(width, 536);
+  assert.equal(width, 616);
   separator.props.onDoubleClick();
-  assert.equal(width, 520);
+  assert.equal(width, 600);
 });
 
 test("file drawer shows a read error without stale content", async () => {
@@ -298,7 +355,7 @@ test("workbench controls follow the active locale", async () => {
   await store.open("src/example.ts");
   const close = findElement(ui.FileDrawer(), (node) => node.props?.className?.includes("dsh-wb-close-button"));
   assert.ok(close);
-  assert.equal(close.props.children, "关闭");
+  assert.equal(close.props["aria-label"], "关闭");
 });
 
 test("workbench controls expose accurate accessibility state", async () => {
@@ -318,9 +375,58 @@ test("workbench controls expose accurate accessibility state", async () => {
   await store.open("src/example.ts");
   const separator = findElement(ui.FileDrawer(), (node) => node.props?.role === "separator");
   assert.ok(separator);
-  assert.equal(separator.props["aria-valuemin"], 360);
+  assert.equal(separator.props["aria-valuemin"], 520);
   assert.equal(separator.props["aria-valuemax"], 900);
-  assert.equal(separator.props["aria-valuenow"], 520);
+  assert.equal(separator.props["aria-valuenow"], 600);
+});
+
+test("file drawer plus button and breadcrumbs are wired", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 1,
+  }));
+  await store.open("src/client/ui.tsx");
+  const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
+  const drawer = ui.FileDrawer();
+  const add = findElement(drawer, (node) => node.props?.className === "dsh-wb-tabbar-add");
+  assert.ok(add);
+  assert.equal(typeof add.props.onClick, "function");
+  add.props.onClick();
+  const decorative = findElement(drawer, (node) => node.props?.className === "dsh-wb-tabbar-active");
+  assert.equal(decorative, undefined);
+  const segments = findElements(drawer, (node) => node.props?.className?.includes("dsh-wb-path-segment"));
+  assert.ok(segments.length >= 3);
+  assert.ok(segments.every((node) => typeof node.props.onClick === "function"));
+  const treeToggle = findElement(drawer, (node) => node.props?.["aria-label"] === "Hide file tree");
+  assert.ok(treeToggle);
+  assert.equal(treeToggle.props["aria-pressed"], true);
+  const panel = findElement(drawer, (node) => typeof node.props?.onResize === "function");
+  assert.ok(panel);
+  const tree = panel.type(panel.props);
+  assert.equal(findElement(tree, (node) => node.props?.["aria-label"] === "Hide file tree"), undefined);
+  assert.ok(findElement(tree, (node) => node.props?.["aria-label"] === "Collapse folders"));
+  assert.equal(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree-rail"), undefined);
+});
+
+test("file drawer shows the workspace tree by default", () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 1,
+  }));
+  store.show();
+  const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
+  const drawer = ui.FileDrawer();
+  assert.ok(findElement(drawer, (node) => typeof node.props?.onResize === "function"));
+  assert.ok(findElement(drawer, (node) => node.props?.["aria-label"] === "Hide file tree"));
+  assert.equal(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree-rail"), undefined);
 });
 
 test("file actions expose accessible labels", async () => {

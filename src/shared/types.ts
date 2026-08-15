@@ -1,5 +1,7 @@
 export const FILE_API_PATH = "/api/dsh-workbench/file";
+export const FILES_API_PATH = "/api/dsh-workbench/files";
 export const ACTIVITY_API_PATH = "/api/dsh-workbench/activity";
+export const EVENTS_API_PATH = "/api/dsh-workbench/events";
 export const MAX_PREVIEW_BYTES = 800_000;
 
 export type WorkspaceErrorCode =
@@ -19,6 +21,16 @@ export type FilePayload = {
   source: FileSource;
   revision: number;
   size: number;
+};
+
+export type WorkspaceFile = {
+  path: string;
+  size: number;
+};
+
+export type WorkspaceTree = {
+  files: WorkspaceFile[];
+  directories: string[];
 };
 
 export type FileRevision = {

@@ -32,6 +32,27 @@ test("a view request cannot render a write payload as a diff", async () => {
   assert.equal(store.getSnapshot().payload?.before, null);
 });
 
+test("activate without a mode keeps the tab's remembered view", async () => {
+  const modes = [];
+  const store = createFileStore(async (path, mode) => {
+    modes.push(`${path}:${mode ?? "auto"}`);
+    return {
+      path,
+      content: path,
+      before: path === "a.ts" ? "old" : null,
+      source: path === "a.ts" ? "dsh-write" : "workspace",
+      revision: path === "a.ts" ? 1 : 0,
+      size: 1,
+    };
+  });
+  await store.open("a.ts", "view");
+  await store.open("b.ts", "view");
+  await store.activate("a.ts");
+  assert.deepEqual(modes, ["a.ts:view", "b.ts:view", "a.ts:view"]);
+  assert.equal(store.getSnapshot().payload?.source, "workspace");
+  assert.equal(store.getSnapshot().views["a.ts"], "view");
+});
+
 test("reload preserves the current file open mode", async () => {
   const modes = [];
   const store = createFileStore(async (path, mode) => {
@@ -177,6 +198,128 @@ test("close of a background path keeps the active file", async () => {
   assert.deepEqual(state.open, ["b.ts"]);
   assert.equal(state.active, "b.ts");
   assert.equal(state.payload?.content, "b.ts");
+});
+
+test("preview opens replace the transient tab", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 1,
+  }));
+  await store.open("a.ts", "view", undefined, false, "preview");
+  await store.open("b.ts", "view", undefined, false, "preview");
+  assert.deepEqual(store.getSnapshot().open, ["b.ts"]);
+  assert.equal(store.getSnapshot().preview, "b.ts");
+  assert.equal(store.getSnapshot().active, "b.ts");
+});
+
+test("activating a preview tab does not pin it", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 1,
+  }));
+  await store.open("a.ts", "view", undefined, false, "preview");
+  await store.activate("a.ts");
+  assert.equal(store.getSnapshot().preview, "a.ts");
+  assert.deepEqual(store.getSnapshot().open, ["a.ts"]);
+});
+
+test("pinning a preview keeps it when another file is previewed", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 1,
+  }));
+  await store.open("a.ts", "view", undefined, false, "preview");
+  store.pin("a.ts");
+  await store.open("b.ts", "view", undefined, false, "preview");
+  assert.deepEqual(store.getSnapshot().open, ["a.ts", "b.ts"]);
+  assert.equal(store.getSnapshot().preview, "b.ts");
+});
+
+test("open remembers whether a tab is a view or a captured diff", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: path === "a.ts" ? "old" : null,
+    source: path === "a.ts" ? "dsh-write" : "workspace",
+    revision: path === "a.ts" ? 1 : 0,
+    size: 1,
+  }));
+  await store.open("a.ts");
+  await store.open("b.ts", "view");
+  assert.equal(store.getSnapshot().views["a.ts"], "diff");
+  assert.equal(store.getSnapshot().views["b.ts"], "view");
+  store.close("a.ts");
+  assert.equal(store.getSnapshot().views["a.ts"], undefined);
+  assert.equal(store.getSnapshot().views["b.ts"], "view");
+});
+
+test("disk changes bump a generation without changing the active file", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 1,
+  }));
+  await store.open("a.ts");
+  assert.equal(store.getSnapshot().disk, 0);
+  store.noteDiskChange();
+  assert.equal(store.getSnapshot().disk, 1);
+  assert.equal(store.getSnapshot().active, "a.ts");
+});
+
+test("open can reveal a file in the tree without a tab switch doing the same", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 1,
+  }));
+  await store.open("a.ts");
+  assert.equal(store.getSnapshot().reveal, 1);
+  await store.open("b.ts");
+  assert.equal(store.getSnapshot().reveal, 2);
+  await store.activate("a.ts");
+  assert.equal(store.getSnapshot().active, "a.ts");
+  assert.equal(store.getSnapshot().reveal, 2);
+  await store.open("b.ts", "auto", undefined, false);
+  assert.equal(store.getSnapshot().active, "b.ts");
+  assert.equal(store.getSnapshot().reveal, 2);
+});
+
+test("open and activate remember a preview line", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: "one\ntwo\nthree\n",
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 14,
+  }));
+  await store.open("a.ts", "view", 3);
+  assert.equal(store.getSnapshot().line, 3);
+  await store.open("a.ts", "view", 9);
+  assert.equal(store.getSnapshot().line, 9);
+  await store.open("b.ts");
+  assert.equal(store.getSnapshot().line, null);
+  await store.activate("a.ts", "view", 2);
+  assert.equal(store.getSnapshot().active, "a.ts");
+  assert.equal(store.getSnapshot().line, 2);
 });
 
 test("a newer open wins over a slower earlier request", async () => {

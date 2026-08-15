@@ -17,12 +17,15 @@ export function mountWorkbenchDrawer(
   createRoot: (container: Element) => Root,
   FileDrawer: unknown,
   parent: DrawerParent,
+  onRoot?: (root: Root) => void,
 ): Element {
   const existing = parent.querySelector(`[${HOST_ATTR}]`);
   if (existing) return existing;
   const host = parent.ownerDocument.createElement("div");
   host.setAttribute(HOST_ATTR, "");
   parent.append(host);
-  createRoot(host).render(React.createElement(FileDrawer));
+  const root = createRoot(host);
+  onRoot?.(root);
+  root.render(React.createElement(FileDrawer));
   return host;
 }

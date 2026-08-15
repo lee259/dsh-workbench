@@ -12,4 +12,9 @@ export default defineConfig({
     // prevent window.__ModuleLoader__.load from running.
     alwaysBundle: () => true,
   },
+  alias: {
+    react: new URL("./src/client/react-bridge.ts", import.meta.url).pathname,
+    "react/jsx-runtime": new URL("./src/client/react-bridge.ts", import.meta.url).pathname,
+    "react/jsx-dev-runtime": new URL("./src/client/react-bridge.ts", import.meta.url).pathname,
+  },
 });

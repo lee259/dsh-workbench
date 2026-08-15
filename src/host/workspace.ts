@@ -1,7 +1,7 @@
-import { readFile, stat } from "node:fs/promises";
-import { resolve } from "node:path";
+import { readdir, readFile, stat } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import { createPathIdentity, type PathIdentity } from "./path-identity.js";
-import { MAX_PREVIEW_BYTES, type WorkspaceErrorCode } from "../shared/types.js";
+import { MAX_PREVIEW_BYTES, type WorkspaceErrorCode, type WorkspaceFile, type WorkspaceTree } from "../shared/types.js";
 
 export type WorkspaceError = {
   ok: false;
@@ -24,6 +24,7 @@ export type FileStat = {
 export type DiskReader = {
   stat(absolute: string): Promise<FileStat>;
   readFile(absolute: string): Promise<string>;
+  readDir(absolute: string): Promise<readonly { name: string; isFile: boolean; isDirectory: boolean }[]>;
 };
 
 const nodeReader: DiskReader = {
@@ -34,11 +35,17 @@ const nodeReader: DiskReader = {
   readFile(absolute) {
     return readFile(absolute, "utf8");
   },
+  async readDir(absolute) {
+    const entries = await readdir(absolute, { withFileTypes: true });
+    return entries.map((entry) => ({ name: entry.name, isFile: entry.isFile(), isDirectory: entry.isDirectory() }));
+  },
 };
 
 export type Workspace = {
   resolve(requested: string): { ok: true; absolute: string; relative: string } | WorkspaceError;
   read(requested: string): Promise<DiskFile | WorkspaceError>;
+  list(query?: string, limit?: number): Promise<WorkspaceFile[]>;
+  tree(limit?: number): Promise<WorkspaceTree>;
 };
 
 export function createWorkspace(options: {
@@ -50,6 +57,22 @@ export function createWorkspace(options: {
   const paths = options.paths ?? createPathIdentity(resolve(options.root));
   const reader = options.fs ?? nodeReader;
   const maxBytes = options.maxBytes ?? MAX_PREVIEW_BYTES;
+  const root = resolve(options.root);
+  const ignoredDirectories = new Set([
+    ".git",
+    ".next",
+    ".turbo",
+    ".cache",
+    ".pnpm-store",
+    ".yarn",
+    ".venv",
+    "vendor",
+    "node_modules",
+    "lib",
+    "dist",
+    "build",
+    "coverage",
+  ]);
 
   function resolvePath(requested: string): { ok: true; absolute: string; relative: string } | WorkspaceError {
     const located = paths.identify(requested);
@@ -73,6 +96,73 @@ export function createWorkspace(options: {
       } catch {
         return { ok: false, status: 404, error: "file_not_found" };
       }
+    },
+    async tree(limit = 1000) {
+      const files: WorkspaceFile[] = [];
+      const directories: string[] = [];
+      const visit = async (absolute: string, relativePath: string): Promise<void> => {
+        if (files.length >= limit) return;
+        let entries;
+        try {
+          entries = await reader.readDir(absolute);
+        } catch {
+          return;
+        }
+        for (const entry of [...entries].sort((left, right) => left.name.localeCompare(right.name))) {
+          if (files.length >= limit) return;
+          const childAbsolute = join(absolute, entry.name);
+          const childRelative = relativePath ? `${relativePath}/${entry.name}` : entry.name;
+          if (entry.isDirectory) {
+            if (ignoredDirectories.has(entry.name)) continue;
+            directories.push(childRelative);
+            await visit(childAbsolute, childRelative);
+          } else if (entry.isFile) {
+            let size = 0;
+            try {
+              size = (await reader.stat(childAbsolute)).size;
+            } catch {
+              continue;
+            }
+            files.push({ path: childRelative, size });
+          }
+        }
+      };
+      await visit(root, "");
+      return {
+        files: files.sort((a, b) => a.path.localeCompare(b.path)),
+        directories: directories.sort((a, b) => a.localeCompare(b)),
+      };
+    },
+    async list(query = "", limit = 100) {
+      const needle = query.trim().toLowerCase();
+      const matches: string[] = [];
+      const visit = async (absolute: string, relativePath: string): Promise<void> => {
+        let entries;
+        try {
+          entries = await reader.readDir(absolute);
+        } catch {
+          return;
+        }
+        for (const entry of entries) {
+          const childAbsolute = join(absolute, entry.name);
+          const childRelative = relativePath ? `${relativePath}/${entry.name}` : entry.name;
+          if (entry.isDirectory) {
+            if (!ignoredDirectories.has(entry.name)) await visit(childAbsolute, childRelative);
+          } else if (entry.isFile && (!needle || childRelative.toLowerCase().includes(needle))) {
+            matches.push(childRelative);
+          }
+        }
+      };
+      await visit(root, "");
+      const paths = matches.sort((left, right) => left.localeCompare(right)).slice(0, limit);
+      const files = await Promise.all(paths.map(async (path): Promise<WorkspaceFile | undefined> => {
+        try {
+          return { path, size: (await reader.stat(join(root, path))).size };
+        } catch {
+          return undefined;
+        }
+      }));
+      return files.filter((file): file is WorkspaceFile => file != null);
     },
   };
 }
