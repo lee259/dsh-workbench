@@ -1,6 +1,5 @@
-import assert from "node:assert/strict";
-import test from "node:test";
-import { createWorkspace } from "../lib/host/workspace.js";
+import { createWorkspace } from "../src/host/workspace.js";
+import { expect, test } from "vitest";
 
 function memoryFs(files) {
   return {
@@ -35,23 +34,23 @@ test("reads an absolute path that is not under the start root", async () => {
     fs: memoryFs({ "/other/project/a.ts": { isFile: true, content: "ok" } }),
   });
   const result = await workspace.read("/other/project/a.ts");
-  assert.equal(result.ok, true);
-  assert.equal(result.path, "/other/project/a.ts");
-  assert.equal(result.content, "ok");
+  expect(result.ok).toBe(true);
+  expect(result.path).toBe("/other/project/a.ts");
+  expect(result.content).toBe("ok");
 });
 
 test("rejects a null-byte path", async () => {
   const workspace = createWorkspace({ root: "/repo", fs: memoryFs({}) });
   const result = await workspace.read("src/\0secret.ts");
-  assert.equal(result.ok, false);
-  assert.equal(result.status, 400);
+  expect(result.ok).toBe(false);
+  expect(result.status).toBe(400);
 });
 
 test("rejects a missing path", async () => {
   const workspace = createWorkspace({ root: "/repo", fs: memoryFs({}) });
   const result = await workspace.read("src/missing.ts");
-  assert.equal(result.ok, false);
-  assert.equal(result.status, 404);
+  expect(result.ok).toBe(false);
+  expect(result.status).toBe(404);
 });
 
 test("rejects an oversized file", async () => {
@@ -61,8 +60,8 @@ test("rejects an oversized file", async () => {
     fs: memoryFs({ "/repo/big.ts": { isFile: true, content: "12345" } }),
   });
   const result = await workspace.read("big.ts");
-  assert.equal(result.ok, false);
-  assert.equal(result.status, 413);
+  expect(result.ok).toBe(false);
+  expect(result.status).toBe(413);
 });
 
 test("reads a workspace file", async () => {
@@ -71,9 +70,9 @@ test("reads a workspace file", async () => {
     fs: memoryFs({ "/repo/src/a.ts": { isFile: true, content: "ok" } }),
   });
   const result = await workspace.read("./src/a.ts");
-  assert.equal(result.ok, true);
-  assert.equal(result.path, "src/a.ts");
-  assert.equal(result.content, "ok");
+  expect(result.ok).toBe(true);
+  expect(result.path).toBe("src/a.ts");
+  expect(result.content).toBe("ok");
 });
 
 test("lists matching workspace files while skipping dependency directories", async () => {
@@ -87,13 +86,13 @@ test("lists matching workspace files while skipping dependency directories", asy
       "/repo/node_modules/pkg/index.js": { isFile: true, content: "ignored" },
     }),
   });
-  assert.deepEqual(await workspace.list(".ts"), [{ path: "src/a.ts", size: 2 }]);
-  assert.deepEqual(await workspace.list(), [
+  expect(await workspace.list(".ts")).toEqual([{ path: "src/a.ts", size: 2 }]);
+  expect(await workspace.list()).toEqual([
     { path: ".env", size: 6 },
     { path: "src/a.ts", size: 2 },
     { path: "src/readme.md", size: 2 },
   ]);
-  assert.deepEqual((await workspace.tree()).directories, ["src"]);
+  expect((await workspace.tree()).directories).toEqual(["src"]);
 });
 
 test("searches past the tree file limit", async () => {
@@ -104,8 +103,8 @@ test("searches past the tree file limit", async () => {
   files["/repo/src/target-after-tree-limit.ts"] = { isFile: true, content: "x" };
   const workspace = createWorkspace({ root: "/repo", fs: memoryFs(files) });
 
-  assert.equal((await workspace.tree()).files.some((file) => file.path === "src/target-after-tree-limit.ts"), false);
-  assert.deepEqual(await workspace.list("target-after-tree-limit"), [
+  expect((await workspace.tree()).files.some((file) => file.path === "src/target-after-tree-limit.ts")).toBe(false);
+  expect(await workspace.list("target-after-tree-limit")).toEqual([
     { path: "src/target-after-tree-limit.ts", size: 1 },
   ]);
 });

@@ -1,6 +1,5 @@
-import assert from "node:assert/strict";
-import test from "node:test";
-import { startWorkspaceWatch } from "../lib/host/workspace-watch.js";
+import { startWorkspaceWatch } from "../src/host/workspace-watch.js";
+import { expect, test } from "vitest";
 
 test("workspace watch skips dependency and build directories", () => {
   const watched = [];
@@ -19,7 +18,7 @@ test("workspace watch skips dependency and build directories", () => {
       ];
     },
   });
-  assert.deepEqual(watched, [
+  expect(watched).toEqual([
     { path: "/repo", recursive: false },
     { path: "/repo/src", recursive: true },
   ]);

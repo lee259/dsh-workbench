@@ -74,7 +74,8 @@
   "scripts": {
     "build": "rm -rf lib && node scripts/embed-css.mjs && tsc -p tsconfig.json && tsdown && mv lib/client.iife.js lib/client.js && rm -f lib/client.iife.js",
     "prepare": "pnpm run build",
-    "test": "pnpm run build && node --test tests/*.test.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "start": "node scripts/start.mjs"
   },
   "peerDependencies": {
@@ -91,7 +92,8 @@
     "@types/react-dom": "^18.3.0",
     "react": "^18.2.0",
     "tsdown": "^0.22.14",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.10"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.4",

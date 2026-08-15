@@ -1,6 +1,5 @@
-import assert from "node:assert/strict";
-import test from "node:test";
-import { mountWorkbenchDrawer } from "../lib/client/mount.js";
+import { mountWorkbenchDrawer } from "../src/client/mount.js";
+import { expect, test } from "vitest";
 
 function fakeParent() {
   const nodes = [];
@@ -40,11 +39,11 @@ test("mountWorkbenchDrawer renders FileDrawer onto a new host", () => {
     "FileDrawer",
     parent,
   );
-  assert.equal(parent.nodes.length, 1);
-  assert.equal(host, parent.nodes[0]);
-  assert.equal(rendered.length, 1);
-  assert.equal(rendered[0].container, host);
-  assert.equal(rendered[0].node.type, "FileDrawer");
+  expect(parent.nodes.length).toBe(1);
+  expect(host).toBe(parent.nodes[0]);
+  expect(rendered.length).toBe(1);
+  expect(rendered[0].container).toBe(host);
+  expect(rendered[0].node.type).toBe("FileDrawer");
 });
 
 test("mountWorkbenchDrawer is idempotent", () => {
@@ -57,7 +56,7 @@ test("mountWorkbenchDrawer is idempotent", () => {
   });
   const first = mountWorkbenchDrawer({ createElement: (type) => ({ type }) }, createRoot, "FileDrawer", parent);
   const second = mountWorkbenchDrawer({ createElement: (type) => ({ type }) }, createRoot, "FileDrawer", parent);
-  assert.equal(first, second);
-  assert.equal(parent.nodes.length, 1);
-  assert.equal(rendered.length, 1);
+  expect(first).toBe(second);
+  expect(parent.nodes.length).toBe(1);
+  expect(rendered.length).toBe(1);
 });

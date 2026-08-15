@@ -1,14 +1,13 @@
-import assert from "node:assert/strict";
-import test from "node:test";
-import { spliceDraftValue } from "../lib/client/explorer/draft-insert.js";
-import { followWorkspaceEvents } from "../lib/client/workspace-events.js";
+import { spliceDraftValue } from "../src/client/explorer/draft-insert.js";
+import { followWorkspaceEvents } from "../src/client/workspace-events.js";
+import { expect, test } from "vitest";
 
 test("draft text is spliced at the caret without replacing the whole value", () => {
-  assert.deepEqual(spliceDraftValue("hello", 5, 5, " src/app.ts"), {
+  expect(spliceDraftValue("hello", 5, 5, " src/app.ts")).toEqual({
     value: "hello src/app.ts",
     caret: 16,
   });
-  assert.deepEqual(spliceDraftValue("hello world", 6, 11, "src/app.ts"), {
+  expect(spliceDraftValue("hello world", 6, 11, "src/app.ts")).toEqual({
     value: "hello src/app.ts",
     caret: 16,
   });
@@ -27,5 +26,5 @@ test("workspace events subscribe to change and close the source", () => {
   }));
   listeners.get("change")();
   stop();
-  assert.deepEqual(log, ["change", "close"]);
+  expect(log).toEqual(["change", "close"]);
 });

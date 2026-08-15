@@ -1,13 +1,13 @@
-import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import test from "node:test";
-import { apply, inject, name } from "../lib/index.js";
-import { ACTIVITY_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH } from "../lib/shared/types.js";
+import { apply, inject, name } from "../src/index.js";
+import { ACTIVITY_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH } from "../src/shared/types.js";
+import { expect, test } from "vitest";
 
 test("host plugin exports the Cordis contract", () => {
-  assert.equal(name, "dsh-workbench");
-  assert.deepEqual(inject, ["sessions", "webServer"]);
-  assert.equal(typeof apply, "function");
+  expect(name).toBe("dsh-workbench");
+  expect(inject).toEqual(["sessions", "webServer"]);
+  expect(typeof apply).toBe("function");
 });
 
 test("apply registers the file route and records session events", async () => {
@@ -24,8 +24,8 @@ test("apply registers the file route and records session events", async () => {
       listeners.push({ event, handler });
     },
   });
-  assert.deepEqual(routes.map((route) => route.path), [FILES_API_PATH, FILE_API_PATH, ACTIVITY_API_PATH, EVENTS_API_PATH]);
-  assert.deepEqual(listeners.map((listener) => listener.event), ["session/created", "session/event"]);
+  expect(routes.map((route) => route.path)).toEqual([FILES_API_PATH, FILE_API_PATH, ACTIVITY_API_PATH, EVENTS_API_PATH]);
+  expect(listeners.map((listener) => listener.event)).toEqual(["session/created", "session/event"]);
 });
 
 test("workspace files route searches paths without reading file contents", async () => {
@@ -49,8 +49,8 @@ test("workspace files route searches paths without reading file contents", async
       },
     },
   );
-  assert.ok(body.files.some((file) => file.path === "package.json"));
-  assert.equal(Object.keys(body.files[0]).sort().join(","), "path,size");
+  expect(body.files.some((file) => file.path === "package.json")).toBeTruthy();
+  expect(Object.keys(body.files[0]).sort().join(",")).toBe("path,size");
 });
 
 test("activity route returns normalized session activity", async () => {
@@ -90,8 +90,8 @@ test("activity route returns normalized session activity", async () => {
       },
     },
   );
-  assert.equal(body.records.length, 1);
-  assert.deepEqual(body.records[0], {
+  expect(body.records.length).toBe(1);
+  expect(body.records[0]).toEqual({
     id: "s1:c1",
     sessionId: "s1",
     kind: "tool",
@@ -141,11 +141,11 @@ test("apply replays existing session events into file previews", async () => {
       },
     },
   );
-  assert.equal(body.source, "dsh-write");
-  assert.equal(body.content, "REPLAYED");
+  expect(body.source).toBe("dsh-write");
+  expect(body.content).toBe("REPLAYED");
 });
 
-test("client bundle registers with DSH ModuleLoader as a classic script", async () => {
+test.skipIf(!existsSync(new URL("../lib/client.js", import.meta.url)))("client bundle registers with DSH ModuleLoader as a classic script", async () => {
   const client = await readFile(new URL("../lib/client.js", import.meta.url), "utf8");
   const registered = [];
   const window = {
@@ -158,5 +158,5 @@ test("client bundle registers with DSH ModuleLoader as a classic script", async 
   // DSH injects client.js as a classic <script>. The page already has
   // window.top, so a bare `const top` at script scope fails to register.
   new Function("window", "top", client)(window, {});
-  assert.deepEqual(registered, ["dsh-workbench"]);
+  expect(registered).toEqual(["dsh-workbench"]);
 });

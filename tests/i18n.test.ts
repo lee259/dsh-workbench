@@ -1,0 +1,40 @@
+import { createLocaleStore, followDshLocale, resolveLocale, translate } from "../src/shared/i18n.js";
+import { expect, test } from "vitest";
+
+test("zh and en resolve from language tags", () => {
+  expect(resolveLocale("zh-CN")).toBe("zh");
+  expect(resolveLocale("en-US")).toBe("en");
+  expect(resolveLocale("")).toBe("en");
+});
+
+test("translate fills placeholders from the active catalog", () => {
+  expect(translate("zh", "linesWorkspace", { count: 12 })).toBe("12 行 · 当前工作区");
+  expect(translate("en", "linesWorkspace", { count: 12 })).toBe("12 lines · workspace");
+  expect(translate("zh", "footerBrand")).toBe("DSH 工作台");
+  expect(translate("en", "footerBrand")).toBe("DSH Workbench");
+});
+
+test("locale store switches catalogs", () => {
+  const i18n = createLocaleStore("en");
+  expect(i18n.t("close")).toBe("Close");
+  i18n.setLocale("zh");
+  expect(i18n.t("close")).toBe("关闭");
+});
+
+test("followDshLocale tracks the DSH locale snapshot", () => {
+  let active = "en";
+  const listeners = new Set();
+  const i18n = createLocaleStore("en");
+  const stop = followDshLocale(i18n, {
+    getLocale: () => ({ active }),
+    subscribe(fn) {
+      listeners.add(fn);
+      return () => listeners.delete(fn);
+    },
+  });
+  expect(i18n.getSnapshot()).toBe("en");
+  active = "zh-CN";
+  for (const listener of listeners) listener();
+  expect(i18n.getSnapshot()).toBe("zh");
+  stop();
+});

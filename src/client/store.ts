@@ -77,6 +77,18 @@ function withActive(open: string[], active: string, rest: Omit<FileState, "open"
   return { ...rest, open, active, path: active, visible: true };
 }
 
+function replaceKey(items: readonly string[], from: string, to: string): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const item of items) {
+    const mapped = item === from ? to : item;
+    if (seen.has(mapped)) continue;
+    seen.add(mapped);
+    result.push(mapped);
+  }
+  return result;
+}
+
 export function createFileStore(load: FileLoader = fetchWorkspaceFile): FileStore {
   let state = empty;
   let requestId = 0;
@@ -106,15 +118,32 @@ export function createFileStore(load: FileLoader = fetchWorkspaceFile): FileStor
     try {
       const payload = payloadForMode(await load(path, mode), mode);
       if (requestId !== id) return;
-      set({ ...withActive(state.open, path, {
+      // Adopt the host-normalized path as the canonical tab key, so an
+      // absolute path clicked in the conversation lands on the same relative
+      // path the workspace tree uses.
+      const canonical = normalizePath(payload.path) || path;
+      const migrated = canonical !== path;
+      const open = migrated ? replaceKey(state.open, path, canonical) : state.open;
+      const preview = migrated && state.preview === path ? canonical : state.preview;
+      const views = { ...state.views };
+      if (migrated && views[path] !== undefined) {
+        views[canonical] = views[path];
+        delete views[path];
+      }
+      views[canonical] = viewKind(payload.source);
+      if (migrated && modes.has(path)) {
+        modes.set(canonical, modes.get(path) as FileOpenMode);
+        modes.delete(path);
+      }
+      set({ ...withActive(open, canonical, {
         loading: false,
-        payload,
+        payload: { ...payload, path: canonical },
         error: "",
         line,
         reveal,
         disk,
-        views: { ...state.views, [path]: viewKind(payload.source) },
-        preview: state.preview,
+        views,
+        preview,
       }), visible: true });
     } catch (error) {
       if (requestId !== id) return;

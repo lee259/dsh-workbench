@@ -1,7 +1,6 @@
-import assert from "node:assert/strict";
-import test from "node:test";
-import { createPathIdentity } from "../lib/host/path-identity.js";
-import { WriteHistory } from "../lib/host/write-history.js";
+import { createPathIdentity } from "../src/host/path-identity.js";
+import { WriteHistory } from "../src/host/write-history.js";
+import { expect, test } from "vitest";
 
 test("consecutive write outputs become the next diff baseline", () => {
   const history = new WriteHistory();
@@ -13,9 +12,9 @@ test("consecutive write outputs become the next diff baseline", () => {
     type: "tool/code-dispatch",
     data: { name: "write", subCallId: "call-2", arguments: { file_path: "./src/a.ts", content: "const a = 2;" } },
   }, "session-1");
-  assert.equal(revision?.before, "const a = 1;");
-  assert.equal(revision?.content, "const a = 2;");
-  assert.equal(revision?.source, "dsh-write");
+  expect(revision?.before).toBe("const a = 1;");
+  expect(revision?.content).toBe("const a = 2;");
+  expect(revision?.source).toBe("dsh-write");
 });
 
 test("start and completion events do not duplicate one write", () => {
@@ -23,7 +22,7 @@ test("start and completion events do not duplicate one write", () => {
   const event = { name: "write", subCallId: "call-1", arguments: { file_path: "x.ts", content: "one" } };
   history.record({ type: "tool/code-dispatch", data: event }, "session-1");
   history.record({ type: "tool/code-dispatch", data: event }, "session-1");
-  assert.equal(history.get("x.ts")?.revision, 1);
+  expect(history.get("x.ts")?.revision).toBe(1);
 });
 
 test("a read result becomes the baseline for the next write", () => {
@@ -41,8 +40,8 @@ test("a read result becomes the baseline for the next write", () => {
     type: "tool/code-dispatch",
     data: { name: "write", subCallId: "write-1", arguments: { file_path: "./x.ts", content: "const x = 2;\n" } },
   }, "session-1");
-  assert.equal(revision?.before, "const x = 1;\n");
-  assert.equal(revision?.source, "dsh-write");
+  expect(revision?.before).toBe("const x = 1;\n");
+  expect(revision?.source).toBe("dsh-write");
 });
 
 test("native tool/call arguments are a JSON string and pair with tool/result", () => {
@@ -55,8 +54,8 @@ test("native tool/call arguments are a JSON string and pair with tool/result", (
     type: "tool/result",
     data: { message: { callId: "c1" } },
   }, "session-1");
-  assert.equal(revision?.content, "one");
-  assert.equal(revision?.source, "dsh-write");
+  expect(revision?.content).toBe("one");
+  expect(revision?.source).toBe("dsh-write");
 });
 
 test("real DSH tool/result pairs via message.content[0].toolCallId", () => {
@@ -78,9 +77,9 @@ test("real DSH tool/result pairs via message.content[0].toolCallId", () => {
       },
     },
   }, "session-1");
-  assert.equal(revision?.source, "dsh-write");
-  assert.equal(revision?.before, "one");
-  assert.equal(revision?.content, "two");
+  expect(revision?.source).toBe("dsh-write");
+  expect(revision?.before).toBe("one");
+  expect(revision?.content).toBe("two");
 });
 
 test("real DSH read output is read from the nested result block", () => {
@@ -102,8 +101,8 @@ test("real DSH read output is read from the nested result block", () => {
       },
     },
   }, "session-1");
-  assert.equal(revision?.source, "dsh-read");
-  assert.equal(revision?.content, "const x = 1;\n");
+  expect(revision?.source).toBe("dsh-read");
+  expect(revision?.content).toBe("const x = 1;\n");
 });
 
 test("tool/result meta.diffs from dsh-tool-fs win over reconstructed edits", () => {
@@ -115,9 +114,9 @@ test("tool/result meta.diffs from dsh-tool-fs win over reconstructed edits", () 
       meta: { diffs: [{ path: "./src/a.ts", oldText: "old", newText: "new" }] },
     },
   }, "session-1");
-  assert.equal(revision?.path, "src/a.ts");
-  assert.equal(revision?.before, "old");
-  assert.equal(revision?.content, "new");
+  expect(revision?.path).toBe("src/a.ts");
+  expect(revision?.before).toBe("old");
+  expect(revision?.content).toBe("new");
 });
 
 test("a native edit without a prior read still records a dsh-write", () => {
@@ -138,9 +137,9 @@ test("a native edit without a prior read still records a dsh-write", () => {
     type: "tool/result",
     data: { message: { callId: "e1" } },
   }, "s");
-  assert.equal(revision?.source, "dsh-write");
-  assert.equal(revision?.before, "const a = 1;");
-  assert.equal(revision?.content, "const a = 2;");
+  expect(revision?.source).toBe("dsh-write");
+  expect(revision?.before).toBe("const a = 1;");
+  expect(revision?.content).toBe("const a = 2;");
 });
 
 test("absolute and workspace-relative paths share one revision", () => {
@@ -165,8 +164,8 @@ test("absolute and workspace-relative paths share one revision", () => {
     type: "tool/result",
     data: { message: { callId: "e1" } },
   }, "s");
-  assert.equal(history.get("src/a.ts")?.source, "dsh-write");
-  assert.equal(history.get("/repo/src/a.ts")?.source, "dsh-write");
+  expect(history.get("src/a.ts")?.source).toBe("dsh-write");
+  expect(history.get("/repo/src/a.ts")?.source).toBe("dsh-write");
 });
 
 test("edit honors replace_all", () => {
@@ -183,7 +182,7 @@ test("edit honors replace_all", () => {
       arguments: { file_path: "a.ts", old_string: "foo", new_string: "bar", replace_all: true },
     },
   }, "s");
-  assert.equal(revision?.content, "bar bar");
+  expect(revision?.content).toBe("bar bar");
 });
 
 test("replay rebuilds revisions from a session log", () => {
@@ -200,9 +199,9 @@ test("replay rebuilds revisions from a session log", () => {
     },
     { type: "tool/result", data: { message: { callId: "e1" } } },
   ], "s");
-  assert.equal(history.get("a.ts")?.source, "dsh-write");
-  assert.equal(history.get("a.ts")?.before, "one");
-  assert.equal(history.get("a.ts")?.content, "two");
+  expect(history.get("a.ts")?.source).toBe("dsh-write");
+  expect(history.get("a.ts")?.before).toBe("one");
+  expect(history.get("a.ts")?.content).toBe("two");
 });
 
 test("replay is idempotent with later live events", () => {
@@ -218,18 +217,18 @@ test("replay is idempotent with later live events", () => {
   history.replay(events, "s");
   history.record(events[0], "s");
   history.record(events[1], "s");
-  assert.equal(history.get("a.ts")?.revision, 1);
-  assert.equal(history.get("a.ts")?.content, "one");
+  expect(history.get("a.ts")?.revision).toBe(1);
+  expect(history.get("a.ts")?.content).toBe("one");
 });
 
 test("failed tool results are ignored", () => {
   const history = new WriteHistory();
-  assert.equal(history.record({
+  expect(history.record({
     type: "tool/code-dispatch",
     data: { name: "write", isError: true, subCallId: "w1", arguments: { file_path: "a.ts", content: "x" } },
-  }, "s"), null);
-  assert.equal(history.record({
+  }, "s")).toBe(null);
+  expect(history.record({
     type: "tool/result",
     data: { error: { name: "ToolError", code: "FAILED" }, message: { callId: "c1" } },
-  }, "s"), null);
+  }, "s")).toBe(null);
 });

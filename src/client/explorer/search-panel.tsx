@@ -20,7 +20,6 @@ function formatBytes(size: number): string {
 }
 
 export function createSearchPanel(React: ReactNs, store: FileStore, i18n: LocaleStore) {
-  const h = React.createElement;
   function SearchPanel({ onClose }: { onClose: () => void }) {
     const t = i18n.t;
     React.useSyncExternalStore(i18n.subscribe, i18n.getSnapshot, i18n.getSnapshot);
@@ -92,53 +91,37 @@ export function createSearchPanel(React: ReactNs, store: FileStore, i18n: Locale
       }
     };
 
-    const renderHit = (hit: SearchHit, index: number) => h("button", {
-      key: hit.path,
-      id: `dsh-wb-search-hit-${index}`,
-      type: "button",
-      role: "option",
-      "aria-selected": index === activeIndex,
-      className: `dsh-wb-search-result${index === activeIndex ? " is-active" : ""}`,
-      onMouseEnter: () => setActiveIndex(index),
-      onClick: () => open(hit.path),
-    },
-      h(FileTypeIcon, { path: hit.name }),
-      h("span", { className: "dsh-wb-search-result-copy" },
-        h("span", { className: "dsh-wb-search-result-name" }, highlightSegments(hit.name, needle).map((segment, segmentIndex) => (
-          segment.match
-            ? h("mark", { key: segmentIndex, className: "dsh-wb-search-mark" }, segment.text)
-            : h("span", { key: segmentIndex }, segment.text)
-        ))),
-        hit.parent ? h("span", { className: "dsh-wb-search-result-parent" }, hit.parent) : null,
-      ),
-      needle && hit.size > 0 ? h("span", { className: "dsh-wb-search-result-size" }, formatBytes(hit.size)) : null,
+    const renderHit = (hit: SearchHit, index: number) => (
+      <button key={hit.path} id={`dsh-wb-search-hit-${index}`} type="button" role="option" aria-selected={index === activeIndex}
+        className={`dsh-wb-search-result${index === activeIndex ? " is-active" : ""}`} onMouseEnter={() => setActiveIndex(index)} onClick={() => open(hit.path)}>
+        <FileTypeIcon path={hit.name} />
+        <span className="dsh-wb-search-result-copy">
+          <span className="dsh-wb-search-result-name">{highlightSegments(hit.name, needle).map((segment, segmentIndex) => (
+            segment.match ? <mark key={segmentIndex} className="dsh-wb-search-mark">{segment.text}</mark> : <span key={segmentIndex}>{segment.text}</span>
+          ))}</span>
+          {hit.parent ? <span className="dsh-wb-search-result-parent">{hit.parent}</span> : null}
+        </span>
+        {needle && hit.size > 0 ? <span className="dsh-wb-search-result-size">{formatBytes(hit.size)}</span> : null}
+      </button>
     );
 
-    return h("section", { className: "dsh-wb-search", "aria-label": t("searchFiles") },
-      h("div", { className: "dsh-wb-search-box" },
-        h(Icon, { name: "search" }),
-        h("input", {
-          ref: inputRef,
-          value: query,
-          type: "search",
-          "aria-label": t("searchFiles"),
-          "aria-controls": "dsh-wb-search-results",
-          "aria-activedescendant": hits[activeIndex] ? `dsh-wb-search-hit-${activeIndex}` : undefined,
-          placeholder: t("searchPlaceholder"),
-          onChange: (event: React.ChangeEvent<HTMLInputElement>) => setQuery(event.target.value),
-          onKeyDown: onSearchKey,
-        }),
-        h("button", { type: "button", className: "dsh-wb-search-close", "aria-label": t("close"), onClick: onClose }, h(Icon, { name: "close" })),
-      ),
-      h("div", { id: "dsh-wb-search-results", className: "dsh-wb-search-results", role: "listbox", "aria-label": t("searchFiles") },
-        !needle && hits.length > 0 ? h("div", { className: "dsh-wb-search-state" }, t("recentFiles")) : null,
-        !needle && hits.length === 0 ? h("div", { className: "dsh-wb-search-state" }, t("searchTypeHint")) : null,
-        needle && loading && hits.length === 0 ? h("div", { className: "dsh-wb-search-state" }, t("searching")) : null,
-        needle && !loading && failed ? h("div", { className: "dsh-wb-search-state" }, t("searchError")) : null,
-        needle && !loading && !failed && hits.length === 0 ? h("div", { className: "dsh-wb-search-state" }, t("searchNoResults")) : null,
-        hits.map(renderHit),
-      ),
-    );
+    return <section className="dsh-wb-search" aria-label={t("searchFiles")}>
+      <div className="dsh-wb-search-box">
+        <Icon name="search" />
+        <input ref={inputRef} value={query} type="search" aria-label={t("searchFiles")} aria-controls="dsh-wb-search-results"
+          aria-activedescendant={hits[activeIndex] ? `dsh-wb-search-hit-${activeIndex}` : undefined} placeholder={t("searchPlaceholder")}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => setQuery(event.target.value)} onKeyDown={onSearchKey} />
+        <button type="button" className="dsh-wb-search-close" aria-label={t("close")} onClick={onClose}><Icon name="close" /></button>
+      </div>
+      <div id="dsh-wb-search-results" className="dsh-wb-search-results" role="listbox" aria-label={t("searchFiles")}>
+        {!needle && hits.length > 0 ? <div className="dsh-wb-search-state">{t("recentFiles")}</div> : null}
+        {!needle && hits.length === 0 ? <div className="dsh-wb-search-state">{t("searchTypeHint")}</div> : null}
+        {needle && loading && hits.length === 0 ? <div className="dsh-wb-search-state">{t("searching")}</div> : null}
+        {needle && !loading && failed ? <div className="dsh-wb-search-state">{t("searchError")}</div> : null}
+        {needle && !loading && !failed && hits.length === 0 ? <div className="dsh-wb-search-state">{t("searchNoResults")}</div> : null}
+        {hits.map(renderHit)}
+      </div>
+    </section>;
   }
   return SearchPanel;
 }

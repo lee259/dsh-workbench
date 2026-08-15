@@ -11,8 +11,17 @@ export function setReactRuntime(value: ReactRuntime): void {
 }
 function getRuntime(): ReactRuntime { if (!runtime) throw new Error("dsh-workbench React runtime is not ready"); return runtime; }
 export const createElement = (...args: any[]) => getRuntime().createElement(...args);
-export const jsx = (...args: any[]) => getRuntime().jsx ? getRuntime().jsx(...args) : getRuntime().createElement(...args);
-export const jsxs = (...args: any[]) => getRuntime().jsxs ? getRuntime().jsxs(...args) : getRuntime().createElement(...args);
+function createJsxElement(type: any, props: any, key: any): any {
+  const current = getRuntime();
+  if (current.jsx) return current.jsx(type, props, key);
+  const { children, ...rest } = props ?? {};
+  const nextProps = key === undefined ? rest : { ...rest, key };
+  if (children === undefined) return current.createElement(type, nextProps);
+  return current.createElement(type, nextProps, ...(Array.isArray(children) ? children : [children]));
+}
+export const jsx = (type: any, props: any, key: any) => createJsxElement(type, props, key);
+export const jsxs = (type: any, props: any, key: any) => createJsxElement(type, props, key);
+export const jsxDEV = (type: any, props: any, key: any) => createJsxElement(type, props, key);
 export const Component = ComponentBase;
 export const PureComponent = PureComponentBase;
 export const cloneElement = (...args: any[]) => getRuntime().cloneElement(...args);

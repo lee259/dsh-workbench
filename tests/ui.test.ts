@@ -1,8 +1,7 @@
-import assert from "node:assert/strict";
-import test from "node:test";
-import { createWorkbenchUi } from "../lib/client/ui.js";
-import { createLocaleStore } from "../lib/shared/i18n.js";
-import { createFileStore } from "../lib/client/store.js";
+import { createWorkbenchUi } from "../src/client/ui.js";
+import { createLocaleStore } from "../src/shared/i18n.js";
+import { createFileStore } from "../src/client/store.js";
+import { expect, test } from "vitest";
 
 const Fragment = Symbol("Fragment");
 const React = {
@@ -106,14 +105,14 @@ test("workbench toggle opens and closes the panel", async () => {
   }));
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const toggle = ui.WorkbenchToggle();
-  assert.equal(toggle.type, "button");
-  assert.equal(toggle.props["aria-label"], "Show sidebar");
+  expect(toggle.type).toBe("button");
+  expect(toggle.props["aria-label"]).toBe("Show sidebar");
   toggle.props.onClick();
-  assert.equal(store.getSnapshot().visible, true);
+  expect(store.getSnapshot().visible).toBe(true);
   const openedToggle = ui.WorkbenchToggle();
-  assert.equal(openedToggle.props["aria-label"], "Hide sidebar");
+  expect(openedToggle.props["aria-label"]).toBe("Hide sidebar");
   openedToggle.props.onClick();
-  assert.equal(store.getSnapshot().visible, false);
+  expect(store.getSnapshot().visible).toBe(false);
 });
 
 test("apply registers the header utility beside Session log", () => {
@@ -127,10 +126,10 @@ test("apply registers the header utility beside Session log", () => {
   }));
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const header = collectSlotRegistrations(ui).find((entry) => entry.slot.name === "conversation.session.header.utilities");
-  assert.ok(header);
-  assert.equal(header.slot.id, "dsh-workbench");
-  assert.equal(header.component, ui.WorkbenchToggle);
-  assert.equal(findElement(ui.WorkbenchRoot(), (node) => node.props?.className === "dsh-wb-toggle"), undefined);
+  expect(header).toBeTruthy();
+  expect(header.slot.id).toBe("dsh-workbench");
+  expect(header.component).toBe(ui.WorkbenchToggle);
+  expect(findElement(ui.WorkbenchRoot(), (node) => node.props?.className === "dsh-wb-toggle")).toBe(undefined);
 });
 
 test("file drawer close button hides the panel", async () => {
@@ -145,10 +144,10 @@ test("file drawer close button hides the panel", async () => {
   await store.open("src/example.ts");
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const close = findElement(ui.FileDrawer(), (node) => node.props?.className?.includes("dsh-wb-close-button"));
-  assert.ok(close);
-  assert.equal(close.props["aria-label"], "Close");
+  expect(close).toBeTruthy();
+  expect(close.props["aria-label"]).toBe("Close");
   close.props.onClick();
-  assert.equal(store.getSnapshot().visible, false);
+  expect(store.getSnapshot().visible).toBe(false);
 });
 
 test("file drawer tabs activate and close individual files", async () => {
@@ -165,16 +164,16 @@ test("file drawer tabs activate and close individual files", async () => {
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const drawer = ui.FileDrawer();
   const tabs = findElements(drawer, (node) => node.props?.role === "tab");
-  assert.equal(tabs.length, 2);
+  expect(tabs.length).toBe(2);
   tabs[0].props.onClick();
   await Promise.resolve();
-  assert.equal(store.getSnapshot().active, "a.ts");
+  expect(store.getSnapshot().active).toBe("a.ts");
 
   const closeButtons = findElements(drawer, (node) => node.props?.className === "dsh-wb-tab-close");
-  assert.equal(closeButtons.length, 2);
+  expect(closeButtons.length).toBe(2);
   closeButtons[0].props.onClick();
-  assert.deepEqual(store.getSnapshot().open, ["b.ts"]);
-  assert.equal(store.getSnapshot().active, "b.ts");
+  expect(store.getSnapshot().open).toEqual(["b.ts"]);
+  expect(store.getSnapshot().active).toBe("b.ts");
 });
 
 test("file drawer tabs distinguish read views from captured diffs", async () => {
@@ -190,11 +189,11 @@ test("file drawer tabs distinguish read views from captured diffs", async () => 
   await store.open("b.ts", "view");
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const tabs = findElements(ui.FileDrawer(), (node) => typeof node.props?.className === "string" && node.props.className.split(/\s+/).includes("dsh-wb-tab"));
-  assert.equal(tabs.length, 2);
-  assert.match(tabs[0].props.className, /\bis-diff\b/);
-  assert.match(tabs[1].props.className, /\bis-view\b/);
-  assert.match(tabs[1].props.className, /\bis-active\b/);
-  assert.match(textContent(tabs[0]), /diff/);
+  expect(tabs.length).toBe(2);
+  expect(tabs[0].props.className).toMatch(/\bis-diff\b/);
+  expect(tabs[1].props.className).toMatch(/\bis-view\b/);
+  expect(tabs[1].props.className).toMatch(/\bis-active\b/);
+  expect(textContent(tabs[0])).toMatch(/diff/);
 });
 
 test("file drawer marks the transient preview tab", async () => {
@@ -210,9 +209,9 @@ test("file drawer marks the transient preview tab", async () => {
   await store.open("b.ts", "view", undefined, false, "preview");
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const tabs = findElements(ui.FileDrawer(), (node) => typeof node.props?.className === "string" && node.props.className.split(/\s+/).includes("dsh-wb-tab"));
-  assert.equal(tabs.length, 2);
-  assert.doesNotMatch(tabs[0].props.className, /\bis-preview\b/);
-  assert.match(tabs[1].props.className, /\bis-preview\b/);
+  expect(tabs.length).toBe(2);
+  expect(tabs[0].props.className).not.toMatch(/\bis-preview\b/);
+  expect(tabs[1].props.className).toMatch(/\bis-preview\b/);
 });
 
 test("file drawer tabs expose active and close states", async () => {
@@ -229,9 +228,9 @@ test("file drawer tabs expose active and close states", async () => {
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const drawer = ui.FileDrawer();
   const tabs = findElements(drawer, (node) => node.props?.role === "tab");
-  assert.deepEqual(tabs.map((node) => node.props["aria-selected"]), [false, true]);
+  expect(tabs.map((node) => node.props["aria-selected"])).toEqual([false, true]);
   const closes = findElements(drawer, (node) => node.props?.className === "dsh-wb-tab-close");
-  assert.deepEqual(closes.map((node) => node.props["aria-label"]), ["Close file: a.ts", "Close file: b.ts"]);
+  expect(closes.map((node) => node.props["aria-label"])).toEqual(["Close file: a.ts", "Close file: b.ts"]);
 });
 
 test("file drawer renders read payloads as workspace views", async () => {
@@ -246,9 +245,9 @@ test("file drawer renders read payloads as workspace views", async () => {
   await store.open("src/example.ts", "view");
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const text = textContent(ui.FileDrawer());
-  assert.match(text, /1 lines · workspace/);
-  assert.match(text, /Read-only · current workspace content/);
-  assert.doesNotMatch(text, /DSH write diff/);
+  expect(text).toMatch(/1 lines · workspace/);
+  expect(text).toMatch(/Read-only · current workspace content/);
+  expect(text).not.toMatch(/DSH write diff/);
 });
 
 test("file drawer renders edit payloads as diffs", async () => {
@@ -263,8 +262,8 @@ test("file drawer renders edit payloads as diffs", async () => {
   await store.open("src/example.ts", "diff");
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const text = textContent(ui.FileDrawer());
-  assert.match(text, /1 lines · DSH write diff/);
-  assert.match(text, /Read-only · from DSH write\/edit output/);
+  expect(text).toMatch(/1 lines · DSH write diff/);
+  expect(text).toMatch(/Read-only · from DSH write\/edit output/);
 });
 
 test("file drawer refreshes the active file", async () => {
@@ -276,11 +275,11 @@ test("file drawer refreshes the active file", async () => {
   await store.open("src/example.ts");
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const refresh = findElement(ui.FileDrawer(), (node) => node.props?.title === "Refresh file");
-  assert.ok(refresh);
+  expect(refresh).toBeTruthy();
   refresh.props.onClick();
   await Promise.resolve();
-  assert.equal(calls, 2);
-  assert.equal(store.getSnapshot().payload?.content, "version-2");
+  expect(calls).toBe(2);
+  expect(store.getSnapshot().payload?.content).toBe("version-2");
 });
 
 test("file drawer copies content and path", async () => {
@@ -304,13 +303,13 @@ test("file drawer copies content and path", async () => {
     const drawer = ui.FileDrawer();
     const copyContent = findElement(drawer, (node) => node.props?.title === "Copy");
     const copyPath = findElement(drawer, (node) => node.props?.className === "dsh-wb-path");
-    assert.ok(copyContent);
-    assert.ok(copyPath);
+    expect(copyContent).toBeTruthy();
+    expect(copyPath).toBeTruthy();
     copyContent.props.onClick();
     copyPath.props.onClick();
     await Promise.resolve();
     await Promise.resolve();
-    assert.deepEqual(copied, ["const value = 1;", "src/example.ts"]);
+    expect(copied).toEqual(["const value = 1;", "src/example.ts"]);
   } finally {
     Object.defineProperty(globalThis, "navigator", { configurable: true, value: originalNavigator });
     Object.defineProperty(globalThis, "window", { configurable: true, value: originalWindow });
@@ -342,11 +341,11 @@ test("file drawer resize handle supports keyboard steps and reset", async () => 
   await store.open("src/example.ts");
   const ui = createWorkbenchUi(TrackedReact, store, createLocaleStore("en"));
   const separator = findElement(ui.FileDrawer(), (node) => node.props?.role === "separator");
-  assert.ok(separator);
+  expect(separator).toBeTruthy();
   separator.props.onKeyDown({ key: "ArrowLeft", preventDefault() {} });
-  assert.equal(width, 616);
+  expect(width).toBe(616);
   separator.props.onDoubleClick();
-  assert.equal(width, 600);
+  expect(width).toBe(600);
 });
 
 test("file drawer shows a read error without stale content", async () => {
@@ -356,8 +355,8 @@ test("file drawer shows a read error without stale content", async () => {
   await store.open("missing.ts");
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const text = textContent(ui.FileDrawer());
-  assert.match(text, /Failed to read/);
-  assert.doesNotMatch(text, /missing content/);
+  expect(text).toMatch(/Failed to read/);
+  expect(text).not.toMatch(/missing content/);
 });
 
 test("file drawer shows a loading state while reading", async () => {
@@ -369,10 +368,10 @@ test("file drawer shows a loading state while reading", async () => {
   });
   const opening = store.open("slow.ts");
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
-  assert.match(textContent(ui.FileDrawer()), /Reading…/);
+  expect(textContent(ui.FileDrawer())).toMatch(/Reading…/);
   finish();
   await opening;
-  assert.match(textContent(ui.FileDrawer()), /1 lines · workspace/);
+  expect(textContent(ui.FileDrawer())).toMatch(/1 lines · workspace/);
 });
 
 test("workbench controls follow the active locale", async () => {
@@ -387,11 +386,11 @@ test("workbench controls follow the active locale", async () => {
   const locale = createLocaleStore("zh");
   const ui = createWorkbenchUi(React, store, locale);
   const toggle = ui.WorkbenchToggle();
-  assert.equal(toggle.props["aria-label"], "显示侧边栏");
+  expect(toggle.props["aria-label"]).toBe("显示侧边栏");
   await store.open("src/example.ts");
   const close = findElement(ui.FileDrawer(), (node) => node.props?.className?.includes("dsh-wb-close-button"));
-  assert.ok(close);
-  assert.equal(close.props["aria-label"], "关闭");
+  expect(close).toBeTruthy();
+  expect(close.props["aria-label"]).toBe("关闭");
 });
 
 test("workbench controls expose accurate accessibility state", async () => {
@@ -405,15 +404,15 @@ test("workbench controls expose accurate accessibility state", async () => {
   }));
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const toggle = ui.WorkbenchToggle();
-  assert.equal(toggle.props["aria-expanded"], false);
-  assert.equal(toggle.props["data-open"], "false");
-  assert.match(toggle.props.title, /Shortcut/);
+  expect(toggle.props["aria-expanded"]).toBe(false);
+  expect(toggle.props["data-open"]).toBe("false");
+  expect(toggle.props.title).toMatch(/Shortcut/);
   await store.open("src/example.ts");
   const separator = findElement(ui.FileDrawer(), (node) => node.props?.role === "separator");
-  assert.ok(separator);
-  assert.equal(separator.props["aria-valuemin"], 520);
-  assert.equal(separator.props["aria-valuemax"], 900);
-  assert.equal(separator.props["aria-valuenow"], 600);
+  expect(separator).toBeTruthy();
+  expect(separator.props["aria-valuemin"]).toBe(520);
+  expect(separator.props["aria-valuemax"]).toBe(900);
+  expect(separator.props["aria-valuenow"]).toBe(600);
 });
 
 test("file drawer plus button and breadcrumbs are wired", async () => {
@@ -429,23 +428,23 @@ test("file drawer plus button and breadcrumbs are wired", async () => {
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const drawer = ui.FileDrawer();
   const add = findElement(drawer, (node) => node.props?.className === "dsh-wb-tabbar-add");
-  assert.ok(add);
-  assert.equal(typeof add.props.onClick, "function");
+  expect(add).toBeTruthy();
+  expect(typeof add.props.onClick).toBe("function");
   add.props.onClick();
   const decorative = findElement(drawer, (node) => node.props?.className === "dsh-wb-tabbar-active");
-  assert.equal(decorative, undefined);
+  expect(decorative).toBe(undefined);
   const segments = findElements(drawer, (node) => node.props?.className?.includes("dsh-wb-path-segment"));
-  assert.ok(segments.length >= 3);
-  assert.ok(segments.every((node) => typeof node.props.onClick === "function"));
+  expect(segments.length >= 3).toBeTruthy();
+  expect(segments.every((node) => typeof node.props.onClick === "function")).toBeTruthy();
   const treeToggle = findElement(drawer, (node) => node.props?.["aria-label"] === "Hide file tree");
-  assert.ok(treeToggle);
-  assert.equal(treeToggle.props["aria-pressed"], true);
+  expect(treeToggle).toBeTruthy();
+  expect(treeToggle.props["aria-pressed"]).toBe(true);
   const panel = findElement(drawer, (node) => typeof node.props?.onResize === "function");
-  assert.ok(panel);
+  expect(panel).toBeTruthy();
   const tree = panel.type(panel.props);
-  assert.equal(findElement(tree, (node) => node.props?.["aria-label"] === "Hide file tree"), undefined);
-  assert.ok(findElement(tree, (node) => node.props?.["aria-label"] === "Collapse folders"));
-  assert.equal(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree-rail"), undefined);
+  expect(findElement(tree, (node) => node.props?.["aria-label"] === "Hide file tree")).toBe(undefined);
+  expect(findElement(tree, (node) => node.props?.["aria-label"] === "Collapse folders")).toBeTruthy();
+  expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree-rail")).toBe(undefined);
 });
 
 test("file drawer shows the workspace tree by default", () => {
@@ -460,9 +459,9 @@ test("file drawer shows the workspace tree by default", () => {
   store.show();
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const drawer = ui.FileDrawer();
-  assert.ok(findElement(drawer, (node) => typeof node.props?.onResize === "function"));
-  assert.ok(findElement(drawer, (node) => node.props?.["aria-label"] === "Hide file tree"));
-  assert.equal(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree-rail"), undefined);
+  expect(findElement(drawer, (node) => typeof node.props?.onResize === "function")).toBeTruthy();
+  expect(findElement(drawer, (node) => node.props?.["aria-label"] === "Hide file tree")).toBeTruthy();
+  expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree-rail")).toBe(undefined);
 });
 
 test("file actions expose accessible labels", async () => {
@@ -477,12 +476,12 @@ test("file actions expose accessible labels", async () => {
   await store.open("src/example.ts");
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const buttons = findElements(ui.FileDrawer(), (node) => node.type === "button");
-  assert.ok(buttons.some((node) => node.props["aria-label"] === "Refresh file"));
-  assert.ok(buttons.some((node) => node.props["aria-label"] === "Copy"));
-  assert.ok(buttons.some((node) => node.props["aria-label"] === "Close"));
+  expect(buttons.some((node) => node.props["aria-label"] === "Refresh file")).toBeTruthy();
+  expect(buttons.some((node) => node.props["aria-label"] === "Copy")).toBeTruthy();
+  expect(buttons.some((node) => node.props["aria-label"] === "Close")).toBeTruthy();
   const pathButton = findElement(ui.FileDrawer(), (node) => node.props?.className === "dsh-wb-path");
-  assert.ok(pathButton);
-  assert.equal(pathButton.props["aria-label"], "Copy file path");
+  expect(pathButton).toBeTruthy();
+  expect(pathButton.props["aria-label"]).toBe("Copy file path");
 });
 
 test("real read tool row opens a view", async () => {
@@ -492,11 +491,11 @@ test("real read tool row opens a view", async () => {
     return { path, content: "const value = 1;", before: null, source: "workspace", revision: 0, size: 16 };
   });
   const button = findElement(toolRow("read", store), (node) => node.type === "button");
-  assert.ok(button);
+  expect(button).toBeTruthy();
   button.props.onClick({ preventDefault() {}, stopPropagation() {} });
   await Promise.resolve();
-  assert.deepEqual(modes, ["view"]);
-  assert.equal(store.getSnapshot().payload?.source, "workspace");
+  expect(modes).toEqual(["view"]);
+  expect(store.getSnapshot().payload?.source).toBe("workspace");
 });
 
 test("real edit tool row opens a diff", async () => {
@@ -506,9 +505,9 @@ test("real edit tool row opens a diff", async () => {
     return { path, content: "const value = 2;", before: "const value = 1;", source: "dsh-write", revision: 1, size: 16 };
   });
   const button = findElement(toolRow("edit", store), (node) => node.type === "button");
-  assert.ok(button);
+  expect(button).toBeTruthy();
   button.props.onClick({ preventDefault() {}, stopPropagation() {} });
   await Promise.resolve();
-  assert.deepEqual(modes, ["diff"]);
-  assert.equal(store.getSnapshot().payload?.source, "dsh-write");
+  expect(modes).toEqual(["diff"]);
+  expect(store.getSnapshot().payload?.source).toBe("dsh-write");
 });
