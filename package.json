@@ -92,7 +92,7 @@
     "@types/react-dom": "^18.3.0",
     "react": "^18.2.0",
     "tsdown": "^0.22.14",
-    "typescript": "^5.0.0",
+    "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   },
   "dependencies": {
