@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2 - 2026-08-15
+
+### Fixes
+
+- Start the workspace file watcher only when a client subscribes to change events, so `pnpm test` can exit on Linux CI.
+
 ## 0.3.1 - 2026-08-15
 
 ### Features
