@@ -1,6 +1,5 @@
 import { filePathFromBlock } from "../capture/tool-path.js";
 import { useWorkbenchServices } from "../workbench/runtime.js";
-import { WorkbenchStyles } from "../workbench/styles.js";
 
 function toolLabelKey(name: string) {
   if (name === "read" || name.endsWith("/read")) return "toolRead" as const;
@@ -21,7 +20,6 @@ export function FileToolRow({ toolName, block }: { toolName: string; block?: unk
     const status = failed ? t("statusError") : settled ? t("statusDone") : t("statusRunning");
     return (
       <div className="dsh-wb-tool-row" data-tool={toolName}>
-        <WorkbenchStyles />
         <span className="dsh-wb-tool-name">{t(toolLabelKey(toolName))}</span>
         <span className="dsh-wb-tool-sep">·</span>
         {filePath ? (

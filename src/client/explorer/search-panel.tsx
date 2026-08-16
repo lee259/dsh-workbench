@@ -141,6 +141,7 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
             type="button"
             className="dsh-wb-search-close"
             aria-label={t("close")}
+            data-dsh-wb-tooltip={t("close")}
             onClick={onClose}
           >
             <Icon name="close" />

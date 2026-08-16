@@ -42,9 +42,8 @@
 }
 
 .dsh-wb-tool-path:focus-visible {
-  outline: 0;
   border-radius: 3px;
-  background: var(--dsw-alias-state-business-tertiary);
+  background: var(--dsh-wb-button-hover-fill);
   text-decoration: underline var(--dsw-alias-state-business-primary);
   text-underline-offset: 3px;
 }

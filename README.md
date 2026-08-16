@@ -21,7 +21,7 @@ write/edit → captured DSH diff
 - See real DSH write/edit changes, with the captured before/after content.
 - Read files as source. Diffs come from captured DSH writes, not a Git `HEAD`.
 - Open several files, switch tabs, copy paths, and resize the panel. A tree or Quick Open click previews; double-click pins. Conversation writes open a kept tab.
-- Shortcuts: `⌥⌘B` toggle, `⌘⇧E` tree / review, `⌘P` open file, tree search to locate without opening, `⌘F` / `⌘L` find or jump, `⌘W` close, `⌘1`–`⌘9` switch tabs. Drag or right-click to insert a path.
+- Shortcuts: `⌥⌘B` toggle, `⌘⇧E` hide or show the file pane, `⌘P` open file, tree search to locate without opening, `⌘F` / `⌘L` find or jump, `⌘W` close, `⌘1`–`⌘9` switch tabs. Drag or right-click to insert a path.
 - Review lists captured writes with `+/−`.
 - UI follows the DSH language setting.
 
@@ -81,6 +81,7 @@ pnpm start -- /absolute/path/to/your/project
 - Host: `name`, `inject`, `apply(ctx)` from `src/index.ts`
 - Client: `dsh.client`, `exports["./client"]`, `window.__ModuleLoader__.load`
 - Styles: `src/client/styles.css`
+- Third-party React components: use the React runtime injected by DSH. Components that statically import `react-dom`, need unbridged React APIs, or inject global CSS need an adapter; see `src/client/react-bridge.ts` and `tsdown.config.ts`.
 - UI strings: `src/shared/i18n.ts`
 
 ## Roadmap

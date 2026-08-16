@@ -98,6 +98,8 @@ export function WorkspaceTreePanel({
     const [contextMenu, setContextMenu] = useState<{ path: string; x: number; y: number } | null>(null);
     const listRef = useRef<HTMLDivElement | null>(null);
     const searchRef = useRef<HTMLInputElement | null>(null);
+    const contextMenuRef = useRef<HTMLDivElement | null>(null);
+    const contextMenuTriggerRef = useRef<HTMLElement | null>(null);
     const normalizedQuery = query.trim();
     const rows = flattenVisibleRows(tree, open);
     const hits = treeSearchHits(tree, normalizedQuery);
@@ -131,17 +133,24 @@ export function WorkspaceTreePanel({
       }
     };
 
+    const closeContextMenu = () => {
+      setContextMenu(null);
+      const trigger = contextMenuTriggerRef.current;
+      contextMenuTriggerRef.current = null;
+      if (trigger) window.requestAnimationFrame(() => trigger.focus());
+    };
+
     const locate = (path: string) => {
       expandTo(path);
       setLocatePath(path);
       setQuery("");
       setHitIndex(0);
-      setContextMenu(null);
+      closeContextMenu();
     };
 
     const openFromTree = (path: string, kind: "preview" | "keep" = "preview") => {
       void store.open(path, openMode === "diff" ? "diff" : treeFileOpenMode(), undefined, false, kind);
-      setContextMenu(null);
+      closeContextMenu();
     };
 
     useEffect(() => {
@@ -149,9 +158,9 @@ export function WorkspaceTreePanel({
     }, [fileState.visible, fileState.disk, refreshTree]);
 
     useEffect(() => {
-      const target = locatePath || revealPath || pendingReveal || fileState.active;
+      const target = locatePath || revealPath || pendingReveal;
       if (target) expandTo(target);
-    }, [locatePath, revealPath, pendingReveal, fileState.active, expandTo]);
+    }, [locatePath, revealPath, pendingReveal, expandTo]);
 
     useEffect(() => {
       const target = locatePath || revealPath;
@@ -177,10 +186,16 @@ export function WorkspaceTreePanel({
     }, [pendingReveal]);
 
     useEffect(() => {
-      const close = () => setContextMenu(null);
+      const close = () => closeContextMenu();
       window.addEventListener("click", close);
       return () => window.removeEventListener("click", close);
     }, []);
+
+    useEffect(() => {
+      if (!contextMenu) return undefined;
+      const frame = window.requestAnimationFrame(() => contextMenuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus());
+      return () => window.cancelAnimationFrame(frame);
+    }, [contextMenu]);
 
     useEffect(() => {
       if (!commandsRef) return;
@@ -188,7 +203,7 @@ export function WorkspaceTreePanel({
         consumeEscape() {
           const layer = consumeTreeEscape({ menu: contextMenu != null, query });
           if (layer === "menu") {
-            setContextMenu(null);
+            closeContextMenu();
             return true;
           }
           if (layer === "query") {
@@ -233,6 +248,7 @@ export function WorkspaceTreePanel({
     const showContextMenu = (event: MouseEvent, path: string) => {
       event.preventDefault();
       event.stopPropagation();
+      contextMenuTriggerRef.current = event.currentTarget as HTMLElement;
       setContextMenu({ path, x: Math.min(event.clientX, Math.max(8, window.innerWidth - 178)), y: Math.min(event.clientY, Math.max(8, window.innerHeight - 98)) });
     };
 
@@ -376,7 +392,7 @@ export function WorkspaceTreePanel({
                 }}
               />
               {normalizedQuery ? (
-                <button type="button" className="dsh-wb-tree-search-clear" aria-label={t("clearSearch")} onClick={() => setQuery("")}>
+                <button type="button" className="dsh-wb-tree-search-clear" aria-label={t("clearSearch")} data-dsh-wb-tooltip={t("clearSearch")} onClick={() => setQuery("")}>
                   <Icon name="close" />
                 </button>
               ) : null}
@@ -428,15 +444,30 @@ export function WorkspaceTreePanel({
               role="menu"
               aria-label={t("fileMenu")}
               style={{ left: contextMenu.x, top: contextMenu.y }}
+              ref={contextMenuRef}
               onClick={(event: MouseEvent) => event.stopPropagation()}
+              onKeyDown={(event: KeyboardEvent) => {
+                const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]'));
+                const index = items.indexOf(document.activeElement as HTMLElement);
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  closeContextMenu();
+                  return;
+                }
+                if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                  event.preventDefault();
+                  const offset = event.key === "ArrowDown" ? 1 : -1;
+                  items[(index + offset + items.length) % items.length]?.focus();
+                }
+              }}
             >
               <button type="button" role="menuitem" onClick={() => menuIsDirectory ? locate(menuPath) : openFromTree(menuPath, "keep")}>
                 {t(menuIsDirectory ? "revealInTree" : "openFileAction")}
               </button>
-              <button type="button" role="menuitem" onClick={() => { insertDraftText(document, menuPath); setContextMenu(null); }}>
+              <button type="button" role="menuitem" onClick={() => { insertDraftText(document, menuPath); closeContextMenu(); }}>
                 {t("insertPathAction")}
               </button>
-              <button type="button" role="menuitem" onClick={() => { if (navigator.clipboard) void navigator.clipboard.writeText(menuPath); setContextMenu(null); }}>
+              <button type="button" role="menuitem" onClick={() => { if (navigator.clipboard) void navigator.clipboard.writeText(menuPath); closeContextMenu(); }}>
                 {t("copyPathAction")}
               </button>
             </div>

@@ -1,5 +1,5 @@
 import { createElement } from "react";
-import { Check, ChevronRight, Copy, FilePlus2, FileText, Folder, FolderOpen, GitCommitHorizontal, PanelRight, Search, X, type IconNode } from "lucide";
+import { Check, ChevronRight, Copy, FilePlus2, FileText, Folder, FolderOpen, GitCommitHorizontal, PanelRightClose, PanelRightOpen, Search, X, type IconNode } from "lucide";
 
 function renderIcon(icon: IconNode, className: string, size: number, strokeWidth: number) {
   return createElement(
@@ -20,7 +20,7 @@ function renderIcon(icon: IconNode, className: string, size: number, strokeWidth
   );
 }
 
-export type WorkbenchIconName = "search" | "copy" | "check" | "close" | "folder" | "panel" | "commit";
+export type WorkbenchIconName = "search" | "copy" | "check" | "close" | "folder" | "panel" | "panel-open" | "panel-closed" | "commit";
 
 const ICONS: Record<WorkbenchIconName, IconNode> = {
   search: Search,
@@ -28,7 +28,9 @@ const ICONS: Record<WorkbenchIconName, IconNode> = {
   check: Check,
   close: X,
   folder: Folder,
-  panel: PanelRight,
+  panel: PanelRightOpen,
+  "panel-open": PanelRightOpen,
+  "panel-closed": PanelRightClose,
   commit: GitCommitHorizontal,
 };
 

@@ -30,6 +30,8 @@ src/
 │   ├── workspace-events.ts  # 磁盘变更 SSE
 │   ├── styles.css           # 样式源文件
 │   ├── styles.generated.ts  # 自动生成（由 embed-css.mjs 从 styles.css 生成）
+│   ├── styles/tokens.css    # 工作台语义 token → DSH host token 映射
+│   ├── styles/controls.css  # 共用按钮与焦点状态
 │   ├── chrome/              # 侧栏宽度、快捷键、tab 集合、图标
 │   ├── explorer/            # 文件树 / Quick Open / 路径插入
 │   ├── preview/             # CodeMirror 预览、diff、跳行

@@ -46,6 +46,11 @@
   font-size: 12px;
 }
 
+.dsh-wb-search-box input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 .dsh-wb-search-close {
   display: grid;
   width: 24px;
@@ -93,8 +98,11 @@
 
 .dsh-wb-search-result:hover,
 .dsh-wb-search-result:focus-visible {
-  outline: 0;
-  background: var(--dsw-specific-sidebar-nav-item-active);
+  background: var(--dsh-wb-nav-item-hover-fill);
+}
+
+.dsh-wb-search-result.is-active {
+  background: var(--dsh-wb-nav-item-active-fill);
 }
 
 .dsh-wb-search-result-glyph {
@@ -166,21 +174,21 @@
   padding: 0 10px;
   border: 1px solid var(--dsw-alias-border-l2);
   border-radius: 8px;
-  color: var(--dsw-alias-label-primary);
+  color: var(--dsh-wb-button-hover-label);
   background: var(--dsw-alias-button-elevated-fill);
   cursor: pointer;
   transition: color 120ms ease-out, background-color 120ms ease-out, border-color 120ms ease-out;
 }
 
 .dsh-wb-toggle:hover {
-  color: var(--dsw-alias-label-primary);
-  background: var(--dsw-alias-button-floating-hover);
+  color: var(--dsh-wb-button-hover-label);
+  background: var(--dsh-wb-button-hover-fill);
 }
 
 .dsh-wb-toggle[data-open="true"] {
-  color: var(--dsw-alias-label-primary);
-  background: var(--dsw-alias-button-ghost-active-fill);
-  box-shadow: inset 0 0 0 1px var(--dsw-alias-button-ghost-active-border);
+  color: var(--dsh-wb-button-hover-label);
+  background: var(--dsh-wb-button-active-fill);
+  box-shadow: inset 0 0 0 1px var(--dsh-wb-button-active-border);
 }
 
 .dsh-wb-toggle.is-review {
@@ -211,4 +219,3 @@
 .dsh-wb-toggle-counts b {
   font-weight: 500;
 }
-

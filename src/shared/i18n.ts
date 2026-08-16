@@ -42,6 +42,9 @@ export type MessageKey =
   | "treeFilter"
   | "treeFilterPlaceholder"
   | "clearSearch"
+  | "showTree"
+  | "hideTree"
+  | "viewOptions"
   | "treeNoMatches"
   | "treeMatchCount"
   | "treeEmpty"
@@ -111,6 +114,9 @@ const zh: Record<MessageKey, string> = {
   treeFilter: "在文件树中定位",
   treeFilterPlaceholder: "筛选并定位到文件…",
   clearSearch: "清除搜索",
+  showTree: "显示文件栏",
+  hideTree: "隐藏文件栏",
+  viewOptions: "视图选项",
   treeNoMatches: "没有匹配的文件",
   treeMatchCount: "{count} 个匹配",
   treeEmpty: "工作区是空的",
@@ -181,6 +187,9 @@ const en: Record<MessageKey, string> = {
   treeFilter: "Locate in file tree",
   treeFilterPlaceholder: "Filter and locate a file…",
   clearSearch: "Clear search",
+  showTree: "Show file pane",
+  hideTree: "Hide file pane",
+  viewOptions: "View options",
   treeNoMatches: "No matching files",
   treeMatchCount: "{count} matches",
   treeEmpty: "Workspace is empty",

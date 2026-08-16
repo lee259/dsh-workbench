@@ -1,0 +1,19 @@
+/* Workbench semantic tokens. Map local roles to the host design system here. */
+
+:where(.dsh-wb-sidebar, .dsh-wb-toggle, .dsh-wb-tool-row, .dsh-wb-tooltip) {
+  --dsh-wb-button-fill: transparent;
+  --dsh-wb-button-hover-fill: var(--dsw-alias-interactive-bg-hover-solid);
+  --dsh-wb-field-fill: var(--dsw-alias-interactive-bg-hover-solid);
+  --dsh-wb-button-active-fill: var(--dsw-alias-button-ghost-active-fill);
+  --dsh-wb-button-active-border: var(--dsw-alias-button-ghost-active-border);
+  --dsh-wb-button-label: var(--dsw-alias-label-secondary);
+  --dsh-wb-button-hover-label: var(--dsw-alias-label-primary);
+  --dsh-wb-nav-item-hover-fill: var(--dsw-specific-sidebar-nav-item-hover);
+  --dsh-wb-nav-item-active-fill: var(--dsw-specific-sidebar-nav-item-active);
+  --dsh-wb-focus-ring: var(--dsw-alias-state-business-primary);
+  --dsh-wb-motion-fast: 120ms ease-out;
+  --dsh-wb-tooltip-fill: #000;
+  --dsh-wb-tooltip-label: #fff;
+  --dsh-wb-tooltip-border: var(--dsw-alias-border-inverted);
+  --dsh-wb-tooltip-shadow: var(--dsw-shadow-lv3);
+}

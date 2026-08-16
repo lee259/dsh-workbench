@@ -386,9 +386,9 @@ test("workbench controls expose accurate accessibility state", async () => {
   const toggle = findElement(ui.WorkbenchToggle(), (node) => node.type === "button");
   expect(toggle.props["aria-expanded"]).toBe(false);
   expect(toggle.props["data-open"]).toBe("false");
-  expect(toggle.props.title).toMatch(/Shortcut/);
-  expect(toggle.props.children[1].type).toBe("span");
-  expect(toggle.props.children[2].props.name).toBe("panel");
+  expect(toggle.props["data-dsh-wb-tooltip"]).toMatch(/Shortcut/);
+  expect(toggle.props.children[0].type).toBe("span");
+  expect(toggle.props.children[1].props.name).toBe("panel");
   await store.open("src/example.ts");
   const separator = findElement(ui.FileDrawer(), (node) => node.props?.role === "separator");
   expect(separator).toBeTruthy();
@@ -421,9 +421,9 @@ test("file drawer plus button and breadcrumbs are wired", async () => {
   expect(findElement(drawer, (node) => node.props?.["aria-label"] === "Hide file tree")).toBe(undefined);
   expect(findElement(drawer, (node) => node.props?.["aria-label"] === "Show review")).toBeTruthy();
   expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree")).toBeTruthy();
-  const rails = findElements(drawer, (node) => node.props?.className === "dsh-wb-rail");
+  const rails = findElements(drawer, (node) => node.props?.className?.startsWith("dsh-wb-rail"));
   expect(rails).toHaveLength(2);
-  expect(rails.filter((node) => node.props.hidden)).toHaveLength(1);
+  expect(rails.filter((node) => node.props["aria-hidden"])).toHaveLength(1);
   expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-review")).toBeTruthy();
 });
 

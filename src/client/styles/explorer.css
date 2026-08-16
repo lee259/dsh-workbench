@@ -1,4 +1,5 @@
 .dsh-wb-main {
+  position: relative;
   display: flex;
   min-height: 0;
   flex: 1;
@@ -10,11 +11,32 @@
 }
 
 .dsh-wb-rail {
-  display: contents;
+  display: flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  overflow: hidden;
+  transition: width 180ms ease-out;
 }
 
-.dsh-wb-rail[hidden] {
+.dsh-wb-rail.is-inactive {
   display: none;
+}
+
+.dsh-wb-rail.is-closed {
+  pointer-events: none;
+}
+
+.dsh-wb-rail.is-closed > * {
+  transform: translateX(100%);
+}
+
+.dsh-wb-rail.is-open > * {
+  transform: translateX(0);
+}
+
+.dsh-wb-rail.is-closed > *,
+.dsh-wb-rail.is-open > * {
+  transition: transform 180ms ease-out;
 }
 
 .dsh-wb-tree {
@@ -34,10 +56,17 @@
   cursor: col-resize;
 }
 
-.dsh-wb-tree-resize:hover,
 .dsh-wb-tree-resize:focus-visible {
-  background: var(--dsw-alias-interactive-bg-hover-accent);
-  outline: 0;
+  outline: 2px solid var(--dsh-wb-focus-ring);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dsh-wb-rail,
+  .dsh-wb-rail.is-closed > *,
+  .dsh-wb-rail.is-open > * {
+    transition: none;
+  }
 }
 
 .dsh-wb-tree-head {
@@ -58,7 +87,7 @@
   border: 1px solid transparent;
   border-radius: 4px;
   color: var(--dsw-alias-label-tertiary);
-  background: var(--dsw-alias-interactive-bg-hover-solid);
+  background: var(--dsh-wb-field-fill);
   transition: border-color 120ms ease-out, background-color 120ms ease-out;
 }
 
@@ -118,8 +147,11 @@
 .dsh-wb-tree-hit:hover,
 .dsh-wb-tree-hit.is-active,
 .dsh-wb-search-result.is-active {
-  outline: 0;
-  background: var(--dsw-specific-sidebar-nav-item-active);
+  background: var(--dsh-wb-nav-item-active-fill);
+}
+
+.dsh-wb-tree-hit:hover {
+  background: var(--dsh-wb-nav-item-hover-fill);
 }
 
 .dsh-wb-tree-list {
@@ -161,8 +193,7 @@
 
 .dsh-wb-context-menu button:hover,
 .dsh-wb-context-menu button:focus-visible {
-  outline: 0;
-  background: var(--dsw-alias-interactive-bg-hover);
+  background: var(--dsh-wb-button-hover-fill);
 }
 
 .dsh-wb-tree-row {
@@ -187,16 +218,15 @@
 
 .dsh-wb-tree-row:hover,
 .dsh-wb-tree-row.is-focused:not(.is-selected) {
-  background: var(--dsw-specific-sidebar-nav-item-hover);
+  background: var(--dsh-wb-nav-item-hover-fill);
 }
 
 .dsh-wb-tree-row.is-selected {
-  background: var(--dsw-specific-sidebar-nav-item-active);
+  background: var(--dsh-wb-nav-item-active-fill);
 }
 
 .dsh-wb-tree-row:focus-visible {
-  outline: 2px solid var(--dsw-alias-state-business-primary);
-  outline-offset: -2px;
+  outline-color: var(--dsh-wb-focus-ring);
 }
 
 .dsh-wb-tree-chevron {
@@ -259,4 +289,3 @@
 .dsh-wb-empty-icon-svg {
   color: var(--dsw-alias-label-tertiary);
 }
-

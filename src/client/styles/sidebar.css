@@ -33,7 +33,7 @@ body.dsh-wb-sidebar-transition {
 }
 
 body.dsh-wb-sidebar-open {
-  margin-right: var(--dsh-wb-sidebar-width, 520px);
+  margin-right: min(var(--dsh-wb-sidebar-width, 520px), 100vw);
 }
 
 .dsh-wb-resize-handle {
@@ -43,13 +43,8 @@ body.dsh-wb-sidebar-open {
   bottom: 0;
   left: -4px;
   width: 8px;
+  background: transparent;
   cursor: col-resize;
-}
-
-.dsh-wb-resize-handle:hover,
-.dsh-wb-resize-handle:active {
-  background: var(--dsw-alias-state-business-primary);
-  opacity: 0.35;
 }
 
 .dsh-wb-resize-handle:focus-visible {

@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import { useEffect, useRef, type ComponentType } from "react";
 import type { FileState } from "../store.js";
 import { EmptyFileIcon } from "../chrome/icons.js";
 import type { PreviewCommands } from "../preview/preview-nav.js";
@@ -28,6 +28,7 @@ export function WorkbenchBody({
     state,
     sessionId,
     diffMode,
+    treeVisible,
     treeWidth,
     revealPath,
     treeCommands,
@@ -42,6 +43,7 @@ export function WorkbenchBody({
     state: FileState;
     sessionId: string;
     diffMode: boolean;
+    treeVisible: boolean;
     treeWidth: number;
     revealPath: string;
     treeCommands: { current: TreeCommands | null };
@@ -55,6 +57,18 @@ export function WorkbenchBody({
   }) {
     const { store, i18n } = useWorkbenchServices();
     const t = i18n.t;
+    const reviewVisible = treeVisible && diffMode;
+    const treeVisibleNow = treeVisible && !diffMode;
+    const reviewRailRef = useRef<HTMLDivElement | null>(null);
+    const treeRailRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+      reviewRailRef.current?.toggleAttribute("inert", !reviewVisible);
+    }, [reviewVisible]);
+
+    useEffect(() => {
+      treeRailRef.current?.toggleAttribute("inert", !treeVisibleNow);
+    }, [treeVisibleNow]);
     return (
       <>
         <div className="dsh-wb-main">
@@ -69,10 +83,20 @@ export function WorkbenchBody({
               </div>
             )}
           </main>
-          <div className="dsh-wb-rail" hidden={!diffMode}>
+          <div
+            ref={reviewRailRef}
+            className={`dsh-wb-rail ${diffMode ? (treeVisible ? "is-open" : "is-closed") : "is-inactive"}`}
+            aria-hidden={!reviewVisible}
+            style={{ width: treeVisible ? treeWidth : 0 }}
+          >
             <ReviewRail store={store} sessionId={sessionId} width={treeWidth} onResize={resizeTree} />
           </div>
-          <div className="dsh-wb-rail" hidden={diffMode}>
+          <div
+            ref={treeRailRef}
+            className={`dsh-wb-rail ${!diffMode ? (treeVisible ? "is-open" : "is-closed") : "is-inactive"}`}
+            aria-hidden={!treeVisibleNow}
+            style={{ width: treeVisible ? treeWidth : 0 }}
+          >
             <WorkspaceTreePanel width={treeWidth} revealPath={revealPath} commandsRef={treeCommands} onResize={resizeTree} />
           </div>
         </div>

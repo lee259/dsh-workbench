@@ -70,16 +70,15 @@
 }
 
 .dsh-wb-review-item:hover {
-  background: var(--dsw-specific-sidebar-nav-item-hover);
+  background: var(--dsh-wb-nav-item-hover-fill);
 }
 
 .dsh-wb-review-item.is-active {
-  background: var(--dsw-specific-sidebar-nav-item-active);
+  background: var(--dsh-wb-nav-item-active-fill);
 }
 
 .dsh-wb-review-item:focus-visible {
-  outline: 2px solid var(--dsw-alias-state-business-primary);
-  outline-offset: -2px;
+  outline-color: var(--dsh-wb-focus-ring);
 }
 
 .dsh-wb-review-path {

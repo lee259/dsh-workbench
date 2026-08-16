@@ -4,6 +4,8 @@ import { createFileStore } from "./store.js";
 import { createWorkbenchUi } from "./ui.js";
 import { setReactRuntime } from "./react-bridge.js";
 import { createLocaleStore, followDshLocale } from "../shared/i18n.js";
+import { installWorkbenchTooltip } from "./tooltip.js";
+import { installWorkbenchStyles } from "./workbench/styles.js";
 import type { DshRequire, WorkbenchClientContext } from "./plugin-contract.js";
 import { followDshSession, followDshWorkspace, notifyWorkbenchSession, retargetWorkbenchRoot } from "./workspace-identity.js";
 
@@ -29,6 +31,8 @@ function createClient(require: DshRequire) {
   let stopWorkspace: (() => void) | undefined;
   let stopSession: (() => void) | undefined;
   setReactRuntime(React);
+  installWorkbenchStyles(document);
+  installWorkbenchTooltip(document);
   ui = createWorkbenchUi(React, store, i18n);
   mountWorkbenchDrawer(React, ReactDOMClient.createRoot, ui.WorkbenchRoot, document.body);
   if (pendingContext && !contextApplied) {

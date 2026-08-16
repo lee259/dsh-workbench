@@ -12,7 +12,6 @@ import type { LocaleStore } from "../../shared/i18n.js";
 import type { FileState } from "../store.js";
 import { WorkbenchBody } from "./body.js";
 import { WorkbenchHeader } from "./header.js";
-import { WorkbenchStyles } from "./styles.js";
 import { useWorkbenchShell } from "./use-shell.js";
 
 function previewMeta(state: FileState, t: LocaleStore["t"]): string {
@@ -27,13 +26,12 @@ function previewMeta(state: FileState, t: LocaleStore["t"]): string {
 }
 
 export function WorkbenchDrawer() {
-  const { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, diffMode, setDiffMode, treeWidth, revealPath, treeCommands, previewCommands, mounted, closing, showTreeAt, resizeTree, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
+  const { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, diffMode, setDiffMode, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, mounted, closing, showTreeAt, resizeTree, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
 
   if (!mounted) return null;
 
   return (
     <>
-      <WorkbenchStyles />
       <aside
         ref={sidebarRef}
         className="dsh-wb-sidebar"
@@ -50,7 +48,6 @@ export function WorkbenchDrawer() {
           aria-valuemax={MAX_SIDEBAR_WIDTH}
           aria-valuenow={width}
           tabIndex={0}
-          title={t("resetWidth")}
           onPointerDown={resizeStart}
           onDoubleClick={() => setWidth(DEFAULT_SIDEBAR_WIDTH)}
           onKeyDown={(event) => {
@@ -63,6 +60,8 @@ export function WorkbenchDrawer() {
           state={state}
           diffMode={diffMode}
           setDiffMode={setDiffMode}
+          treeVisible={treeVisible}
+          setTreeOpen={setTreeOpen}
           setSearchOpen={setSearchOpen}
           showTreeAt={showTreeAt}
           meta={previewMeta(state, t)}
@@ -74,6 +73,7 @@ export function WorkbenchDrawer() {
           state={state}
           sessionId={sessionId}
           diffMode={diffMode}
+          treeVisible={treeVisible}
           treeWidth={treeWidth}
           revealPath={revealPath}
           treeCommands={treeCommands}

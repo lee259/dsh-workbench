@@ -24,6 +24,31 @@ Use host tokens only:
 
 Type inherits the host font. Body 12px, meta 11px.
 
+### Interactive controls
+
+`src/client/styles/tokens.css` is the workbench's design-system adapter. It
+defines only `--dsh-wb-*` semantic tokens and maps them to host tokens; do not
+use raw host interaction tokens in component styles.
+
+| Role | Local token | Host mapping |
+| --- | --- | --- |
+| Button hover | `--dsh-wb-button-hover-fill` | `--dsw-alias-interactive-bg-hover-solid` |
+| Field fill | `--dsh-wb-field-fill` | `--dsw-alias-interactive-bg-hover-solid` |
+| Button pressed | `--dsh-wb-button-active-fill` | `--dsw-alias-button-ghost-active-fill` |
+| Navigation hover | `--dsh-wb-nav-item-hover-fill` | `--dsw-specific-sidebar-nav-item-hover` |
+| Navigation selected | `--dsh-wb-nav-item-active-fill` | `--dsw-specific-sidebar-nav-item-active` |
+| Keyboard focus | `--dsh-wb-focus-ring` | `--dsw-alias-state-business-primary` |
+
+Hover communicates availability; it never substitutes for selected state or
+keyboard focus. Shared button behavior belongs in `styles/controls.css`;
+surface styles retain only layout and size.
+
+Tooltips are reserved for icon-only controls and the workbench entry with its
+shortcut; visible labels, file rows, breadcrumbs, and menu items do not repeat
+their text in a tooltip. Tooltips are the one deliberate color exception: use
+black fill, white text, 8px radius, and `8px 10px` padding. They open after
+400ms on pointer hover and immediately on keyboard focus.
+
 ## Scale
 
 | Role | Size |
@@ -40,6 +65,8 @@ Type inherits the host font. Body 12px, meta 11px.
 - One primary action per surface: click a row to open, double-click to pin.
 - Hover uses nav-item-hover. Selected uses nav-item-active.
 - Keyboard: `focus-visible` 2px business outline, offset `-2px`.
-- Icon-only buttons use `aria-label` and `title`.
+- Icon-only buttons use `aria-label` and `data-dsh-wb-tooltip`. The tooltip is
+  mounted on `document.body`, so it is not clipped by panel overflow and also
+  appears on keyboard focus.
 - Show `+/−` counts when they are non-zero.
 - Review and the file tree share one rail. Same head height, same row, same hover. The mode toggle replaces the list.

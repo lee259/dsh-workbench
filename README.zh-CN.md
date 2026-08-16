@@ -21,7 +21,7 @@ write/edit → 捕获到的 DSH diff
 - 只展示真实 DSH write/edit 的前后变化。
 - `read` 是源码预览。Diff 来自捕获到的 DSH 写入，不是 Git `HEAD`。
 - 多文件标签、复制路径、拖拽调宽度。文件树或 Quick Open 单击预览，双击固定。对话里的写入打开固定标签。
-- 快捷键：`⌥⌘B` 开关，`⌘⇧E` 文件树 / 审阅，`⌘P` 打开文件，树搜索只定位不打开，`⌘F` / `⌘L` 查找或跳行，`⌘W` 关闭，`⌘1`–`⌘9` 切标签。拖拽或右键可插入路径。
+- 快捷键：`⌥⌘B` 开关，`⌘⇧E` 隐藏或显示文件栏，`⌘P` 打开文件，树搜索只定位不打开，`⌘F` / `⌘L` 查找或跳行，`⌘W` 关闭，`⌘1`–`⌘9` 切标签。拖拽或右键可插入路径。
 - 审阅列出捕获到的写入和 `+/−`。
 - 界面跟随 DSH 语言设置。
 
@@ -81,6 +81,7 @@ pnpm start -- /绝对路径/你的项目
 - Host：`src/index.ts` 导出 `name`、`inject`、`apply(ctx)`
 - Client：`dsh.client`、`exports["./client"]`、`window.__ModuleLoader__.load`
 - 样式：`src/client/styles.css`
+- 第三方 React 组件：使用 DSH 注入的 React 运行时。若组件静态导入 `react-dom`、依赖尚未桥接的 React API，或注入全局 CSS，需要先加适配层；参见 `src/client/react-bridge.ts` 与 `tsdown.config.ts`。
 - 文案：`src/shared/i18n.ts`
 
 ## Roadmap

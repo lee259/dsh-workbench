@@ -155,7 +155,6 @@ export function ReviewPanel({ store, sessionId }: { store: FileStore; sessionId?
               className={`dsh-wb-review-item${change.path === state.active ? " is-active" : ""}`}
               type="button"
               key={`${change.sessionId}:${change.path}`}
-              title={change.path}
               onClick={() => openChange(change, "preview")}
               onDoubleClick={() => openChange(change, "keep")}
             >

@@ -1,6 +1,5 @@
 import { Icon } from "../chrome/icons.js";
 import { useWorkbenchServices } from "./runtime.js";
-import { WorkbenchStyles } from "./styles.js";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { REVIEW_API_PATH, type ReviewChange } from "../../shared/types.js";
 import { followWorkspaceEvents } from "../workspace-events.js";
@@ -55,7 +54,7 @@ export function WorkbenchToggle() {
       aria-label={label}
       aria-expanded={state.visible}
       data-open={state.visible ? "true" : "false"}
-      title={`${label} · ${t("shortcutHint")}`}
+      data-dsh-wb-tooltip={`${label} · ${t("shortcutHint")}`}
       onClick={() => {
         if (state.visible) {
           store.hide();
@@ -65,7 +64,6 @@ export function WorkbenchToggle() {
         if (hasReview) window.dispatchEvent(new Event("dsh-wb-review-request"));
       }}
     >
-      <WorkbenchStyles />
       <span className="dsh-wb-toggle-label">
         {hasReview ? t("editedFiles", { count: changes.length }) : t("workbench")}
         {hasReview && (additions > 0 || deletions > 0) ? (

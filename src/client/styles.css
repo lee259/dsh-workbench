@@ -1,4 +1,6 @@
 /* Source of truth for workbench styles. Modules are expanded at build time. */
+@import "./styles/tokens.css";
+@import "./styles/controls.css";
 @import "./styles/sidebar.css";
 @import "./styles/tabs.css";
 @import "./styles/explorer.css";

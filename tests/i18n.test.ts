@@ -12,6 +12,8 @@ test("translate fills placeholders from the active catalog", () => {
   expect(translate("en", "linesWorkspace", { count: 12 })).toBe("12 lines · workspace");
   expect(translate("zh", "workbench")).toBe("工作台");
   expect(translate("en", "workbench")).toBe("Workbench");
+  expect(translate("zh", "hideTree")).toBe("隐藏文件栏");
+  expect(translate("en", "showTree")).toBe("Show file pane");
 });
 
 test("locale store switches catalogs", () => {

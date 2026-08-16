@@ -8,6 +8,8 @@ export function WorkbenchHeader({
     state,
     diffMode,
     setDiffMode,
+    treeVisible,
+    setTreeOpen,
     setSearchOpen,
     showTreeAt,
     meta,
@@ -17,6 +19,8 @@ export function WorkbenchHeader({
     state: FileState;
     diffMode: boolean;
     setDiffMode(next: boolean): void;
+    treeVisible: boolean;
+    setTreeOpen(next: boolean): void;
     setSearchOpen(open: boolean): void;
     showTreeAt(path: string): void;
     meta: string;
@@ -43,7 +47,6 @@ export function WorkbenchHeader({
                     type="button"
                     role="tab"
                     aria-selected={path === state.active}
-                    title={path}
                     onClick={() => void store.activate(path)}
                     onDoubleClick={() => store.pin(path)}
                   >
@@ -52,7 +55,7 @@ export function WorkbenchHeader({
                   <button
                     className="dsh-wb-tab-close"
                     type="button"
-                    title={t("closeFile")}
+                    data-dsh-wb-tooltip={t("closeFile")}
                     aria-label={`${t("closeFile")}: ${path}`}
                     onClick={() => store.close(path)}
                   >
@@ -65,7 +68,7 @@ export function WorkbenchHeader({
               type="button"
               className="dsh-wb-tabbar-add"
               aria-label={t("newTab")}
-              title={t("searchHint")}
+              data-dsh-wb-tooltip={t("searchHint")}
               onClick={() => setSearchOpen(true)}
             >
               <NewTabIcon />
@@ -73,12 +76,15 @@ export function WorkbenchHeader({
           </div>
           <div className="dsh-wb-tab-actions">
             <button
-              className={`dsh-wb-button dsh-wb-icon-button${diffMode ? " is-on" : ""}`}
+              className="dsh-wb-button dsh-wb-icon-button"
               type="button"
               aria-label={t(diffMode ? "previewMode" : "diffMode")}
               aria-pressed={diffMode}
-              title={t(diffMode ? "previewMode" : "diffMode")}
-              onClick={() => setDiffMode(!diffMode)}
+              data-dsh-wb-tooltip={t(diffMode ? "previewMode" : "diffMode")}
+              onClick={() => {
+                setDiffMode(!diffMode);
+                if (!treeVisible) setTreeOpen(true);
+              }}
             >
               <Icon name={diffMode ? "folder" : "commit"} />
             </button>
@@ -86,7 +92,7 @@ export function WorkbenchHeader({
               className="dsh-wb-button dsh-wb-icon-button dsh-wb-close-button"
               type="button"
               aria-label={t("close")}
-              title={t("hidePanel")}
+              data-dsh-wb-tooltip={t("hidePanel")}
               onClick={() => store.hide()}
             >
               <Icon name="close" />
@@ -110,22 +116,34 @@ export function WorkbenchHeader({
                 </button>
               </Fragment>
             ))}
-            <button
-              className="dsh-wb-path"
-              type="button"
-              aria-label={t(pathCopied ? "pathCopied" : "copyPath")}
-              title={t(pathCopied ? "pathCopied" : "copyPath")}
-              onClick={() => {
-                if (!navigator.clipboard) return;
-                void navigator.clipboard.writeText(state.path).then(() => {
-                  setPathCopied(true);
-                  window.setTimeout(() => setPathCopied(false), 1400);
-                });
-              }}
-            >
-              <Icon name={pathCopied ? "check" : "copy"} />
-            </button>
             <span className="dsh-wb-meta">{meta}</span>
+            <div className="dsh-wb-path-actions" aria-label={t("viewOptions")}>
+              <button
+                className="dsh-wb-button dsh-wb-icon-button"
+                type="button"
+                aria-label={t(treeVisible ? "hideTree" : "showTree")}
+                aria-pressed={treeVisible}
+                data-dsh-wb-tooltip={t(treeVisible ? "hideTree" : "showTree")}
+                onClick={() => setTreeOpen(!treeVisible)}
+              >
+                <Icon name={treeVisible ? "panel-open" : "panel-closed"} />
+              </button>
+              <button
+                className="dsh-wb-path"
+                type="button"
+                aria-label={t(pathCopied ? "pathCopied" : "copyPath")}
+                data-dsh-wb-tooltip={t(pathCopied ? "pathCopied" : "copyPath")}
+                onClick={() => {
+                  if (!navigator.clipboard) return;
+                  void navigator.clipboard.writeText(state.path).then(() => {
+                    setPathCopied(true);
+                    window.setTimeout(() => setPathCopied(false), 1400);
+                  });
+                }}
+              >
+                <Icon name={pathCopied ? "check" : "copy"} />
+              </button>
+            </div>
           </nav>
         ) : null}
       </>
