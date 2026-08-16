@@ -25,11 +25,16 @@ export function FileToolRow({ toolName, block }: { toolName: string; block?: unk
         <span className="dsh-wb-tool-name">{t(toolLabelKey(toolName))}</span>
         <span className="dsh-wb-tool-sep">·</span>
         {filePath ? (
-          <button className="dsh-wb-tool-path" data-dsh-wb-mode={isWriteLikeTool(toolName) ? "diff" : "view"} type="button" onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            void store.open(filePath, isWriteLikeTool(toolName) ? "diff" : "view");
-          }}>
+          <button
+            className="dsh-wb-tool-path"
+            data-dsh-wb-mode={isWriteLikeTool(toolName) ? "diff" : "view"}
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              void store.open(filePath, isWriteLikeTool(toolName) ? "diff" : "view");
+            }}
+          >
             {filePath}
           </button>
         ) : <span className="dsh-wb-tool-fallback">{t("file")}</span>}

@@ -2,39 +2,45 @@ import {
   DEFAULT_SIDEBAR_WIDTH,
   MAX_SIDEBAR_WIDTH,
   MIN_SIDEBAR_WIDTH,
-  sidebarWidthFromKey,
 } from "../chrome/sidebar.js";
 import { SearchPanel } from "../explorer/search-panel.js";
 import { WorkspaceTreePanel } from "../explorer/file-tree.js";
 import { CodeView } from "../preview/code-view.js";
 import { viewKind } from "../preview/editor-spec.js";
 import { countDiffLines } from "../preview/line-diff.js";
+import type { LocaleStore } from "../../shared/i18n.js";
+import type { FileState } from "../store.js";
 import { WorkbenchBody } from "./body.js";
 import { WorkbenchHeader } from "./header.js";
 import { WorkbenchStyles } from "./styles.js";
 import { useWorkbenchShell } from "./use-shell.js";
+
+function previewMeta(state: FileState, t: LocaleStore["t"]): string {
+  if (!state.path) return t("workspaceTitle");
+  if (state.loading) return t("reading");
+  if (state.error) return t("readError");
+  const payload = state.payload;
+  if (payload && viewKind(payload.source) === "diff") {
+    return t("linesDiff", countDiffLines(payload.before, payload.content));
+  }
+  return t("linesWorkspace", { count: payload?.content.split("\n").length ?? 0 });
+}
 
 export function WorkbenchDrawer() {
   const { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, diffMode, setDiffMode, treeWidth, revealPath, treeCommands, previewCommands, mounted, closing, showTreeAt, resizeTree, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
 
   if (!mounted) return null;
 
-  const payload = state.payload;
-  const lineCount = payload?.content.split("\n").length ?? 0;
-  const meta = !state.path
-    ? t("workspaceTitle")
-    : state.loading
-    ? t("reading")
-    : state.error
-      ? t("readError")
-      : payload && viewKind(payload.source) === "diff"
-        ? t("linesDiff", countDiffLines(payload.before, payload.content))
-        : t("linesWorkspace", { count: lineCount });
-
   return (
     <>
       <WorkbenchStyles />
-      <aside ref={sidebarRef} className="dsh-wb-sidebar" data-state={closing ? "closing" : "open"} style={{ width: `${width}px` }} aria-label={t("ariaWorkspace")}>
+      <aside
+        ref={sidebarRef}
+        className="dsh-wb-sidebar"
+        data-state={closing ? "closing" : "open"}
+        style={{ width: `${width}px` }}
+        aria-label={t("ariaWorkspace")}
+      >
         <div
           className="dsh-wb-resize-handle"
           role="separator"
@@ -53,7 +59,16 @@ export function WorkbenchDrawer() {
             setWidth((current) => sidebarWidthFromKey(current, event.key));
           }}
         />
-        <WorkbenchHeader state={state} diffMode={diffMode} setDiffMode={setDiffMode} setSearchOpen={setSearchOpen} showTreeAt={showTreeAt} meta={meta} pathCopied={pathCopied} setPathCopied={setPathCopied} />
+        <WorkbenchHeader
+          state={state}
+          diffMode={diffMode}
+          setDiffMode={setDiffMode}
+          setSearchOpen={setSearchOpen}
+          showTreeAt={showTreeAt}
+          meta={previewMeta(state, t)}
+          pathCopied={pathCopied}
+          setPathCopied={setPathCopied}
+        />
         <WorkbenchBody
           key={workspaceKey}
           state={state}

@@ -1,4 +1,15 @@
-import * as React from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ChangeEvent,
+  type DragEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import type { FileOpenMode, WorkspaceTree as WorkspaceTreeData } from "../../shared/types.js";
 import { FileTypeIcon, Icon, TreeChevron } from "../chrome/icons.js";
 import { insertDraftText } from "./draft-insert.js";
@@ -73,26 +84,26 @@ export function WorkspaceTreePanel({
   }) {
     const { store, i18n } = useWorkbenchServices();
     const t = i18n.t;
-    const fileState = React.useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
-    const [tree, setTree] = React.useState<WorkspaceTreeData>(emptyTree);
-    const [query, setQuery] = React.useState("");
-    const [open, setOpen] = React.useState<string[]>(savedTreeOpen);
-    const [loading, setLoading] = React.useState(false);
-    const [failed, setFailed] = React.useState(false);
-    const [hitIndex, setHitIndex] = React.useState(0);
-    const [focusedPath, setFocusedPath] = React.useState(fileState.active);
-    const [locatePath, setLocatePath] = React.useState("");
-    const [pendingReveal, setPendingReveal] = React.useState("");
-    const lastReveal = React.useRef(0);
-    const [contextMenu, setContextMenu] = React.useState<{ path: string; x: number; y: number } | null>(null);
-    const listRef = React.useRef<HTMLDivElement | null>(null);
-    const searchRef = React.useRef<HTMLInputElement | null>(null);
+    const fileState = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+    const [tree, setTree] = useState<WorkspaceTreeData>(emptyTree);
+    const [query, setQuery] = useState("");
+    const [open, setOpen] = useState<string[]>(savedTreeOpen);
+    const [loading, setLoading] = useState(false);
+    const [failed, setFailed] = useState(false);
+    const [hitIndex, setHitIndex] = useState(0);
+    const [focusedPath, setFocusedPath] = useState(fileState.active);
+    const [locatePath, setLocatePath] = useState("");
+    const [pendingReveal, setPendingReveal] = useState("");
+    const lastReveal = useRef(0);
+    const [contextMenu, setContextMenu] = useState<{ path: string; x: number; y: number } | null>(null);
+    const listRef = useRef<HTMLDivElement | null>(null);
+    const searchRef = useRef<HTMLInputElement | null>(null);
     const normalizedQuery = query.trim();
     const rows = flattenVisibleRows(tree, open);
     const hits = treeSearchHits(tree, normalizedQuery);
     const filtering = Boolean(normalizedQuery);
 
-    const refreshTree = React.useCallback(() => {
+    const refreshTree = useCallback(() => {
       setLoading(true);
       setFailed(false);
       void fetchWorkspaceTree().then(setTree).catch(() => {
@@ -101,7 +112,7 @@ export function WorkspaceTreePanel({
       }).finally(() => setLoading(false));
     }, []);
 
-    const expandTo = React.useCallback((path: string) => {
+    const expandTo = useCallback((path: string) => {
       if (!path) return;
       setOpen((current) => {
         const extra = tree.directories.includes(path) ? directoriesToReveal(path) : ancestorDirectories(path);
@@ -133,29 +144,23 @@ export function WorkspaceTreePanel({
       setContextMenu(null);
     };
 
-    React.useEffect(() => {
+    useEffect(() => {
       if (fileState.visible) refreshTree();
     }, [fileState.visible, fileState.disk, refreshTree]);
 
-    React.useEffect(() => {
-      if (fileState.reveal === lastReveal.current) return;
-      lastReveal.current = fileState.reveal;
-      if (fileState.active) setPendingReveal(fileState.active);
-    }, [fileState.reveal, fileState.active]);
-
-    React.useEffect(() => {
+    useEffect(() => {
       const target = locatePath || revealPath || pendingReveal || fileState.active;
       if (target) expandTo(target);
     }, [locatePath, revealPath, pendingReveal, fileState.active, expandTo]);
 
-    React.useEffect(() => {
+    useEffect(() => {
       const target = locatePath || revealPath;
       if (!target) return;
       const frame = window.requestAnimationFrame(() => focusRow(target));
       return () => window.cancelAnimationFrame(frame);
     }, [locatePath, revealPath, tree, open]);
 
-    React.useEffect(() => {
+    useEffect(() => {
       if (!pendingReveal) return;
       let tries = 0;
       let frame = 0;
@@ -171,13 +176,13 @@ export function WorkspaceTreePanel({
       return () => window.cancelAnimationFrame(frame);
     }, [pendingReveal]);
 
-    React.useEffect(() => {
+    useEffect(() => {
       const close = () => setContextMenu(null);
       window.addEventListener("click", close);
       return () => window.removeEventListener("click", close);
     }, []);
 
-    React.useEffect(() => {
+    useEffect(() => {
       if (!commandsRef) return;
       commandsRef.current = {
         consumeEscape() {
@@ -198,6 +203,11 @@ export function WorkspaceTreePanel({
         commandsRef.current = null;
       };
     }, [commandsRef, contextMenu, query]);
+
+    if (fileState.reveal !== lastReveal.current) {
+      lastReveal.current = fileState.reveal;
+      if (fileState.active) setPendingReveal(fileState.active);
+    }
 
     const toggleDirectory = (path: string) => {
       setOpen((current) => {
@@ -220,13 +230,13 @@ export function WorkspaceTreePanel({
       openFromTree(path);
     };
 
-    const showContextMenu = (event: React.MouseEvent, path: string) => {
+    const showContextMenu = (event: MouseEvent, path: string) => {
       event.preventDefault();
       event.stopPropagation();
       setContextMenu({ path, x: Math.min(event.clientX, Math.max(8, window.innerWidth - 178)), y: Math.min(event.clientY, Math.max(8, window.innerHeight - 98)) });
     };
 
-    const onTreeKeyDown = (event: React.KeyboardEvent, path = focusedPath || fileState.active || rows[0]?.path) => {
+    const onTreeKeyDown = (event: KeyboardEvent, path = focusedPath || fileState.active || rows[0]?.path) => {
       if (!path) return;
       const action = treeKeyAction(event.key, rows, path, open);
       if (!action) return;
@@ -255,14 +265,14 @@ export function WorkspaceTreePanel({
           className={`dsh-wb-tree-row${selected ? " is-selected" : ""}${focused ? " is-focused" : ""}`}
           style={{ paddingLeft: `${6 + item.depth * 14}px` }}
           draggable={!internal}
-          onDragStart={(event: React.DragEvent) => {
+          onDragStart={(event: DragEvent) => {
             if (!internal) {
               event.dataTransfer.setData("text/plain", item.path);
               event.dataTransfer.effectAllowed = "copy";
             }
           }}
-          onContextMenu={(event: React.MouseEvent) => showContextMenu(event, item.path)}
-          onKeyDown={(event: React.KeyboardEvent) => onTreeKeyDown(event, item.path)}
+          onContextMenu={(event: MouseEvent) => showContextMenu(event, item.path)}
+          onKeyDown={(event: KeyboardEvent) => onTreeKeyDown(event, item.path)}
           onFocus={() => setFocusedPath(item.path)}
           onDoubleClick={internal ? undefined : () => openFromTree(item.path, "keep")}
           onClick={internal ? () => toggleDirectory(item.path) : () => openFromTree(item.path)}
@@ -313,7 +323,7 @@ export function WorkspaceTreePanel({
           aria-valuemax={MAX_TREE_WIDTH}
           aria-valuenow={width}
           tabIndex={0}
-          onPointerDown={(event: React.PointerEvent) => {
+          onPointerDown={(event: ReactPointerEvent) => {
             event.preventDefault();
             const onMove = (move: PointerEvent) => onResize(window.innerWidth - move.clientX);
             const onUp = () => {
@@ -323,7 +333,7 @@ export function WorkspaceTreePanel({
             window.addEventListener("pointermove", onMove);
             window.addEventListener("pointerup", onUp, { once: true });
           }}
-          onKeyDown={(event: React.KeyboardEvent) => {
+          onKeyDown={(event: KeyboardEvent) => {
             if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
             event.preventDefault();
             onResize(clampTreeWidth(width + (event.key === "ArrowLeft" ? 16 : -16)));
@@ -339,11 +349,11 @@ export function WorkspaceTreePanel({
                 aria-label={t("treeFilter")}
                 aria-controls={filtering ? "dsh-wb-tree-hits" : undefined}
                 placeholder={t("treeFilterPlaceholder")}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                onChange={(event: ChangeEvent<HTMLInputElement>) => {
                   setQuery(event.target.value);
                   setHitIndex(0);
                 }}
-                onKeyDown={(event: React.KeyboardEvent) => {
+                onKeyDown={(event: KeyboardEvent) => {
                   if (event.key === "Escape" && normalizedQuery) {
                     event.preventDefault();
                     event.stopPropagation();
@@ -379,7 +389,7 @@ export function WorkspaceTreePanel({
               role="listbox"
               aria-label={t("treeFilter")}
               ref={listRef}
-              onKeyDown={(event: React.KeyboardEvent) => {
+              onKeyDown={(event: KeyboardEvent) => {
                 if (event.key === "ArrowDown" || event.key === "ArrowUp") {
                   event.preventDefault();
                   setHitIndex((current) => moveSearchFocus(hits.length, current, event.key === "ArrowDown" ? 1 : -1));
@@ -403,7 +413,7 @@ export function WorkspaceTreePanel({
               tabIndex={rows.length === 0 ? 0 : -1}
               aria-activedescendant={focusedPath ? `dsh-wb-tree-row-${focusedPath}` : undefined}
               ref={listRef}
-              onKeyDown={(event: React.KeyboardEvent) => {
+              onKeyDown={(event: KeyboardEvent) => {
                 if (event.target === event.currentTarget) onTreeKeyDown(event);
               }}
             >
@@ -418,7 +428,7 @@ export function WorkspaceTreePanel({
               role="menu"
               aria-label={t("fileMenu")}
               style={{ left: contextMenu.x, top: contextMenu.y }}
-              onClick={(event: React.MouseEvent) => event.stopPropagation()}
+              onClick={(event: MouseEvent) => event.stopPropagation()}
             >
               <button type="button" role="menuitem" onClick={() => menuIsDirectory ? locate(menuPath) : openFromTree(menuPath, "keep")}>
                 {t(menuIsDirectory ? "revealInTree" : "openFileAction")}

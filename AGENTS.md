@@ -31,13 +31,13 @@ This is [YAGNI](https://ronjeffries.com/xprog/articles/practices/pracnotneed/) a
 - Prefer `dsh-tool-fs` `meta.diffs` over reconstructed edits. Diffs come from captured DSH writes.
 - UI strings go through `src/shared/i18n.ts`.
 - Client styles live in `src/client/styles/*.css`.
-- Follow [docs/ui.md](./docs/ui.md) for tokens, sizes, and interaction. Follow [docs/style.md](./docs/style.md) for TSX and CSS.
+- Follow [docs/ui.md](./docs/ui.md) for tokens, sizes, and interaction. Follow [docs/style.md](./docs/style.md) for TypeScript, TSX, CSS, and React.
 - Tests assert behaviour at module interfaces (`createPathIdentity`, `WriteHistory`, `createWorkspace`, `createFileStore`, `nextOpenTabs`, `diffLines`, `countDiffLines`, `reviewCountsFor`, `followDshLocale`, `workspacePathFromDsh`, `followDshWorkspace`, `followDshSession`, `workbenchShouldReset`, `retargetWorkbenchRoot`, `filePathFromOpenHint`, `parseOpenTarget`, `breadcrumbTargets`, `visibleBreadcrumbTargets`, `flattenVisibleRows`, `treeFileOpenMode`, `treeKeyAction`, `rankSearchHits`, `createChangePump`, `startWorkspaceWatch`, `spliceDraftValue`, `shortcutAction`, `editorSpec`, `mountWorkbenchDrawer`).
 
 ## Docs
 
 - [docs/context.md](./docs/context.md) — project map
 - [docs/ui.md](./docs/ui.md) — tokens and interaction
-- [docs/style.md](./docs/style.md) — TSX and CSS
+- [docs/style.md](./docs/style.md) — TypeScript, TSX, CSS, and React
 - [README.md](./README.md) / [README.zh-CN.md](./README.zh-CN.md)
 - Plugin docs: https://deepseek-harness.github.io/deepseek-harness/develop/basic/

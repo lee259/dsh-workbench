@@ -1,8 +1,7 @@
 import { Icon } from "../chrome/icons.js";
 import { useWorkbenchServices } from "./runtime.js";
 import { WorkbenchStyles } from "./styles.js";
-import { useSyncExternalStore } from "react";
-import * as React from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { REVIEW_API_PATH, type ReviewChange } from "../../shared/types.js";
 import { followWorkspaceEvents } from "../workspace-events.js";
 import { lastWorkbenchSession, sessionIdFromEvent } from "../workspace-identity.js";
@@ -11,8 +10,8 @@ export function WorkbenchToggle() {
   const { store, i18n } = useWorkbenchServices();
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   const t = i18n.t;
-  const [changes, setChanges] = React.useState<ReviewChange[]>([]);
-  React.useEffect(() => {
+  const [changes, setChanges] = useState<ReviewChange[]>([]);
+  useEffect(() => {
     let active = true;
     let requestId = 0;
     let sessionId = lastWorkbenchSession();

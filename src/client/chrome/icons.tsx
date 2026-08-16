@@ -1,9 +1,22 @@
-import React from "react";
+import { createElement } from "react";
 import { Check, ChevronRight, Copy, FilePlus2, FileText, Folder, FolderOpen, GitCommitHorizontal, PanelRight, Search, X, type IconNode } from "lucide";
 
 function renderIcon(icon: IconNode, className: string, size: number, strokeWidth: number) {
-  return React.createElement("svg", { className, width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": strokeWidth, "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": true },
-    icon.map(([tag, attrs], index) => React.createElement(tag, { ...attrs, key: index })),
+  return createElement(
+    "svg",
+    {
+      className,
+      width: size,
+      height: size,
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      "stroke-width": strokeWidth,
+      "stroke-linecap": "round",
+      "stroke-linejoin": "round",
+      "aria-hidden": true,
+    },
+    icon.map(([tag, attrs], index) => createElement(tag, { ...attrs, key: index })),
   );
 }
 

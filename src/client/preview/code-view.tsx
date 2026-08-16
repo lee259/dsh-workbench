@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useEffect, useRef, useState } from "react";
 import { createEditorExtensions, mountCodeEditor } from "./code-mirror.js";
 import { editorSpec } from "./editor-spec.js";
 import { createPreviewCommands, type PreviewCommands } from "./preview-nav.js";
@@ -19,15 +19,17 @@ export function CodeView({
   }) {
     const { i18n } = useWorkbenchServices();
     const t = i18n.t;
-    const hostRef = React.useRef<HTMLDivElement | null>(null);
-    const editorRef = React.useRef<ReturnType<typeof mountCodeEditor> | null>(null);
-    const [markdownSource, setMarkdownSource] = React.useState(false);
-
-    React.useEffect(() => {
+    const hostRef = useRef<HTMLDivElement | null>(null);
+    const editorRef = useRef<ReturnType<typeof mountCodeEditor> | null>(null);
+    const [markdownSource, setMarkdownSource] = useState(false);
+    const path = state.payload?.path;
+    const [seenPath, setSeenPath] = useState(path);
+    if (path !== seenPath) {
+      setSeenPath(path);
       setMarkdownSource(false);
-    }, [state.payload?.path]);
+    }
 
-    React.useEffect(() => {
+    useEffect(() => {
       const host = hostRef.current;
       const payload = state.payload;
       if (!host || !payload || state.loading || state.error) return undefined;
@@ -43,26 +45,63 @@ export function CodeView({
       };
     }, [state.payload, state.loading, state.error, markdownSource]);
 
-    React.useEffect(() => {
+    useEffect(() => {
       if (!state.line || !editorRef.current) return;
       createPreviewCommands(editorRef.current.view).revealLine(state.line);
     }, [state.line, state.payload]);
 
-    if (state.loading) return <div className="dsh-wb-empty"><div><strong>{t("loadingTitle")}</strong><span>{t("loadingHint")}</span></div></div>;
+    if (state.loading) {
+      return (
+        <div className="dsh-wb-empty">
+          <div>
+            <strong>{t("loadingTitle")}</strong>
+            <span>{t("loadingHint")}</span>
+          </div>
+        </div>
+      );
+    }
     if (state.error) return <div className="dsh-wb-error">{t(state.error)}</div>;
     if (!state.payload) return null;
     const kind = previewKind(state.payload.path);
     const isMarkdown = kind === "markdown" && state.payload.source !== "dsh-write";
     const toggle = isMarkdown ? (
-      <button className="dsh-wb-markdown-toggle" type="button" onClick={() => setMarkdownSource((value) => !value)}>
+      <button
+        className="dsh-wb-markdown-toggle"
+        type="button"
+        onClick={() => setMarkdownSource((value) => !value)}
+      >
         {t(markdownSource ? "markdownPreview" : "markdownSource")}
       </button>
     ) : null;
     if (kind === "image" && state.payload.source !== "dsh-write") {
-      return <div className="dsh-wb-image-preview"><img src={`${FILE_ASSET_API_PATH}?path=${encodeURIComponent(state.payload.path)}&revision=${state.payload.revision}`} alt={state.payload.path} /></div>;
+      return (
+        <div className="dsh-wb-image-preview">
+          <img
+            src={`${FILE_ASSET_API_PATH}?path=${encodeURIComponent(state.payload.path)}&revision=${state.payload.revision}`}
+            alt={state.payload.path}
+          />
+        </div>
+      );
     }
     if (isMarkdown && !markdownSource) {
-      return <div className="dsh-wb-preview-shell"><div className="dsh-wb-preview-toolbar">{toggle}</div><article className="dsh-wb-markdown-preview" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderMarkdown(state.payload.content, state.payload.path), { USE_PROFILES: { html: true } }) }} /></div>;
+      return (
+        <div className="dsh-wb-preview-shell">
+          <div className="dsh-wb-preview-toolbar">{toggle}</div>
+          <article
+            className="dsh-wb-markdown-preview"
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(renderMarkdown(state.payload.content, state.payload.path), {
+                USE_PROFILES: { html: true },
+              }),
+            }}
+          />
+        </div>
+      );
     }
-    return <div className="dsh-wb-preview-shell">{toggle ? <div className="dsh-wb-preview-toolbar">{toggle}</div> : null}<div className="dsh-wb-cm" ref={hostRef} /></div>;
+    return (
+      <div className="dsh-wb-preview-shell">
+        {toggle ? <div className="dsh-wb-preview-toolbar">{toggle}</div> : null}
+        <div className="dsh-wb-cm" ref={hostRef} />
+      </div>
+    );
 }

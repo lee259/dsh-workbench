@@ -5,7 +5,16 @@ import { clampTreeWidth } from "../explorer/file-tree.js";
 import { MAX_TREE_WIDTH, MIN_TREE_WIDTH } from "../explorer/tree-model.js";
 import { useWorkbenchServices } from "../workbench/runtime.js";
 import { followWorkspaceEvents } from "../workspace-events.js";
-import * as React from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from "react";
 
 type ReviewResponse = { changes?: ReviewChange[]; sessionId?: string | null };
 
@@ -51,7 +60,7 @@ export function ReviewRail({
         aria-valuemax={MAX_TREE_WIDTH}
         aria-valuenow={width}
         tabIndex={0}
-        onPointerDown={(event: React.PointerEvent) => {
+        onPointerDown={(event: ReactPointerEvent) => {
           event.preventDefault();
           const onMove = (move: PointerEvent) => onResize(window.innerWidth - move.clientX);
           const onUp = () => {
@@ -61,7 +70,7 @@ export function ReviewRail({
           window.addEventListener("pointermove", onMove);
           window.addEventListener("pointerup", onUp, { once: true });
         }}
-        onKeyDown={(event: React.KeyboardEvent) => {
+        onKeyDown={(event: KeyboardEvent) => {
           if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
           event.preventDefault();
           onResize(clampTreeWidth(width + (event.key === "ArrowLeft" ? 16 : -16)));
@@ -77,13 +86,13 @@ export function ReviewRail({
 export function ReviewPanel({ store, sessionId }: { store: FileStore; sessionId?: string }) {
   const { i18n } = useWorkbenchServices();
   const t = i18n.t;
-  const [data, setData] = React.useState<ReviewResponse>({ changes: [] });
-  const [loading, setLoading] = React.useState(Boolean(sessionId));
-  const [error, setError] = React.useState(false);
-  const state = React.useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
-  const requestId = React.useRef(0);
+  const [data, setData] = useState<ReviewResponse>({ changes: [] });
+  const [loading, setLoading] = useState(Boolean(sessionId));
+  const [error, setError] = useState(false);
+  const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+  const requestId = useRef(0);
 
-  const load = React.useCallback(async (selected?: string, silent = false) => {
+  const load = useCallback(async (selected?: string, silent = false) => {
     const id = ++requestId.current;
     if (!selected) {
       setData({ changes: [] });
@@ -109,10 +118,10 @@ export function ReviewPanel({ store, sessionId }: { store: FileStore; sessionId?
     }
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     void load(sessionId || undefined);
   }, [load, sessionId]);
-  React.useEffect(() => followWorkspaceEvents(() => {
+  useEffect(() => followWorkspaceEvents(() => {
     void load(sessionId || undefined, true);
   }), [load, sessionId]);
 
@@ -124,7 +133,7 @@ export function ReviewPanel({ store, sessionId }: { store: FileStore; sessionId?
     void store.open(change.path, "diff", undefined, false, kind);
   };
 
-  let body: React.ReactNode;
+  let body: ReactNode;
   if (loading && changes.length === 0) {
     body = <div className="dsh-wb-review-empty">{t("reading")}</div>;
   } else if (error && changes.length === 0) {
