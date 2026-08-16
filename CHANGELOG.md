@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.6.0 - 2026-08-16
+
+### Features
+
+- Add a focused, keyboard-accessible tooltip for icon-only workbench controls.
+- Add a persistent file-pane visibility control and preserve focus when opening or closing Quick Open.
+
+### Changed
+
+- Centralize workbench interaction tokens and shared button states so hover, pressed, selected, and focus treatment follows the DSH host UI.
+- Simplify the file tree and review rail transition while keeping hidden controls out of keyboard navigation.
+- Move workbench styles to one document-level stylesheet instead of rendering them with each UI entry point.
+
+### Fixes
+
+- Remove the duplicate native clear button from the Quick Open search field.
+- Keep tooltip delays from firing after the pointer has left a control.
+
 ## 0.5.0 - 2026-08-16
 
 ### Added
