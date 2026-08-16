@@ -1,3 +1,3 @@
 # Claude
 
-Follow [AGENTS.md](./AGENTS.md). Project map: [CONTEXT.md](./CONTEXT.md).
+Follow [AGENTS.md](./AGENTS.md). Docs live in [docs/](./docs/).

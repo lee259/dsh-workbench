@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { WorkspaceTree as WorkspaceTreeData } from "../../shared/types.js";
+import type { FileOpenMode, WorkspaceTree as WorkspaceTreeData } from "../../shared/types.js";
 import { FileTypeIcon, Icon, TreeChevron } from "../chrome/icons.js";
 import { insertDraftText } from "./draft-insert.js";
 import { highlightSegments, moveSearchFocus, treeSearchHits } from "./search-model.js";
@@ -15,9 +15,7 @@ import {
   directoriesToReveal,
   emptyTree,
   flattenVisibleRows,
-  foldersAreExpanded,
   mergeOpenDirectories,
-  nextFolderExpansion,
   readTreeOpen,
   readTreeWidth,
   treeFileOpenMode,
@@ -64,11 +62,13 @@ export function WorkspaceTreePanel({
     width,
     onResize,
     revealPath = "",
+    openMode = "view",
     commandsRef,
   }: {
     width: number;
     onResize: (width: number) => void;
     revealPath?: string;
+    openMode?: FileOpenMode;
     commandsRef?: { current: TreeCommands | null };
   }) {
     const { store, i18n } = useWorkbenchServices();
@@ -129,7 +129,7 @@ export function WorkspaceTreePanel({
     };
 
     const openFromTree = (path: string, kind: "preview" | "keep" = "preview") => {
-      void store.open(path, treeFileOpenMode(), undefined, false, kind);
+      void store.open(path, openMode === "diff" ? "diff" : treeFileOpenMode(), undefined, false, kind);
       setContextMenu(null);
     };
 
@@ -223,7 +223,7 @@ export function WorkspaceTreePanel({
     const showContextMenu = (event: React.MouseEvent, path: string) => {
       event.preventDefault();
       event.stopPropagation();
-      setContextMenu({ path, x: Math.min(event.clientX, Math.max(8, window.innerWidth - 178)), y: Math.min(event.clientY, Math.max(8, window.innerHeight - 124)) });
+      setContextMenu({ path, x: Math.min(event.clientX, Math.max(8, window.innerWidth - 178)), y: Math.min(event.clientY, Math.max(8, window.innerHeight - 98)) });
     };
 
     const onTreeKeyDown = (event: React.KeyboardEvent, path = focusedPath || fileState.active || rows[0]?.path) => {
@@ -240,119 +240,198 @@ export function WorkspaceTreePanel({
       const isOpen = open.includes(item.path);
       const selected = item.path === fileState.active;
       const focused = item.path === focusedPath;
-      return <button key={item.path} id={`dsh-wb-tree-row-${item.path}`} type="button" role="treeitem" tabIndex={focused ? 0 : -1}
-        data-path={item.path} data-depth={item.depth} aria-level={item.depth + 1} aria-selected={selected} aria-expanded={internal ? isOpen : undefined}
-        className={`dsh-wb-tree-row${selected ? " is-selected" : ""}${focused ? " is-focused" : ""}`} style={{ paddingLeft: `${6 + item.depth * 14}px` }} draggable={!internal}
-        onDragStart={(event: React.DragEvent) => { if (!internal) { event.dataTransfer.setData("text/plain", item.path); event.dataTransfer.effectAllowed = "copy"; } }}
-        onContextMenu={(event: React.MouseEvent) => showContextMenu(event, item.path)} onKeyDown={(event: React.KeyboardEvent) => onTreeKeyDown(event, item.path)}
-        onFocus={() => setFocusedPath(item.path)} onDoubleClick={internal ? undefined : () => openFromTree(item.path, "keep")}
-        onClick={internal ? () => toggleDirectory(item.path) : () => openFromTree(item.path)}>
-        <TreeChevron open={isOpen} leaf={!internal} />
-        <FileTypeIcon path={item.name} directory={internal} open={isOpen} />
-        <span className="dsh-wb-tree-name">{item.name}</span>
-      </button>;
+      return (
+        <button
+          key={item.path}
+          id={`dsh-wb-tree-row-${item.path}`}
+          type="button"
+          role="treeitem"
+          tabIndex={focused ? 0 : -1}
+          data-path={item.path}
+          data-depth={item.depth}
+          aria-level={item.depth + 1}
+          aria-selected={selected}
+          aria-expanded={internal ? isOpen : undefined}
+          className={`dsh-wb-tree-row${selected ? " is-selected" : ""}${focused ? " is-focused" : ""}`}
+          style={{ paddingLeft: `${6 + item.depth * 14}px` }}
+          draggable={!internal}
+          onDragStart={(event: React.DragEvent) => {
+            if (!internal) {
+              event.dataTransfer.setData("text/plain", item.path);
+              event.dataTransfer.effectAllowed = "copy";
+            }
+          }}
+          onContextMenu={(event: React.MouseEvent) => showContextMenu(event, item.path)}
+          onKeyDown={(event: React.KeyboardEvent) => onTreeKeyDown(event, item.path)}
+          onFocus={() => setFocusedPath(item.path)}
+          onDoubleClick={internal ? undefined : () => openFromTree(item.path, "keep")}
+          onClick={internal ? () => toggleDirectory(item.path) : () => openFromTree(item.path)}
+        >
+          <TreeChevron open={isOpen} leaf={!internal} />
+          <FileTypeIcon path={item.name} directory={internal} open={isOpen} />
+          <span className="dsh-wb-tree-name">{item.name}</span>
+        </button>
+      );
     });
 
-    const renderHits = () => hits.map((hit, index) => <button key={hit.path} id={`dsh-wb-tree-hit-${index}`} type="button" role="option"
-      aria-selected={index === hitIndex} className={`dsh-wb-tree-hit${index === hitIndex ? " is-active" : ""}`} onMouseEnter={() => setHitIndex(index)} onClick={() => locate(hit.path)}>
-      <FileTypeIcon path={hit.name} directory={tree.directories.includes(hit.path)} />
-      <span className="dsh-wb-search-result-copy">
-        <span className="dsh-wb-search-result-name">{highlightSegments(hit.name, normalizedQuery).map((segment, segmentIndex) => (
-          segment.match ? <mark key={segmentIndex} className="dsh-wb-search-mark">{segment.text}</mark> : <span key={segmentIndex}>{segment.text}</span>
-        ))}</span>
-        {hit.parent ? <span className="dsh-wb-search-result-parent">{hit.parent}</span> : null}
-      </span>
-    </button>);
+    const renderHits = () => hits.map((hit, index) => (
+      <button
+        key={hit.path}
+        id={`dsh-wb-tree-hit-${index}`}
+        type="button"
+        role="option"
+        aria-selected={index === hitIndex}
+        className={`dsh-wb-tree-hit${index === hitIndex ? " is-active" : ""}`}
+        onMouseEnter={() => setHitIndex(index)}
+        onClick={() => locate(hit.path)}
+      >
+        <FileTypeIcon path={hit.name} directory={tree.directories.includes(hit.path)} />
+        <span className="dsh-wb-search-result-copy">
+          <span className="dsh-wb-search-result-name">
+            {highlightSegments(hit.name, normalizedQuery).map((segment, segmentIndex) => (
+              segment.match
+                ? <mark key={segmentIndex} className="dsh-wb-search-mark">{segment.text}</mark>
+                : <span key={segmentIndex}>{segment.text}</span>
+            ))}
+          </span>
+          {hit.parent ? <span className="dsh-wb-search-result-parent">{hit.parent}</span> : null}
+        </span>
+      </button>
+    ));
 
     const menuPath = contextMenu?.path ?? "";
     const menuIsDirectory = tree.directories.includes(menuPath);
-    const foldersExpanded = foldersAreExpanded(open, tree.directories);
-    const toggleFolders = () => {
-      const next = nextFolderExpansion(open, tree.directories);
-      setOpen(next);
-      persistTreeOpen(next);
-    };
 
-    return <>
-      <div className="dsh-wb-tree-resize" role="separator" aria-label={t("resizeTree")} aria-orientation="vertical"
-        aria-valuemin={MIN_TREE_WIDTH} aria-valuemax={MAX_TREE_WIDTH} aria-valuenow={width} tabIndex={0}
-        onPointerDown={(event: React.PointerEvent) => {
-          event.preventDefault();
-          const onMove = (move: PointerEvent) => onResize(window.innerWidth - move.clientX);
-          const onUp = () => { window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp); };
-          window.addEventListener("pointermove", onMove);
-          window.addEventListener("pointerup", onUp, { once: true });
-        }}
-        onKeyDown={(event: React.KeyboardEvent) => {
-          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-          event.preventDefault();
-          onResize(clampTreeWidth(width + (event.key === "ArrowLeft" ? 16 : -16)));
-        }} />
-      <aside className="dsh-wb-tree" style={{ width }} aria-label={t("workspaceTree")}>
-        <div className="dsh-wb-tree-head">
-          <div className="dsh-wb-tree-search">
-            <Icon name="search" />
-            <input ref={searchRef} value={query} aria-label={t("treeFilter")} aria-controls={filtering ? "dsh-wb-tree-hits" : undefined} placeholder={t("treeFilterPlaceholder")}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                setQuery(event.target.value);
-                setHitIndex(0);
-              }}
-              onKeyDown={(event: React.KeyboardEvent) => {
-                if (event.key === "Escape" && normalizedQuery) {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setQuery("");
-                  return;
-                }
-                if (event.key === "ArrowDown") {
-                  event.preventDefault();
-                  if (filtering && hits[0]) {
-                    setHitIndex(0);
-                    listRef.current?.querySelector<HTMLElement>(".dsh-wb-tree-hit")?.focus();
+    return (
+      <>
+        <div
+          className="dsh-wb-tree-resize"
+          role="separator"
+          aria-label={t("resizeTree")}
+          aria-orientation="vertical"
+          aria-valuemin={MIN_TREE_WIDTH}
+          aria-valuemax={MAX_TREE_WIDTH}
+          aria-valuenow={width}
+          tabIndex={0}
+          onPointerDown={(event: React.PointerEvent) => {
+            event.preventDefault();
+            const onMove = (move: PointerEvent) => onResize(window.innerWidth - move.clientX);
+            const onUp = () => {
+              window.removeEventListener("pointermove", onMove);
+              window.removeEventListener("pointerup", onUp);
+            };
+            window.addEventListener("pointermove", onMove);
+            window.addEventListener("pointerup", onUp, { once: true });
+          }}
+          onKeyDown={(event: React.KeyboardEvent) => {
+            if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+            event.preventDefault();
+            onResize(clampTreeWidth(width + (event.key === "ArrowLeft" ? 16 : -16)));
+          }}
+        />
+        <aside className="dsh-wb-tree" style={{ width }} aria-label={t("workspaceTree")}>
+          <div className="dsh-wb-tree-head">
+            <div className="dsh-wb-tree-search">
+              <Icon name="search" />
+              <input
+                ref={searchRef}
+                value={query}
+                aria-label={t("treeFilter")}
+                aria-controls={filtering ? "dsh-wb-tree-hits" : undefined}
+                placeholder={t("treeFilterPlaceholder")}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                  setQuery(event.target.value);
+                  setHitIndex(0);
+                }}
+                onKeyDown={(event: React.KeyboardEvent) => {
+                  if (event.key === "Escape" && normalizedQuery) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setQuery("");
                     return;
                   }
-                  if (rows[0]) focusRow(rows[0].path);
+                  if (event.key === "ArrowDown") {
+                    event.preventDefault();
+                    if (filtering && hits[0]) {
+                      setHitIndex(0);
+                      listRef.current?.querySelector<HTMLElement>(".dsh-wb-tree-hit")?.focus();
+                      return;
+                    }
+                    if (rows[0]) focusRow(rows[0].path);
+                  }
+                  if (event.key === "Enter" && filtering && hits[hitIndex]) {
+                    event.preventDefault();
+                    locate(hits[hitIndex].path);
+                  }
+                }}
+              />
+              {normalizedQuery ? (
+                <button type="button" className="dsh-wb-tree-search-clear" aria-label={t("clearSearch")} onClick={() => setQuery("")}>
+                  <Icon name="close" />
+                </button>
+              ) : null}
+            </div>
+          </div>
+          {filtering ? (
+            <div
+              id="dsh-wb-tree-hits"
+              className="dsh-wb-tree-hits"
+              role="listbox"
+              aria-label={t("treeFilter")}
+              ref={listRef}
+              onKeyDown={(event: React.KeyboardEvent) => {
+                if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                  event.preventDefault();
+                  setHitIndex((current) => moveSearchFocus(hits.length, current, event.key === "ArrowDown" ? 1 : -1));
+                  return;
                 }
-                if (event.key === "Enter" && filtering && hits[hitIndex]) {
+                if (event.key === "Enter" && hits[hitIndex]) {
                   event.preventDefault();
                   locate(hits[hitIndex].path);
                 }
-              }} />
-            {normalizedQuery ? <button type="button" className="dsh-wb-tree-search-clear" aria-label={t("clearSearch")} onClick={() => setQuery("")}><Icon name="close" /></button> : null}
-          </div>
-          <button type="button" className="dsh-wb-button dsh-wb-icon-button" aria-label={t(foldersExpanded ? "collapseFolders" : "expandFolders")} title={t(foldersExpanded ? "collapseFolders" : "expandFolders")} disabled={tree.directories.length === 0}
-            onClick={toggleFolders}><Icon name={foldersExpanded ? "collapse" : "expand"} /></button>
-          <button type="button" className="dsh-wb-button dsh-wb-icon-button dsh-wb-tree-refresh" aria-label={t("refresh")} title={t("refresh")} data-loading={loading ? "true" : "false"} onClick={refreshTree}><Icon name="refresh" /></button>
-        </div>
-        {filtering ? <div id="dsh-wb-tree-hits" className="dsh-wb-tree-hits" role="listbox" aria-label={t("treeFilter")} ref={listRef}
-          onKeyDown={(event: React.KeyboardEvent) => {
-            if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-              event.preventDefault();
-              setHitIndex((current) => moveSearchFocus(hits.length, current, event.key === "ArrowDown" ? 1 : -1));
-              return;
-            }
-            if (event.key === "Enter" && hits[hitIndex]) {
-              event.preventDefault();
-              locate(hits[hitIndex].path);
-            }
-          }}>
-          <div className="dsh-wb-search-state">{hits.length === 0 ? t("treeNoMatches") : t("treeMatchCount", { count: hits.length })}</div>
-          {renderHits()}
-        </div> : <div className="dsh-wb-tree-list" role="tree" tabIndex={rows.length === 0 ? 0 : -1}
-          aria-activedescendant={focusedPath ? `dsh-wb-tree-row-${focusedPath}` : undefined} ref={listRef}
-          onKeyDown={(event: React.KeyboardEvent) => {
-            if (event.target === event.currentTarget) onTreeKeyDown(event);
-          }}>
-          {failed ? <div className="dsh-wb-search-state">{t("searchError")}</div> : null}
-          {!failed && rows.length === 0 && !loading ? <div className="dsh-wb-search-state">{t("treeEmpty")}</div> : null}
-          {renderNodes()}
-        </div>}
-        {contextMenu ? <div className="dsh-wb-context-menu" role="menu" aria-label={t("fileMenu")} style={{ left: contextMenu.x, top: contextMenu.y }} onClick={(event: React.MouseEvent) => event.stopPropagation()}>
-          <button type="button" role="menuitem" onClick={() => menuIsDirectory ? locate(menuPath) : openFromTree(menuPath, "keep")}>{t(menuIsDirectory ? "revealInTree" : "openFileAction")}</button>
-          <button type="button" role="menuitem" onClick={() => { insertDraftText(document, menuPath); setContextMenu(null); }}>{t("insertPathAction")}</button>
-          <button type="button" role="menuitem" onClick={() => { if (navigator.clipboard) void navigator.clipboard.writeText(menuPath); setContextMenu(null); }}>{t("copyPathAction")}</button>
-          <button type="button" role="menuitem" onClick={() => { setContextMenu(null); refreshTree(); }}>{t("refresh")}</button>
-        </div> : null}
-      </aside>
-    </>;
+              }}
+            >
+              <div className="dsh-wb-search-state">
+                {hits.length === 0 ? t("treeNoMatches") : t("treeMatchCount", { count: hits.length })}
+              </div>
+              {renderHits()}
+            </div>
+          ) : (
+            <div
+              className="dsh-wb-tree-list"
+              role="tree"
+              tabIndex={rows.length === 0 ? 0 : -1}
+              aria-activedescendant={focusedPath ? `dsh-wb-tree-row-${focusedPath}` : undefined}
+              ref={listRef}
+              onKeyDown={(event: React.KeyboardEvent) => {
+                if (event.target === event.currentTarget) onTreeKeyDown(event);
+              }}
+            >
+              {failed ? <div className="dsh-wb-search-state">{t("searchError")}</div> : null}
+              {!failed && rows.length === 0 && !loading ? <div className="dsh-wb-search-state">{t("treeEmpty")}</div> : null}
+              {renderNodes()}
+            </div>
+          )}
+          {contextMenu ? (
+            <div
+              className="dsh-wb-context-menu"
+              role="menu"
+              aria-label={t("fileMenu")}
+              style={{ left: contextMenu.x, top: contextMenu.y }}
+              onClick={(event: React.MouseEvent) => event.stopPropagation()}
+            >
+              <button type="button" role="menuitem" onClick={() => menuIsDirectory ? locate(menuPath) : openFromTree(menuPath, "keep")}>
+                {t(menuIsDirectory ? "revealInTree" : "openFileAction")}
+              </button>
+              <button type="button" role="menuitem" onClick={() => { insertDraftText(document, menuPath); setContextMenu(null); }}>
+                {t("insertPathAction")}
+              </button>
+              <button type="button" role="menuitem" onClick={() => { if (navigator.clipboard) void navigator.clipboard.writeText(menuPath); setContextMenu(null); }}>
+                {t("copyPathAction")}
+              </button>
+            </div>
+          ) : null}
+        </aside>
+      </>
+    );
 }

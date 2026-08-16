@@ -1,0 +1,124 @@
+.dsh-wb-review-shell {
+  display: flex;
+  width: 280px;
+  min-width: 210px;
+  min-height: 0;
+  flex-direction: column;
+  border-left: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-specific-sidebar-fill);
+}
+
+.dsh-wb-review {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.dsh-wb-review-meta {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  height: 26px;
+  padding: 0 7px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+}
+
+.dsh-wb-review-meta b {
+  font-weight: 500;
+}
+
+.dsh-wb-review-meta .is-add,
+.dsh-wb-review-count.is-add,
+.dsh-wb-toggle-counts .is-add {
+  color: var(--dsw-alias-state-success-primary);
+}
+
+.dsh-wb-review-meta .is-delete,
+.dsh-wb-review-count.is-delete,
+.dsh-wb-toggle-counts .is-delete {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.dsh-wb-review-list {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 2px 4px 12px;
+}
+
+.dsh-wb-review-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 5px;
+  box-sizing: border-box;
+  min-height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  color: var(--dsw-alias-label-primary);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  font-size: 12px;
+  transition: background-color 120ms ease-out;
+}
+
+.dsh-wb-review-item:hover {
+  background: var(--dsw-specific-sidebar-nav-item-hover);
+}
+
+.dsh-wb-review-item.is-active {
+  background: var(--dsw-specific-sidebar-nav-item-active);
+}
+
+.dsh-wb-review-item:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: -2px;
+}
+
+.dsh-wb-review-path {
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dsh-wb-review-parent {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+}
+
+.dsh-wb-review-count {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dsh-wb-review-empty {
+  display: flex;
+  min-height: 120px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px;
+  color: var(--dsw-alias-label-tertiary);
+  text-align: center;
+  font-size: 12px;
+}
+
+.dsh-wb-review-empty strong {
+  color: var(--dsw-alias-label-secondary);
+}

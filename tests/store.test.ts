@@ -87,6 +87,7 @@ test("close clears the open file", async () => {
   expect(store.getSnapshot().path).toBe("");
   expect(store.getSnapshot().open).toEqual([]);
   expect(store.getSnapshot().payload).toBe(null);
+  expect(store.getSnapshot().visible).toBe(true);
 });
 
 test("show and hide only change panel visibility", async () => {

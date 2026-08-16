@@ -10,8 +10,8 @@ test("zh and en resolve from language tags", () => {
 test("translate fills placeholders from the active catalog", () => {
   expect(translate("zh", "linesWorkspace", { count: 12 })).toBe("12 行 · 当前工作区");
   expect(translate("en", "linesWorkspace", { count: 12 })).toBe("12 lines · workspace");
-  expect(translate("zh", "footerBrand")).toBe("DSH 工作台");
-  expect(translate("en", "footerBrand")).toBe("DSH Workbench");
+  expect(translate("zh", "workbench")).toBe("工作台");
+  expect(translate("en", "workbench")).toBe("Workbench");
 });
 
 test("locale store switches catalogs", () => {

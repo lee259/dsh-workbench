@@ -1,4 +1,4 @@
-import { diffLines, previewLines } from "../src/client/preview/line-diff.js";
+import { countDiffLines, diffLines, previewLines } from "../src/shared/line-diff.js";
 import { expect, test } from "vitest";
 
 test("preview keeps every line in order", () => {
@@ -24,6 +24,13 @@ test("diff deletes a line without treating the rest as replacements", () => {
     { text: "b", line: 2, kind: "remove" },
     { text: "c", line: 2, kind: "same" },
   ]);
+});
+
+test("countDiffLines matches the expanded add and remove rows", () => {
+  expect(countDiffLines("const value = 0;", "const value = 1;")).toEqual({ additions: 1, deletions: 1 });
+  expect(countDiffLines(null, "one\ntwo")).toEqual({ additions: 2, deletions: 0 });
+  expect(countDiffLines("a\nb\nc", "a\nc")).toEqual({ additions: 0, deletions: 1 });
+  expect(countDiffLines("", "a\nb")).toEqual({ additions: 2, deletions: 0 });
 });
 
 test("identical files produce only same rows", () => {

@@ -1,3 +1,4 @@
+import { countDiffLines } from "../shared/line-diff.js";
 import type { DiskFile } from "./workspace.js";
 import type { FileOpenMode, FilePayload, FileRevision } from "../shared/types.js";
 
@@ -42,4 +43,9 @@ export function toFilePayload(disk: DiskFile, revision: FileRevision | null, mod
     revision: revision?.revision ?? 0,
     size: disk.size,
   };
+}
+
+export function reviewCountsFor(disk: DiskFile, revision: FileRevision | null) {
+  const payload = toFilePayload(disk, revision, "diff");
+  return countDiffLines(payload.before, payload.content);
 }

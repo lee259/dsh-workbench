@@ -3,9 +3,13 @@ import { useWorkbenchServices } from "../workbench/runtime.js";
 import { WorkbenchStyles } from "../workbench/styles.js";
 
 function toolLabelKey(name: string) {
-  if (name === "read") return "toolRead" as const;
-  if (name === "edit") return "toolEdit" as const;
+  if (name === "read" || name.endsWith("/read")) return "toolRead" as const;
+  if (name === "edit" || name.endsWith("/edit")) return "toolEdit" as const;
   return "toolWrite" as const;
+}
+
+function isWriteLikeTool(name: string): boolean {
+  return name === "write" || name === "edit" || name.endsWith("/write") || name.endsWith("/edit");
 }
 
 export function FileToolRow({ toolName, block }: { toolName: string; block?: unknown }) {
@@ -21,10 +25,10 @@ export function FileToolRow({ toolName, block }: { toolName: string; block?: unk
         <span className="dsh-wb-tool-name">{t(toolLabelKey(toolName))}</span>
         <span className="dsh-wb-tool-sep">·</span>
         {filePath ? (
-          <button className="dsh-wb-tool-path" data-dsh-wb-mode={toolName === "write" || toolName === "edit" ? "diff" : "view"} type="button" onClick={(event) => {
+          <button className="dsh-wb-tool-path" data-dsh-wb-mode={isWriteLikeTool(toolName) ? "diff" : "view"} type="button" onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
-            void store.open(filePath, toolName === "write" || toolName === "edit" ? "diff" : "view");
+            void store.open(filePath, isWriteLikeTool(toolName) ? "diff" : "view");
           }}>
             {filePath}
           </button>

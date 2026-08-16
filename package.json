@@ -1,7 +1,7 @@
 {
   "name": "dsh-workbench",
   "version": "0.4.0",
-  "description": "A Codex-like file workspace for DeepSeek Harness Web with read-only previews, real DSH write/edit diffs, tabs, shortcuts, and resizing.",
+  "description": "A right-side file workspace for DeepSeek Harness Web.",
   "license": "MIT",
   "author": "lee259",
   "type": "module",
@@ -15,7 +15,7 @@
     "README.zh-CN.md",
     "assets",
     "AGENTS.md",
-    "CONTEXT.md"
+    "docs"
   ],
   "packageManager": "pnpm@10.34.5",
   "engines": {

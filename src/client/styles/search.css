@@ -151,9 +151,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .dsh-wb-sidebar,
-  .dsh-wb-search-box,
-  .dsh-wb-tree-refresh[data-loading="true"] .dsh-wb-icon-svg,
-  .dsh-wb-icon-button[data-loading="true"] .dsh-wb-icon-svg {
+  .dsh-wb-search-box {
     animation: none;
     transition: none;
   }
@@ -185,9 +183,32 @@
   box-shadow: inset 0 0 0 1px var(--dsw-alias-button-ghost-active-border);
 }
 
+.dsh-wb-toggle.is-review {
+  max-width: 280px;
+}
+
 .dsh-wb-toggle-label {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
   line-height: 20px;
   white-space: nowrap;
+}
+
+.dsh-wb-toggle.is-review .dsh-wb-toggle-label {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+}
+
+.dsh-wb-toggle-counts {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+}
+
+.dsh-wb-toggle-counts b {
+  font-weight: 500;
 }
 

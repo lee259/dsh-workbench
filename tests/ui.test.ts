@@ -196,7 +196,6 @@ test("file drawer tabs distinguish read views from captured diffs", async () => 
   expect(tabs[0].props.className).toMatch(/\bis-diff\b/);
   expect(tabs[1].props.className).toMatch(/\bis-view\b/);
   expect(tabs[1].props.className).toMatch(/\bis-active\b/);
-  expect(textContent(tabs[0])).toMatch(/diff/);
 });
 
 test("file drawer marks the transient preview tab", async () => {
@@ -249,7 +248,6 @@ test("file drawer renders read payloads as workspace views", async () => {
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const text = textContent(ui.FileDrawer());
   expect(text).toMatch(/1 lines · workspace/);
-  expect(text).toMatch(/Read-only · current workspace content/);
   expect(text).not.toMatch(/DSH write diff/);
 });
 
@@ -265,27 +263,10 @@ test("file drawer renders edit payloads as diffs", async () => {
   await store.open("src/example.ts", "diff");
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const text = textContent(ui.FileDrawer());
-  expect(text).toMatch(/1 lines · DSH write diff/);
-  expect(text).toMatch(/Read-only · from DSH write\/edit output/);
+  expect(text).toMatch(/\+1 −1 · DSH write diff/);
 });
 
-test("file drawer refreshes the active file", async () => {
-  let calls = 0;
-  const store = createFileStore(async (path) => {
-    calls += 1;
-    return { path, content: `version-${calls}`, before: null, source: "workspace", revision: calls - 1, size: 9 };
-  });
-  await store.open("src/example.ts");
-  const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
-  const refresh = findElement(ui.FileDrawer(), (node) => node.props?.title === "Refresh file");
-  expect(refresh).toBeTruthy();
-  refresh.props.onClick();
-  await Promise.resolve();
-  expect(calls).toBe(2);
-  expect(store.getSnapshot().payload?.content).toBe("version-2");
-});
-
-test("file drawer copies content and path", async () => {
+test("file drawer copies the active path", async () => {
   const copied = [];
   const clipboard = { writeText: async (value) => copied.push(value) };
   const originalNavigator = globalThis.navigator;
@@ -304,15 +285,11 @@ test("file drawer copies content and path", async () => {
     await store.open("src/example.ts");
     const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
     const drawer = ui.FileDrawer();
-    const copyContent = findElement(drawer, (node) => node.props?.title === "Copy");
     const copyPath = findElement(drawer, (node) => node.props?.className === "dsh-wb-path");
-    expect(copyContent).toBeTruthy();
     expect(copyPath).toBeTruthy();
-    copyContent.props.onClick();
     copyPath.props.onClick();
     await Promise.resolve();
-    await Promise.resolve();
-    expect(copied).toEqual(["const value = 1;", "src/example.ts"]);
+    expect(copied).toEqual(["src/example.ts"]);
   } finally {
     Object.defineProperty(globalThis, "navigator", { configurable: true, value: originalNavigator });
     Object.defineProperty(globalThis, "window", { configurable: true, value: originalWindow });
@@ -441,12 +418,13 @@ test("file drawer plus button and breadcrumbs are wired", async () => {
   const segments = findElements(drawer, (node) => node.props?.className?.includes("dsh-wb-path-segment"));
   expect(segments.length >= 3).toBeTruthy();
   expect(segments.every((node) => typeof node.props.onClick === "function")).toBeTruthy();
-  const treeToggle = findElement(drawer, (node) => node.props?.["aria-label"] === "Hide file tree");
-  expect(treeToggle).toBeTruthy();
-  expect(treeToggle.props["aria-pressed"]).toBe(true);
+  expect(findElement(drawer, (node) => node.props?.["aria-label"] === "Hide file tree")).toBe(undefined);
+  expect(findElement(drawer, (node) => node.props?.["aria-label"] === "Show review")).toBeTruthy();
   expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree")).toBeTruthy();
-  expect(findElement(drawer, (node) => node.props?.["aria-label"] === "Expand folders")).toBeTruthy();
-  expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree-rail")).toBe(undefined);
+  const rails = findElements(drawer, (node) => node.props?.className === "dsh-wb-rail");
+  expect(rails).toHaveLength(2);
+  expect(rails.filter((node) => node.props.hidden)).toHaveLength(1);
+  expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-review")).toBeTruthy();
 });
 
 test("file drawer shows the workspace tree by default", () => {
@@ -462,7 +440,7 @@ test("file drawer shows the workspace tree by default", () => {
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const drawer = ui.FileDrawer();
   expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree-resize")).toBeTruthy();
-  expect(findElement(drawer, (node) => node.props?.["aria-label"] === "Hide file tree")).toBeTruthy();
+  expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree")).toBeTruthy();
   expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree-rail")).toBe(undefined);
 });
 
@@ -478,8 +456,6 @@ test("file actions expose accessible labels", async () => {
   await store.open("src/example.ts");
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const buttons = findElements(ui.FileDrawer(), (node) => node.type === "button");
-  expect(buttons.some((node) => node.props["aria-label"] === "Refresh file")).toBeTruthy();
-  expect(buttons.some((node) => node.props["aria-label"] === "Copy")).toBeTruthy();
   expect(buttons.some((node) => node.props["aria-label"] === "Close")).toBeTruthy();
   const pathButton = findElement(ui.FileDrawer(), (node) => node.props?.className === "dsh-wb-path");
   expect(pathButton).toBeTruthy();

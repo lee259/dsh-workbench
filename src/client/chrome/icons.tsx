@@ -1,5 +1,5 @@
 import React from "react";
-import { Check, ChevronRight, ChevronsDownUp, ChevronsUpDown, Copy, FilePlus2, FileText, Folder, FolderOpen, PanelRight, RefreshCw, Search, X, type IconNode } from "lucide";
+import { Check, ChevronRight, Copy, FilePlus2, FileText, Folder, FolderOpen, GitCommitHorizontal, PanelRight, Search, X, type IconNode } from "lucide";
 
 function renderIcon(icon: IconNode, className: string, size: number, strokeWidth: number) {
   return React.createElement("svg", { className, width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": strokeWidth, "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": true },
@@ -7,18 +7,16 @@ function renderIcon(icon: IconNode, className: string, size: number, strokeWidth
   );
 }
 
-export type WorkbenchIconName = "search" | "refresh" | "copy" | "check" | "close" | "folder" | "collapse" | "expand" | "panel";
+export type WorkbenchIconName = "search" | "copy" | "check" | "close" | "folder" | "panel" | "commit";
 
 const ICONS: Record<WorkbenchIconName, IconNode> = {
   search: Search,
-  refresh: RefreshCw,
   copy: Copy,
   check: Check,
   close: X,
   folder: Folder,
-  collapse: ChevronsDownUp,
-  expand: ChevronsUpDown,
   panel: PanelRight,
+  commit: GitCommitHorizontal,
 };
 
 export function Icon({ name }: { name: WorkbenchIconName }) {

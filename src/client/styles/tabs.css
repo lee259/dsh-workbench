@@ -57,20 +57,6 @@
   height: 14px;
 }
 
-.dsh-wb-tab-kind {
-  flex: 0 0 auto;
-  color: var(--dsw-alias-label-tertiary);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  line-height: 14px;
-  text-transform: lowercase;
-}
-
-.dsh-wb-tab.is-diff .dsh-wb-tab-kind {
-  color: var(--dsw-alias-state-warn-primary);
-}
-
 .dsh-wb-tab-name,
 .dsh-wb-tab-close {
   border: 0;
@@ -284,4 +270,3 @@
   font-size: 11px;
   pointer-events: none;
 }
-

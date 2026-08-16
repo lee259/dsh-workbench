@@ -1,4 +1,5 @@
-import { isFileTool, normalizePath, type FileRevision, type FileToolName } from "../shared/types.js";
+import { countDiffLines } from "../shared/line-diff.js";
+import { isFileTool, normalizePath, type FileRevision, type FileToolName, type ReviewChange } from "../shared/types.js";
 
 export type SessionEvent = {
   type?: string;
@@ -126,6 +127,8 @@ function diffsFromMeta(meta: unknown): FileDiff[] {
  */
 export class WriteHistory {
   private readonly revisions = new Map<string, FileRevision>();
+  private readonly reviewRevisions = new Map<string, ReviewChange>();
+  private readonly sessionRoots = new Map<string, string>();
   private readonly seenCalls = new Set<string>();
   private readonly pending = new Map<string, PendingCall>();
 
@@ -144,6 +147,24 @@ export class WriteHistory {
 
   get(path: string): FileRevision | null {
     return this.revisions.get(this.key(path)) ?? null;
+  }
+
+  noteSessionRoot(sessionId: string, root: string): void {
+    const value = root.trim();
+    if (value) this.sessionRoots.set(sessionId, value);
+  }
+
+  getReview(sessionId?: string, root?: string): ReviewChange[] {
+    return [...this.reviewRevisions.values()].filter((change) => {
+      if (sessionId && change.sessionId !== sessionId) return false;
+      if (!root) return true;
+      const sessionRoot = this.sessionRoots.get(change.sessionId);
+      return !sessionRoot || sessionRoot === root;
+    });
+  }
+
+  reviewSessions(root?: string): string[] {
+    return [...new Set(this.getReview(undefined, root).map((change) => change.sessionId))];
   }
 
   private key(path: string): string {
@@ -257,6 +278,11 @@ export class WriteHistory {
       source,
     };
     this.revisions.set(path, revision);
+    if (source === "dsh-write") {
+      const key = `${sessionId}:${path}`;
+      this.reviewRevisions.delete(key);
+      this.reviewRevisions.set(key, { path: revision.path, sessionId, revision: revision.revision, ...countDiffLines(revision.before, revision.content) });
+    }
     return revision;
   }
 

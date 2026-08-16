@@ -1,43 +1,94 @@
 import * as React from "react";
 import { shortcutAction } from "../chrome/shortcuts.js";
 import { DEFAULT_SIDEBAR_WIDTH, sidebarWidthFromKey, sidebarWidthFromPointer, readSidebarWidth, writeSidebarWidth } from "../chrome/sidebar.js";
-import type { TreeCommands } from "../explorer/file-tree.js";
-import { readTreeVisible, writeTreeVisible } from "../explorer/tree-model.js";
+import { clampTreeWidth, persistTreeWidth, savedTreeWidth, type TreeCommands } from "../explorer/file-tree.js";
+import { writeTreeOpen } from "../explorer/tree-model.js";
 import type { PreviewCommands } from "../preview/preview-nav.js";
 import type { FileState } from "../store.js";
+import { WORKSPACE_API_PATH } from "../../shared/types.js";
 import { followWorkspaceEvents } from "../workspace-events.js";
+import { lastWorkbenchSession, sessionIdFromEvent, workbenchShouldReset } from "../workspace-identity.js";
 import { useWorkbenchServices } from "./runtime.js";
 
 function savedSidebarWidth(): number {
   try { return readSidebarWidth(window.localStorage); } catch { return DEFAULT_SIDEBAR_WIDTH; }
 }
 
-function savedTreeVisible(): boolean {
-  try { return readTreeVisible(window.localStorage); } catch { return true; }
-}
-
-export function useWorkbenchShell(readTreeWidth: () => number, writeTreeWidth: (width: number) => void) {
+export function useWorkbenchShell() {
     const { store, i18n } = useWorkbenchServices();
     const state = React.useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot) as FileState;
     const t = i18n.t;
     const [width, setWidth] = React.useState(savedSidebarWidth);
-    const [treeWidth, setTreeWidth] = React.useState(readTreeWidth);
-    const [treeVisible, setTreeVisible] = React.useState(savedTreeVisible);
-    const [revealPath, setRevealPath] = React.useState("");
-    const [copied, setCopied] = React.useState(false);
     const [pathCopied, setPathCopied] = React.useState(false);
     const [searchOpen, setSearchOpen] = React.useState(false);
+    const [diffMode, setDiffMode] = React.useState(false);
+    const [treeWidth, setTreeWidth] = React.useState(savedTreeWidth);
+    const [revealPath, setRevealPath] = React.useState("");
+    const [workspaceKey, setWorkspaceKey] = React.useState("");
+    const [sessionId, setSessionId] = React.useState("");
     const [mounted, setMounted] = React.useState(state.visible);
     const [closing, setClosing] = React.useState(false);
     const previewCommands = React.useRef<PreviewCommands | null>(null);
     const treeCommands = React.useRef<TreeCommands | null>(null);
     const sidebarRef = React.useRef<HTMLElement | null>(null);
+    const rootRef = React.useRef("");
+    const sessionRef = React.useRef("");
+    const workspaceKeyRef = React.useRef(workspaceKey);
+    workspaceKeyRef.current = workspaceKey;
 
-    const setTreeOpen = (next: boolean) => {
-      setTreeVisible(next);
-      try { writeTreeVisible(window.localStorage, next); } catch { /* storage may be unavailable */ }
-    };
-    const showTreeAt = (path: string) => { setTreeOpen(true); setRevealPath(path); };
+    const resetChrome = React.useCallback(() => {
+      store.close();
+      setDiffMode(false);
+      setRevealPath("");
+      setSearchOpen(false);
+      setPathCopied(false);
+      writeTreeOpen(window.localStorage, []);
+    }, [store]);
+
+    const applyIdentity = React.useCallback((root: string, sessionId: string) => {
+      const nextRoot = root || rootRef.current;
+      if (workbenchShouldReset(rootRef.current, nextRoot)) resetChrome();
+      if (nextRoot && nextRoot !== rootRef.current) {
+        rootRef.current = nextRoot;
+        workspaceKeyRef.current = nextRoot;
+        setWorkspaceKey(nextRoot);
+      }
+      if (sessionId !== sessionRef.current) {
+        sessionRef.current = sessionId;
+        setSessionId(sessionId);
+      }
+    }, [resetChrome]);
+
+    const syncWorkspace = React.useCallback(async () => {
+      try {
+        const response = await fetch(WORKSPACE_API_PATH);
+        if (!response.ok) return;
+        const next = (await response.json() as { root?: string }).root ?? "";
+        if (next) applyIdentity(next, sessionRef.current);
+      } catch { /* workspace identity is best effort */ }
+    }, [applyIdentity]);
+
+    React.useEffect(() => {
+      applyIdentity(rootRef.current, lastWorkbenchSession());
+      void syncWorkspace();
+      const onWorkspaceChange = () => void syncWorkspace();
+      const onSessionChange = (event: Event) => applyIdentity(rootRef.current, sessionIdFromEvent(event));
+      window.addEventListener("dsh-wb-workspace-change", onWorkspaceChange);
+      window.addEventListener("dsh-wb-session-change", onSessionChange);
+      return () => {
+        window.removeEventListener("dsh-wb-workspace-change", onWorkspaceChange);
+        window.removeEventListener("dsh-wb-session-change", onSessionChange);
+      };
+    }, [applyIdentity, syncWorkspace]);
+
+    React.useEffect(() => {
+      const onReviewRequest = () => {
+        setDiffMode(true);
+        if (!state.visible) store.show();
+      };
+      window.addEventListener("dsh-wb-review-request", onReviewRequest);
+      return () => window.removeEventListener("dsh-wb-review-request", onReviewRequest);
+    }, [state.visible, store]);
 
     React.useEffect(() => {
       const onKey = (event: KeyboardEvent) => {
@@ -45,7 +96,7 @@ export function useWorkbenchShell(readTreeWidth: () => number, writeTreeWidth: (
         if (!action) return;
         if (action.type === "search") { event.preventDefault(); if (!state.visible) store.show(); setSearchOpen(true); return; }
         if (action.type === "toggle") { event.preventDefault(); if (state.visible) store.hide(); else store.show(); return; }
-        if (action.type === "toggleTree") { event.preventDefault(); if (!state.visible) store.show(); setTreeOpen(!treeVisible); return; }
+        if (action.type === "toggleTree") { event.preventDefault(); if (!state.visible) store.show(); setDiffMode((current) => !current); return; }
         if (action.type === "find") {
           if (!(event.target instanceof Node) || !sidebarRef.current?.contains(event.target)) return;
           event.preventDefault(); previewCommands.current?.find(); return;
@@ -64,7 +115,7 @@ export function useWorkbenchShell(readTreeWidth: () => number, writeTreeWidth: (
       };
       window.addEventListener("keydown", onKey);
       return () => window.removeEventListener("keydown", onKey);
-    }, [state.visible, state.active, state.open, searchOpen, treeVisible]);
+    }, [state.visible, state.active, state.open, searchOpen, store]);
 
     React.useEffect(() => followWorkspaceEvents(() => {
       store.noteDiskChange();
@@ -98,5 +149,7 @@ export function useWorkbenchShell(readTreeWidth: () => number, writeTreeWidth: (
       window.addEventListener("pointerup", onUp, { once: true });
     };
 
-    return { state, t, width, setWidth, treeWidth, setTreeWidth, treeVisible, setTreeVisible, revealPath, copied, setCopied, pathCopied, setPathCopied, searchOpen, setSearchOpen, mounted, closing, previewCommands, treeCommands, setTreeOpen, showTreeAt, resizeStart, sidebarRef, sidebarWidthFromKey, writeTreeWidth };
+    const showTreeAt = (path: string) => { setDiffMode(false); setRevealPath(path); };
+    const resizeTree = (next: number) => { const value = clampTreeWidth(next); setTreeWidth(value); persistTreeWidth(value); };
+    return { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, diffMode, setDiffMode, treeWidth, revealPath, treeCommands, previewCommands, mounted, closing, showTreeAt, resizeTree, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey };
 }

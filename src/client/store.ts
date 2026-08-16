@@ -210,7 +210,7 @@ export function createFileStore(load: FileLoader = fetchWorkspaceFile): FileStor
       if (path == null || path === "") {
         requestId += 1;
         modes.clear();
-        set(empty);
+        set({ ...empty, visible: state.visible, disk: state.disk });
         return;
       }
       const key = normalizePath(path);

@@ -2,6 +2,8 @@ export const FILE_API_PATH = "/api/dsh-workbench/file";
 export const FILE_ASSET_API_PATH = "/api/dsh-workbench/asset";
 export const FILES_API_PATH = "/api/dsh-workbench/files";
 export const ACTIVITY_API_PATH = "/api/dsh-workbench/activity";
+export const REVIEW_API_PATH = "/api/dsh-workbench/review";
+export const WORKSPACE_API_PATH = "/api/dsh-workbench/workspace";
 export const EVENTS_API_PATH = "/api/dsh-workbench/events";
 export const MAX_PREVIEW_BYTES = 800_000;
 export const MAX_IMAGE_PREVIEW_BYTES = 12_000_000;
@@ -42,6 +44,14 @@ export type FileRevision = {
   revision: number;
   sessionId: string;
   source: Exclude<FileSource, "workspace">;
+};
+
+export type ReviewChange = {
+  path: string;
+  sessionId: string;
+  revision: number;
+  additions: number;
+  deletions: number;
 };
 
 export type ActivityKind = "tool" | "code";

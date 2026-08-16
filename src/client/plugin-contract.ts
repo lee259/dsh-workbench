@@ -1,3 +1,6 @@
+import type { DshLocaleFace } from "../shared/i18n.js";
+import type { DshWorkspaceFaces } from "./workspace-identity.js";
+
 export type DshRequire = (id: string) => unknown;
 
 export type WorkbenchSlotContext = {
@@ -7,12 +10,11 @@ export type WorkbenchSlotContext = {
   };
 };
 
-export type WorkbenchClientContext = WorkbenchSlotContext & {
+export type WorkbenchClientContext = WorkbenchSlotContext & DshWorkspaceFaces & {
   locale: DshLocaleFace;
 };
 
 export type WorkbenchPlugin = {
-  inject: ["slots", "locale"];
+  inject: ["slots", "locale", "sessions", "workspaces"];
   apply(ctx: WorkbenchClientContext): void;
 };
-import type { DshLocaleFace } from "../shared/i18n.js";

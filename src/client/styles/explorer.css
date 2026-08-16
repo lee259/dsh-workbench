@@ -9,6 +9,14 @@
   flex: 1;
 }
 
+.dsh-wb-rail {
+  display: contents;
+}
+
+.dsh-wb-rail[hidden] {
+  display: none;
+}
+
 .dsh-wb-tree {
   display: flex;
   width: 280px;
@@ -59,26 +67,6 @@
   background: var(--dsw-alias-bg-layer-1);
 }
 
-.dsh-wb-tree-head .dsh-wb-icon-button {
-  width: 26px;
-  height: 26px;
-}
-
-.dsh-wb-tree-refresh {
-  flex: 0 0 26px;
-}
-
-.dsh-wb-tree-refresh[data-loading="true"] .dsh-wb-icon-svg {
-  animation: dsh-wb-spin 0.8s linear infinite;
-}
-
-.dsh-wb-icon-button[data-loading="true"] .dsh-wb-icon-svg {
-  animation: dsh-wb-spin 0.8s linear infinite;
-}
-
-@keyframes dsh-wb-spin {
-  to { transform: rotate(360deg); }
-}
 
 .dsh-wb-tree-search input {
   min-width: 0;

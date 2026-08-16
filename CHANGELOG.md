@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Add a change review panel that lists real DSH writes by session with `+/−` counts.
+
+### Changed
+
+- Align the review rail with the file tree: same head height, row, and hover language.
+- Fold the header review chip into the Workbench toggle so one control shows counts when the session has writes.
+- Drop the review-rail refresh control; the list already follows session and disk events.
+- Remove the status footer, header file refresh, tab Diff badge, and content-copy control.
+- Drop the review file filter and the tree expand-all / refresh chrome. The tree still rescans on disk events; folders still toggle from the row.
+- Opening the Workbench toggle while the session has writes lands on the review rail.
+
+### Fixes
+
+- Follow the DSH workspace selection so the file tree, tabs, and review list retarget instead of staying on the process start directory.
+- Review `+/−` counts follow the expanded preview diff, and the Workbench toggle waits for the current session before showing writes.
+
 ## 0.4.0 - 2026-08-16
 
 ### Features

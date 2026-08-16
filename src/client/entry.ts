@@ -5,6 +5,7 @@ import { createWorkbenchUi } from "./ui.js";
 import { setReactRuntime } from "./react-bridge.js";
 import { createLocaleStore, followDshLocale } from "../shared/i18n.js";
 import type { DshRequire, WorkbenchClientContext } from "./plugin-contract.js";
+import { followDshSession, followDshWorkspace, notifyWorkbenchSession, retargetWorkbenchRoot } from "./workspace-identity.js";
 
 declare global {
   interface Window {
@@ -25,6 +26,8 @@ function createClient(require: DshRequire) {
   let ui: ReturnType<typeof createWorkbenchUi> | undefined;
   let contextApplied = false;
   let pendingContext: WorkbenchClientContext | undefined;
+  let stopWorkspace: (() => void) | undefined;
+  let stopSession: (() => void) | undefined;
   setReactRuntime(React);
   ui = createWorkbenchUi(React, store, i18n);
   mountWorkbenchDrawer(React, ReactDOMClient.createRoot, ui.WorkbenchRoot, document.body);
@@ -33,9 +36,15 @@ function createClient(require: DshRequire) {
     contextApplied = true;
   }
   return {
-    inject: ["slots", "locale"],
+    inject: ["slots", "locale", "sessions", "workspaces"],
     apply(ctx: WorkbenchClientContext) {
       followDshLocale(i18n, ctx.locale);
+      stopWorkspace?.();
+      stopSession?.();
+      stopWorkspace = followDshWorkspace(ctx, (path) => {
+        void retargetWorkbenchRoot(path);
+      });
+      stopSession = followDshSession(ctx, notifyWorkbenchSession);
       pendingContext = ctx;
       if (ui && !contextApplied) {
         ui.apply(ctx);

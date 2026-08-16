@@ -3,9 +3,6 @@ export type Locale = "zh" | "en";
 export type MessageKey =
   | "loadingTitle"
   | "loadingHint"
-  | "copy"
-  | "refresh"
-  | "copied"
   | "copyPath"
   | "pathCopied"
   | "close"
@@ -14,9 +11,6 @@ export type MessageKey =
   | "linesWorkspace"
   | "linesDiff"
   | "workspaceTitle"
-  | "footerView"
-  | "footerDiff"
-  | "footerBrand"
   | "file"
   | "toolRead"
   | "toolWrite"
@@ -53,9 +47,6 @@ export type MessageKey =
   | "treeEmpty"
   | "revealInTree"
   | "insertPathAction"
-  | "collapseFolders"
-  | "expandFolders"
-  | "tabDiff"
   | "workspaceTree"
   | "openFile"
   | "newTab"
@@ -64,31 +55,31 @@ export type MessageKey =
   | "fileMenu"
   | "openFileAction"
   | "copyPathAction"
-  | "showTree"
-  | "hideTree"
+  | "diffMode"
+  | "previewMode"
   | "findInFile"
   | "goToLine"
   | "workbench"
   | "markdownPreview"
-  | "markdownSource";
+  | "markdownSource"
+  | "reviewTitle"
+  | "reviewError"
+  | "reviewEmpty"
+  | "reviewEmptyHint"
+  | "reviewFiles"
+  | "editedFiles";
 
 const zh: Record<MessageKey, string> = {
   loadingTitle: "正在读取文件",
   loadingHint: "从当前工作区加载内容…",
-  copy: "复制内容",
-  refresh: "刷新文件",
-  copied: "已复制",
   copyPath: "复制文件路径",
   pathCopied: "路径已复制",
   close: "关闭",
   reading: "正在读取…",
   readError: "读取失败",
   linesWorkspace: "{count} 行 · 当前工作区",
-  linesDiff: "{count} 行 · DSH 写入对比",
+  linesDiff: "+{additions} −{deletions} · DSH 写入对比",
   workspaceTitle: "文件工作区",
-  footerView: "只读查看 · 当前工作区内容",
-  footerDiff: "只读查看 · 基于 DSH write/edit 输出",
-  footerBrand: "DSH 工作台",
   file: "文件",
   toolRead: "读取",
   toolWrite: "写入",
@@ -125,9 +116,6 @@ const zh: Record<MessageKey, string> = {
   treeEmpty: "工作区是空的",
   revealInTree: "在树中显示",
   insertPathAction: "插入路径到输入框",
-  collapseFolders: "折叠全部文件夹",
-  expandFolders: "展开全部文件夹",
-  tabDiff: "对比",
   workspaceTree: "工作区文件树",
   openFile: "打开文件",
   newTab: "新建标签页",
@@ -136,32 +124,32 @@ const zh: Record<MessageKey, string> = {
   fileMenu: "文件操作",
   openFileAction: "打开文件",
   copyPathAction: "复制路径",
-  showTree: "显示文件树",
-  hideTree: "隐藏文件树",
+  diffMode: "显示变更审阅",
+  previewMode: "显示文件树",
   findInFile: "在文件中查找",
   goToLine: "跳转到行",
   workbench: "工作台",
   markdownPreview: "预览 Markdown",
   markdownSource: "查看原始 Markdown",
+  reviewTitle: "变更审阅",
+  reviewError: "变更加载失败",
+  reviewEmpty: "暂无捕获的变更",
+  reviewEmptyHint: "DSH 写入文件后会显示在这里",
+  reviewFiles: "个文件",
+  editedFiles: "已编辑 {count} 个文件",
 };
 
 const en: Record<MessageKey, string> = {
   loadingTitle: "Reading file",
   loadingHint: "Loading from the current workspace…",
-  copy: "Copy",
-  refresh: "Refresh file",
-  copied: "Copied",
   copyPath: "Copy file path",
   pathCopied: "Path copied",
   close: "Close",
   reading: "Reading…",
   readError: "Failed to read",
   linesWorkspace: "{count} lines · workspace",
-  linesDiff: "{count} lines · DSH write diff",
+  linesDiff: "+{additions} −{deletions} · DSH write diff",
   workspaceTitle: "File workspace",
-  footerView: "Read-only · current workspace content",
-  footerDiff: "Read-only · from DSH write/edit output",
-  footerBrand: "DSH Workbench",
   file: "File",
   toolRead: "Read",
   toolWrite: "Write",
@@ -198,9 +186,6 @@ const en: Record<MessageKey, string> = {
   treeEmpty: "Workspace is empty",
   revealInTree: "Reveal in tree",
   insertPathAction: "Insert path into input",
-  collapseFolders: "Collapse folders",
-  expandFolders: "Expand folders",
-  tabDiff: "diff",
   workspaceTree: "Workspace files",
   openFile: "Open file",
   newTab: "New tab",
@@ -209,13 +194,19 @@ const en: Record<MessageKey, string> = {
   fileMenu: "File actions",
   openFileAction: "Open file",
   copyPathAction: "Copy path",
-  showTree: "Show file tree",
-  hideTree: "Hide file tree",
+  diffMode: "Show review",
+  previewMode: "Show file tree",
   findInFile: "Find in file",
   goToLine: "Go to line",
   workbench: "Workbench",
   markdownPreview: "Preview Markdown",
   markdownSource: "View raw Markdown",
+  reviewTitle: "Review changes",
+  reviewError: "Failed to load changes",
+  reviewEmpty: "No captured changes",
+  reviewEmptyHint: "DSH file writes will appear here",
+  reviewFiles: "files",
+  editedFiles: "{count} files edited",
 };
 
 const catalogs: Record<Locale, Record<MessageKey, string>> = { zh, en };

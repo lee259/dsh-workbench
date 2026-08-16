@@ -1,0 +1,6 @@
+---
+description: Point Cursor at the shared agent docs used by every tool.
+alwaysApply: true
+---
+
+Follow [AGENTS.md](../../AGENTS.md). Docs live in [docs/](../../docs/).

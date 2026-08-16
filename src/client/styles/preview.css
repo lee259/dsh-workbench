@@ -39,11 +39,12 @@
 
 .dsh-wb-preview-toolbar {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   flex: 0 0 auto;
   padding: 6px 10px;
   border-bottom: 1px solid var(--dsw-alias-border-l2);
-  background: var(--ds-specific-sidebar-fill, var(--dsw-specific-sidebar-fill));
+  background: var(--dsw-specific-sidebar-fill);
 }
 
 .dsh-wb-markdown-toggle {
@@ -162,17 +163,5 @@
   padding: 18px;
   color: var(--dsw-alias-state-error-primary);
   font-size: 12px;
-}
-
-/* ── Footer ──────────────────────────────────────────────────────── */
-
-.dsh-wb-foot {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 7px 12px;
-  border-top: 1px solid var(--dsw-alias-border-l2);
-  color: var(--dsw-alias-label-tertiary);
-  font-size: 11px;
 }
 
