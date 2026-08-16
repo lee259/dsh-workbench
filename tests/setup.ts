@@ -23,7 +23,7 @@ setReactRuntime({
         if (!node || typeof node !== "object") return node;
         if (typeof node.type === "function") {
           const name = node.type.name ?? "";
-          if (name.endsWith("Icon") || name === "WorkspaceTreePanel") return node;
+          if (name.endsWith("Icon")) return node;
           return resolve(node.type(node.props ?? {}));
         }
         if (!node.props?.children) return node;

@@ -4,15 +4,10 @@ import type { FileStore } from "../store.js";
 
 export type WorkbenchRuntimeServices = { readonly store: FileStore; readonly i18n: LocaleStore };
 let runtimeContext: ReturnType<typeof createContext<WorkbenchRuntimeServices | null>> | null = null;
-let compatibilityServices: WorkbenchRuntimeServices | null = null;
 
 function getRuntimeContext() {
   runtimeContext ??= createContext<WorkbenchRuntimeServices | null>(null);
   return runtimeContext;
-}
-
-export function setWorkbenchRuntimeFallback(services: WorkbenchRuntimeServices): void {
-  compatibilityServices = services;
 }
 
 export function WorkbenchRuntime({ services, children }: { services: WorkbenchRuntimeServices; children: ReactNode }) {
@@ -22,9 +17,8 @@ export function WorkbenchRuntime({ services, children }: { services: WorkbenchRu
 
 export function useWorkbenchRuntime(): WorkbenchRuntimeServices {
   const context = useContext(getRuntimeContext());
-  const services = context ?? compatibilityServices;
-  if (!services) throw new Error("Workbench runtime is not initialized");
-  return services;
+  if (!context) throw new Error("Workbench runtime is not initialized");
+  return context;
 }
 
 export function useWorkbenchServices(): WorkbenchRuntimeServices {

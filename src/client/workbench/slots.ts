@@ -1,13 +1,7 @@
 import { FILE_TOOLS } from "../../shared/types.js";
+import type { WorkbenchSlotContext } from "../plugin-contract.js";
 
-export type SlotContext = {
-  slots: {
-    inject(name: string, factory: () => unknown): void;
-    register(slot: Record<string, unknown>, component: unknown): unknown;
-  };
-};
-
-export function applyWorkbenchSlots(ctx: SlotContext, components: {
+export function applyWorkbenchSlots(ctx: WorkbenchSlotContext, components: {
   FileToolRow: unknown;
   WorkbenchToggle: unknown;
 }): void {

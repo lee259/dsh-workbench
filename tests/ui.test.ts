@@ -444,11 +444,8 @@ test("file drawer plus button and breadcrumbs are wired", async () => {
   const treeToggle = findElement(drawer, (node) => node.props?.["aria-label"] === "Hide file tree");
   expect(treeToggle).toBeTruthy();
   expect(treeToggle.props["aria-pressed"]).toBe(true);
-  const panel = findElement(drawer, (node) => typeof node.props?.onResize === "function");
-  expect(panel).toBeTruthy();
-  const tree = panel.type(panel.props);
-  expect(findElement(tree, (node) => node.props?.["aria-label"] === "Hide file tree")).toBe(undefined);
-  expect(findElement(tree, (node) => node.props?.["aria-label"] === "Expand folders")).toBeTruthy();
+  expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree")).toBeTruthy();
+  expect(findElement(drawer, (node) => node.props?.["aria-label"] === "Expand folders")).toBeTruthy();
   expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree-rail")).toBe(undefined);
 });
 
@@ -464,7 +461,7 @@ test("file drawer shows the workspace tree by default", () => {
   store.show();
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const drawer = ui.FileDrawer();
-  expect(findElement(drawer, (node) => typeof node.props?.onResize === "function")).toBeTruthy();
+  expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree-resize")).toBeTruthy();
   expect(findElement(drawer, (node) => node.props?.["aria-label"] === "Hide file tree")).toBeTruthy();
   expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree-rail")).toBe(undefined);
 });
