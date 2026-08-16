@@ -33,14 +33,12 @@
   "keywords": [
     "deepseek-harness",
     "dsh",
+    "dsh-plugin",
     "cordis",
-    "plugin",
     "workbench",
-    "diff",
     "file-preview",
-    "code-review",
-    "codemirror",
-    "session-tools"
+    "file-tree",
+    "diff"
   ],
   "publishConfig": {
     "access": "public",

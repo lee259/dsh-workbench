@@ -15,12 +15,15 @@ read       → source
 write/edit → captured DSH diff
 ```
 
-- Tabs, resize, and path copy
-- Click a tree or Quick Open row to preview; double-click to pin
-- `⌥⌘B` toggle · `⌘⇧E` tree / review · `⌘P` open file · `⌘F` / `⌘L` find / go to line · `⌘W` close · `⌘1`–`⌘9` tabs
-- Tree search locates without opening; drag or right-click inserts a path
-- Review lists captured writes with `+/−`
-- UI follows the DSH language setting
+## Why it is useful
+
+- Keep the conversation and the file you are inspecting visible together.
+- See real DSH write/edit changes, with the captured before/after content.
+- Read files as source. Diffs come from captured DSH writes, not a Git `HEAD`.
+- Open several files, switch tabs, copy paths, and resize the panel. A tree or Quick Open click previews; double-click pins. Conversation writes open a kept tab.
+- Shortcuts: `⌥⌘B` toggle, `⌘⇧E` tree / review, `⌘P` open file, tree search to locate without opening, `⌘F` / `⌘L` find or jump, `⌘W` close, `⌘1`–`⌘9` switch tabs. Drag or right-click to insert a path.
+- Review lists captured writes with `+/−`.
+- UI follows the DSH language setting.
 
 ## Install
 
@@ -79,6 +82,39 @@ pnpm start -- /absolute/path/to/your/project
 - Client: `dsh.client`, `exports["./client"]`, `window.__ModuleLoader__.load`
 - Styles: `src/client/styles.css`
 - UI strings: `src/shared/i18n.ts`
+
+## Roadmap
+
+Inspect, navigate, and review what the agent touched. Diffs stay on captured DSH writes.
+
+### Done
+
+- Read-only previews for `read` and file mentions
+- Captured DSH diffs for `write` / `edit`
+- Persistent, resizable right-side workspace
+- Multi-file tabs, preview / pin, path copy, and desktop shortcuts
+- In-file find / go-to-line, plus conversation `:line` / `#Lline` targets
+- Chinese / English UI following DSH locale
+- Quick Open (`⌘/Ctrl+P`) and tree search that locates without opening
+- Workspace file tree with breadcrumbs, keyboard navigation, and path insert
+- Syntax highlighting, folding, and live refresh when the workspace changes on disk
+- Image previews and rendered Markdown, including relative images
+- Change review: captured DSH writes by session, with `+/−` counts
+
+### Next
+
+- A short change summary on each captured write
+- Follow the agent: auto-open or reveal files as DSH writes them
+- Workspace content search (`⌘/Ctrl+⇧+F`)
+- Attach a file or folder from the tree as composer context
+- Associate the Git worktree for the current workspace, without inventing a Git `HEAD` diff
+
+### Exploring
+
+- Open-in-editor and reveal-in-folder
+- Inline comments on a diff line that send guidance back to the composer
+- Native DSH panel controls and layout slots, if the host exposes a usable one
+- Pluggable workspace panels (Files / Review, and later DSH tools)
 
 ## License
 
