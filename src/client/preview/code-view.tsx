@@ -1,4 +1,4 @@
-import type { LocaleStore } from "../../shared/i18n.js";
+import * as React from "react";
 import { createEditorExtensions, mountCodeEditor } from "./code-mirror.js";
 import { editorSpec } from "./editor-spec.js";
 import { createPreviewCommands, type PreviewCommands } from "./preview-nav.js";
@@ -8,19 +8,17 @@ import { previewKind } from "./preview-kind.js";
 import { renderMarkdown } from "./markdown-preview.js";
 import DOMPurify from "dompurify";
 
-type ReactNs = typeof import("react");
+import { useWorkbenchServices } from "../workbench/runtime.js";
 
-export function createCodeView(React: ReactNs, i18n: LocaleStore) {
-  const h = React.createElement;
-  function CodeView({
+export function CodeView({
     state,
     commandsRef,
   }: {
     state: FileState;
     commandsRef?: { current: PreviewCommands | null };
   }) {
+    const { i18n } = useWorkbenchServices();
     const t = i18n.t;
-    React.useSyncExternalStore(i18n.subscribe, i18n.getSnapshot, i18n.getSnapshot);
     const hostRef = React.useRef<HTMLDivElement | null>(null);
     const editorRef = React.useRef<ReturnType<typeof mountCodeEditor> | null>(null);
     const [markdownSource, setMarkdownSource] = React.useState(false);
@@ -67,6 +65,4 @@ export function createCodeView(React: ReactNs, i18n: LocaleStore) {
       return <div className="dsh-wb-preview-shell"><div className="dsh-wb-preview-toolbar">{toggle}</div><article className="dsh-wb-markdown-preview" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderMarkdown(state.payload.content, state.payload.path), { USE_PROFILES: { html: true } }) }} /></div>;
     }
     return <div className="dsh-wb-preview-shell">{toggle ? <div className="dsh-wb-preview-toolbar">{toggle}</div> : null}<div className="dsh-wb-cm" ref={hostRef} /></div>;
-  }
-  return CodeView;
 }

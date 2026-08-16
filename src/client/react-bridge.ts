@@ -3,11 +3,15 @@ let runtime: ReactRuntime | undefined;
 const ComponentBase = class {};
 const PureComponentBase = class {};
 export function setReactRuntime(value: ReactRuntime): void {
-  runtime = value;
-  Object.setPrototypeOf(ComponentBase, value.Component);
-  Object.setPrototypeOf(ComponentBase.prototype, value.Component.prototype);
-  Object.setPrototypeOf(PureComponentBase, value.PureComponent);
-  Object.setPrototypeOf(PureComponentBase.prototype, value.PureComponent.prototype);
+  runtime = { ...(runtime ?? {}), ...value };
+  if (runtime.Component) {
+    Object.setPrototypeOf(ComponentBase, runtime.Component);
+    Object.setPrototypeOf(ComponentBase.prototype, runtime.Component.prototype);
+  }
+  if (runtime.PureComponent) {
+    Object.setPrototypeOf(PureComponentBase, runtime.PureComponent);
+    Object.setPrototypeOf(PureComponentBase.prototype, runtime.PureComponent.prototype);
+  }
 }
 function getRuntime(): ReactRuntime { if (!runtime) throw new Error("dsh-workbench React runtime is not ready"); return runtime; }
 export const createElement = (...args: any[]) => getRuntime().createElement(...args);

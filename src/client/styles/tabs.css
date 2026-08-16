@@ -1,0 +1,287 @@
+/* ── Tabs ────────────────────────────────────────────────────────── */
+/* Tab row + pathbar = 75px, matching the host conversation header. */
+
+.dsh-wb-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  box-sizing: border-box;
+  height: 40px;
+  min-height: 40px;
+  padding-right: 6px;
+  border-bottom: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-bg-layer-1);
+}
+
+.dsh-wb-tabstrip {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  overflow-x: auto;
+}
+
+.dsh-wb-tab-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.dsh-wb-tab {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  max-width: 200px;
+  min-height: 40px;
+  padding: 0 2px 0 8px;
+  color: var(--dsw-alias-label-tertiary);
+  transition: color 120ms ease-out, background-color 120ms ease-out, box-shadow 120ms ease-out;
+}
+
+.dsh-wb-tab:hover {
+  color: var(--dsw-alias-label-secondary);
+  background: var(--dsw-alias-interactive-bg-hover-solid);
+}
+
+.dsh-wb-tab.is-active {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-interactive-bg-hover-solid);
+  box-shadow: inset 0 -1.5px 0 var(--dsw-alias-state-business-primary);
+}
+
+.dsh-wb-tab .dsh-wb-tree-file-icon,
+.dsh-wb-tab .dsh-wb-tree-folder-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.dsh-wb-tab-kind {
+  flex: 0 0 auto;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 14px;
+  text-transform: lowercase;
+}
+
+.dsh-wb-tab.is-diff .dsh-wb-tab-kind {
+  color: var(--dsw-alias-state-warn-primary);
+}
+
+.dsh-wb-tab-name,
+.dsh-wb-tab-close {
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  transition: color 120ms ease-out, opacity 120ms ease-out, background-color 120ms ease-out;
+}
+
+.dsh-wb-tab-name {
+  max-width: 120px;
+  overflow: hidden;
+  padding: 7px 2px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.dsh-wb-tab.is-preview .dsh-wb-tab-name {
+  font-style: italic;
+}
+
+.dsh-wb-tab-close {
+  opacity: 0;
+  padding: 5px 8px 5px 4px;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.dsh-wb-tab:hover .dsh-wb-tab-close,
+.dsh-wb-tab.is-active .dsh-wb-tab-close,
+.dsh-wb-tab-close:focus-visible {
+  opacity: 1;
+}
+
+.dsh-wb-tab-name:hover,
+.dsh-wb-tab-close:hover {
+  color: var(--dsw-alias-label-primary);
+}
+
+.dsh-wb-tab-name:focus-visible,
+.dsh-wb-tab-close:focus-visible,
+.dsh-wb-tabbar-add:focus-visible,
+.dsh-wb-path-root:focus-visible,
+.dsh-wb-path:focus-visible,
+.dsh-wb-path-segment:focus-visible,
+.dsh-wb-button:focus-visible,
+.dsh-wb-tree-search-clear:focus-visible,
+.dsh-wb-search-close:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: -2px;
+}
+
+.dsh-wb-button {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--dsw-alias-label-secondary);
+  background: transparent;
+  cursor: pointer;
+  transition: color 120ms ease-out, background-color 120ms ease-out, box-shadow 120ms ease-out;
+}
+
+.dsh-wb-button:hover {
+  border-color: transparent;
+  background: var(--dsw-alias-interactive-bg-hover-solid);
+  color: var(--dsw-alias-label-primary);
+}
+
+.dsh-wb-button.is-on {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-button-ghost-active-fill);
+  box-shadow: none;
+}
+
+.dsh-wb-icon-button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
+}
+
+.dsh-wb-text-button {
+  min-width: 48px;
+  height: 29px;
+  padding: 0 9px;
+  font-size: 11px;
+}
+
+.dsh-wb-close-button {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.dsh-wb-tabbar-add {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  margin: 0 2px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--dsw-alias-label-tertiary);
+  background: transparent;
+  cursor: pointer;
+  transition: color 120ms ease-out, background-color 120ms ease-out;
+}
+
+.dsh-wb-tabbar-add:hover {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-interactive-bg-hover-solid);
+}
+
+.dsh-wb-button:active,
+.dsh-wb-tabbar-add:active,
+.dsh-wb-path-root:active,
+.dsh-wb-path:active,
+.dsh-wb-path-segment:active,
+.dsh-wb-tree-search-clear:active,
+.dsh-wb-search-close:active {
+  background: var(--dsw-alias-button-ghost-active-fill);
+}
+
+.dsh-wb-file-outline {
+  width: 14px;
+  height: 16px;
+  border: 1.5px solid currentColor;
+  border-radius: 3px;
+}
+
+.dsh-wb-pathbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow: hidden;
+  box-sizing: border-box;
+  min-height: 35px;
+  height: 35px;
+  padding: 0 10px 0 8px;
+  border-bottom: 1px solid var(--dsw-alias-border-l2);
+  color: var(--dsw-alias-label-secondary);
+  background: var(--dsw-alias-bg-layer-1);
+  font-size: 12px;
+}
+
+.dsh-wb-path-root,
+.dsh-wb-path {
+  display: grid;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: var(--dsw-alias-label-tertiary);
+  background: transparent;
+  cursor: pointer;
+  transition: color 120ms ease-out, background-color 120ms ease-out;
+}
+
+.dsh-wb-path {
+  margin-left: auto;
+}
+
+.dsh-wb-path-root:hover,
+.dsh-wb-path:hover {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-interactive-bg-hover-solid);
+}
+
+.dsh-wb-pathbar .dsh-wb-meta {
+  padding-left: 8px;
+}
+
+.dsh-wb-path-root .dsh-wb-icon-svg,
+.dsh-wb-path .dsh-wb-icon-svg {
+  width: 13px;
+  height: 13px;
+}
+
+.dsh-wb-path-segment {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 22ch;
+  overflow: hidden;
+  padding: 1px 4px;
+  border: 0;
+  border-radius: 4px;
+  color: var(--dsw-alias-label-tertiary);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 120ms ease-out, background-color 120ms ease-out;
+}
+
+.dsh-wb-path-segment:hover {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-interactive-bg-hover-solid);
+}
+
+.dsh-wb-path-segment.is-current {
+  color: var(--dsw-alias-label-primary);
+  font-weight: 500;
+}
+
+.dsh-wb-path-separator {
+  flex: 0 0 auto;
+  color: var(--dsw-alias-label-tertiary);
+  opacity: 0.5;
+  font-size: 11px;
+  pointer-events: none;
+}
+

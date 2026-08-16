@@ -1,0 +1,39 @@
+/* ── Animations ──────────────────────────────────────────────────── */
+
+@keyframes dsh-wb-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes dsh-wb-slide-out {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes dsh-wb-search-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+body[data-ds-dark-theme] .dsh-wb-sidebar {
+  box-shadow: var(--dsw-shadow-lv3);
+}

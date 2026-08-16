@@ -38,6 +38,7 @@ function findElement(node, predicate) {
   }
   if (typeof node !== "object") return undefined;
   if (predicate(node)) return node;
+  if (typeof node.type === "function") return findElement(node.type(node.props ?? {}), predicate);
   const children = node.props?.children;
   for (const child of Array.isArray(children) ? children : [children]) {
     const found = findElement(child, predicate);
@@ -53,6 +54,7 @@ function findElements(node, predicate, matches = []) {
     return matches;
   }
   if (typeof node !== "object") return matches;
+  if (typeof node.type === "function") return findElements(node.type(node.props ?? {}), predicate, matches);
   if (predicate(node)) matches.push(node);
   const children = node.props?.children;
   for (const child of Array.isArray(children) ? children : [children]) findElements(child, predicate, matches);
@@ -63,6 +65,7 @@ function textContent(node) {
   if (node == null || typeof node === "boolean") return "";
   if (typeof node === "string" || typeof node === "number") return String(node);
   if (typeof node !== "object") return "";
+  if (typeof node.type === "function") return textContent(node.type(node.props ?? {}));
   const children = node.props?.children;
   return (Array.isArray(children) ? children : [children]).map(textContent).join("");
 }
@@ -104,12 +107,12 @@ test("workbench toggle opens and closes the panel", async () => {
     size: 1,
   }));
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
-  const toggle = ui.WorkbenchToggle();
+  const toggle = findElement(ui.WorkbenchToggle(), (node) => node.type === "button");
   expect(toggle.type).toBe("button");
   expect(toggle.props["aria-label"]).toBe("Show sidebar");
   toggle.props.onClick();
   expect(store.getSnapshot().visible).toBe(true);
-  const openedToggle = ui.WorkbenchToggle();
+  const openedToggle = findElement(ui.WorkbenchToggle(), (node) => node.type === "button");
   expect(openedToggle.props["aria-label"]).toBe("Hide sidebar");
   openedToggle.props.onClick();
   expect(store.getSnapshot().visible).toBe(false);
@@ -385,7 +388,7 @@ test("workbench controls follow the active locale", async () => {
   }));
   const locale = createLocaleStore("zh");
   const ui = createWorkbenchUi(React, store, locale);
-  const toggle = ui.WorkbenchToggle();
+  const toggle = findElement(ui.WorkbenchToggle(), (node) => node.type === "button");
   expect(toggle.props["aria-label"]).toBe("显示侧边栏");
   await store.open("src/example.ts");
   const close = findElement(ui.FileDrawer(), (node) => node.props?.className?.includes("dsh-wb-close-button"));
@@ -403,7 +406,7 @@ test("workbench controls expose accurate accessibility state", async () => {
     size: 1,
   }));
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
-  const toggle = ui.WorkbenchToggle();
+  const toggle = findElement(ui.WorkbenchToggle(), (node) => node.type === "button");
   expect(toggle.props["aria-expanded"]).toBe(false);
   expect(toggle.props["data-open"]).toBe("false");
   expect(toggle.props.title).toMatch(/Shortcut/);

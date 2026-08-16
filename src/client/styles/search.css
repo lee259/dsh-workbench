@@ -1,0 +1,193 @@
+/* ── File search / quick open ────────────────────────────────────── */
+
+.dsh-wb-search {
+  padding: 8px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 10px;
+  background: var(--dsw-specific-sidebar-fill);
+  box-shadow: var(--dsw-shadow-lv2);
+}
+
+.dsh-wb-search-overlay {
+  position: absolute;
+  z-index: 4;
+  top: 48px;
+  right: 12px;
+  left: 12px;
+  animation: dsh-wb-search-enter 120ms ease-out both;
+}
+
+.dsh-wb-search-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  color: var(--dsw-alias-label-tertiary);
+  background: var(--dsw-alias-bg-layer-1);
+}
+
+.dsh-wb-search-box:focus-within {
+  border-color: var(--dsw-alias-brand-primary);
+}
+
+.dsh-wb-search-box input {
+  min-width: 0;
+  flex: 1;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+}
+
+.dsh-wb-search-close {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  padding: 0 3px;
+  border: 0;
+  color: var(--dsw-alias-label-tertiary);
+  background: transparent;
+  cursor: pointer;
+  transition: color 120ms ease-out, background-color 120ms ease-out;
+}
+
+.dsh-wb-search-close .dsh-wb-icon-svg {
+  width: 14px;
+  height: 14px;
+}
+
+.dsh-wb-search-results {
+  max-height: min(360px, calc(100vh - 140px));
+  overflow-y: auto;
+  margin-top: 6px;
+}
+
+.dsh-wb-search-state {
+  padding: 12px 4px 4px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+}
+
+.dsh-wb-search-result {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--dsw-alias-label-primary);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 120ms ease-out;
+}
+
+.dsh-wb-search-result:hover,
+.dsh-wb-search-result:focus-visible {
+  outline: 0;
+  background: var(--dsw-specific-sidebar-nav-item-active);
+}
+
+.dsh-wb-search-result-glyph {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  place-items: center;
+  border-radius: 5px;
+  color: var(--dsw-alias-state-business-primary);
+  background: var(--dsw-alias-state-business-tertiary);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.dsh-wb-search-result-copy {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dsh-wb-search-result-name,
+.dsh-wb-search-result-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.dsh-wb-search-result-parent {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dsw-alias-label-tertiary);
+  font-family: var(--ds-font-family-code);
+  font-size: 10px;
+}
+
+.dsh-wb-search-mark {
+  padding: 0;
+  color: inherit;
+  background: var(--dsw-alias-state-business-tertiary);
+  font: inherit;
+}
+
+.dsh-wb-search-result-size {
+  color: var(--dsw-alias-label-tertiary);
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dsh-wb-sidebar,
+  .dsh-wb-search-box,
+  .dsh-wb-tree-refresh[data-loading="true"] .dsh-wb-icon-svg,
+  .dsh-wb-icon-button[data-loading="true"] .dsh-wb-icon-svg {
+    animation: none;
+    transition: none;
+  }
+}
+
+.dsh-wb-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-button-elevated-fill);
+  cursor: pointer;
+  transition: color 120ms ease-out, background-color 120ms ease-out, border-color 120ms ease-out;
+}
+
+.dsh-wb-toggle:hover {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-button-floating-hover);
+}
+
+.dsh-wb-toggle[data-open="true"] {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-button-ghost-active-fill);
+  box-shadow: inset 0 0 0 1px var(--dsw-alias-button-ghost-active-border);
+}
+
+.dsh-wb-toggle-label {
+  font-size: 13px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+

@@ -1,4 +1,4 @@
-import type { LocaleStore } from "../../shared/i18n.js";
+import * as React from "react";
 import type { WorkspaceFile } from "../../shared/types.js";
 import {
   highlightSegments,
@@ -8,10 +8,9 @@ import {
   type SearchHit,
 } from "./search-model.js";
 import { FileTypeIcon, Icon } from "../chrome/icons.js";
-import { fetchWorkspaceFiles, type FileStore } from "../store.js";
+import { fetchWorkspaceFiles } from "../store.js";
 import { treeFileOpenMode } from "./tree-model.js";
-
-type ReactNs = typeof import("react");
+import { useWorkbenchServices } from "../workbench/runtime.js";
 
 function formatBytes(size: number): string {
   if (size < 1024) return `${size} B`;
@@ -19,10 +18,9 @@ function formatBytes(size: number): string {
   return `${Math.round(size / (102.4 * 1024)) / 10} MB`;
 }
 
-export function createSearchPanel(React: ReactNs, store: FileStore, i18n: LocaleStore) {
-  function SearchPanel({ onClose }: { onClose: () => void }) {
+export function SearchPanel({ onClose }: { onClose: () => void }) {
+    const { store, i18n } = useWorkbenchServices();
     const t = i18n.t;
-    React.useSyncExternalStore(i18n.subscribe, i18n.getSnapshot, i18n.getSnapshot);
     const fileState = React.useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
     const [query, setQuery] = React.useState("");
     const [results, setResults] = React.useState<WorkspaceFile[]>([]);
@@ -122,6 +120,4 @@ export function createSearchPanel(React: ReactNs, store: FileStore, i18n: Locale
         {hits.map(renderHit)}
       </div>
     </section>;
-  }
-  return SearchPanel;
 }

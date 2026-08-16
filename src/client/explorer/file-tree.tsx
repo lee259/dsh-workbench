@@ -1,9 +1,10 @@
-import type { LocaleStore } from "../../shared/i18n.js";
+import * as React from "react";
 import type { WorkspaceTree as WorkspaceTreeData } from "../../shared/types.js";
 import { FileTypeIcon, Icon, TreeChevron } from "../chrome/icons.js";
 import { insertDraftText } from "./draft-insert.js";
 import { highlightSegments, moveSearchFocus, treeSearchHits } from "./search-model.js";
-import { fetchWorkspaceTree, type FileStore } from "../store.js";
+import { fetchWorkspaceTree } from "../store.js";
+import { useWorkbenchServices } from "../workbench/runtime.js";
 import {
   DEFAULT_TREE_WIDTH,
   MAX_TREE_WIDTH,
@@ -25,8 +26,6 @@ import {
   writeTreeWidth,
 } from "./tree-model.js";
 
-type ReactNs = typeof import("react");
-
 export type TreeCommands = {
   consumeEscape(): boolean;
 };
@@ -39,7 +38,7 @@ function storage(): Pick<Storage, "getItem" | "setItem"> | null {
   }
 }
 
-function savedTreeWidth(): number {
+export function savedTreeWidth(): number {
   const local = storage();
   return local ? readTreeWidth(local) : DEFAULT_TREE_WIDTH;
 }
@@ -54,20 +53,14 @@ function persistTreeOpen(value: string[]): void {
   if (local) writeTreeOpen(local, value);
 }
 
-function persistTreeWidth(value: number): void {
+export function persistTreeWidth(value: number): void {
   const local = storage();
   if (local) writeTreeWidth(local, value);
 }
 
 export { clampTreeWidth };
 
-export function createFileTree(React: ReactNs, store: FileStore, i18n: LocaleStore) {
-  function useLocale() {
-    React.useSyncExternalStore(i18n.subscribe, i18n.getSnapshot, i18n.getSnapshot);
-    return i18n.t;
-  }
-
-  function WorkspaceTreePanel({
+export function WorkspaceTreePanel({
     width,
     onResize,
     revealPath = "",
@@ -78,7 +71,8 @@ export function createFileTree(React: ReactNs, store: FileStore, i18n: LocaleSto
     revealPath?: string;
     commandsRef?: { current: TreeCommands | null };
   }) {
-    const t = useLocale();
+    const { store, i18n } = useWorkbenchServices();
+    const t = i18n.t;
     const fileState = React.useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
     const [tree, setTree] = React.useState<WorkspaceTreeData>(emptyTree);
     const [query, setQuery] = React.useState("");
@@ -361,11 +355,4 @@ export function createFileTree(React: ReactNs, store: FileStore, i18n: LocaleSto
         </div> : null}
       </aside>
     </>;
-  }
-
-  return {
-    WorkspaceTreePanel,
-    readTreeWidth: savedTreeWidth,
-    writeTreeWidth: persistTreeWidth,
-  };
 }

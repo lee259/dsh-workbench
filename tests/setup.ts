@@ -13,14 +13,36 @@ setReactRuntime({
   Fragment: Symbol.for("react.fragment"),
   Component: class {},
   PureComponent: class {},
-  createContext: () => ({ Provider: {}, Consumer: {} }),
+  createContext(defaultValue: any) {
+    const context = { value: defaultValue, Provider: null as any, Consumer: null as any };
+    context.Provider = ({ value, children }: any) => {
+      const previous = context.value;
+      context.value = value;
+      const resolve = (node: any): any => {
+        if (Array.isArray(node)) return node.map(resolve);
+        if (!node || typeof node !== "object") return node;
+        if (typeof node.type === "function") {
+          const name = node.type.name ?? "";
+          if (name.endsWith("Icon") || name === "WorkspaceTreePanel") return node;
+          return resolve(node.type(node.props ?? {}));
+        }
+        if (!node.props?.children) return node;
+        return { ...node, props: { ...node.props, children: resolve(node.props.children) } };
+      };
+      const result = resolve(children);
+      context.value = previous;
+      return result;
+    };
+    context.Consumer = ({ children }: any) => children(context.value);
+    return context;
+  },
   forwardRef: (fn: any) => fn,
   cloneElement: (_el: any, props: any) => ({ type: "clone", props }),
   createRef: () => ({ current: null }),
   isValidElement: () => true,
   memo: (fn: any) => fn,
   useCallback: (fn: any) => fn,
-  useContext: () => ({}),
+  useContext: (context: any) => context.value,
   useEffect: () => {},
   useImperativeHandle: () => {},
   useLayoutEffect: () => {},

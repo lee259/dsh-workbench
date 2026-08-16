@@ -1,0 +1,51 @@
+/* ── Tool row in conversation ────────────────────────────────────── */
+
+.dsh-wb-tool-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  font-size: 13px;
+}
+
+.dsh-wb-tool-name {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.dsh-wb-tool-sep,
+.dsh-wb-tool-fallback,
+.dsh-wb-tool-status {
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.dsh-wb-tool-status {
+  margin-left: auto;
+  font-size: 11px;
+}
+
+.dsh-wb-tool-status[data-kind="error"] {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.dsh-wb-tool-path {
+  padding: 0;
+  border: 0;
+  color: var(--dsw-alias-state-business-primary);
+  background: transparent;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.dsh-wb-tool-path:hover {
+  text-decoration: underline var(--dsw-alias-state-business-primary);
+  text-underline-offset: 3px;
+}
+
+.dsh-wb-tool-path:focus-visible {
+  outline: 0;
+  border-radius: 3px;
+  background: var(--dsw-alias-state-business-tertiary);
+  text-decoration: underline var(--dsw-alias-state-business-primary);
+  text-underline-offset: 3px;
+}
+

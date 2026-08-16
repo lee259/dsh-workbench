@@ -1,0 +1,59 @@
+/* Source of truth for workbench styles. Edit this file, not generated TS.
+   Colors, type, and elevation come from the host DeepSeek Harness tokens. */
+
+/* ── Sidebar panel ───────────────────────────────────────────────── */
+
+.dsh-wb-sidebar {
+  position: fixed;
+  z-index: 1201;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(520px, 100vw);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-bg-layer-1);
+  border-left: 1px solid var(--dsw-alias-border-l1);
+  box-shadow: var(--dsw-shadow-lv2);
+  animation: dsh-wb-slide-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  will-change: transform, opacity;
+}
+
+.dsh-wb-sidebar[data-state="closing"] {
+  pointer-events: none;
+  animation: dsh-wb-slide-out 160ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+/* When the sidebar is open, nudge the page content to the left
+   (the panel itself is position: fixed on the right). */
+body.dsh-wb-sidebar-transition {
+  transition: margin-right 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+body.dsh-wb-sidebar-open {
+  margin-right: var(--dsh-wb-sidebar-width, 520px);
+}
+
+.dsh-wb-resize-handle {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  width: 8px;
+  cursor: col-resize;
+}
+
+.dsh-wb-resize-handle:hover,
+.dsh-wb-resize-handle:active {
+  background: var(--dsw-alias-state-business-primary);
+  opacity: 0.35;
+}
+
+.dsh-wb-resize-handle:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: -2px;
+}
+
