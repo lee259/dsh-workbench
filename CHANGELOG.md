@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.0 - 2026-08-17
+
+### Features
+
+- Show simple operation summaries for captured DSH writes in the review rail.
+- Follow agent-written files by opening the latest DSH write and revealing it in the workspace tree.
+
 ## 0.6.0 - 2026-08-16
 
 ### Features
