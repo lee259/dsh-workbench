@@ -5,7 +5,7 @@ test("review returns captured write changes with line counts", () => {
   const history = new WriteHistory();
   history.record({ type: "tool/code-dispatch", data: { name: "write", arguments: { file_path: "src/a.ts", content: "one\ntwo" }, callId: "w1" } }, "s1");
   history.record({ type: "tool/code-dispatch", data: { name: "edit", arguments: { file_path: "src/a.ts", old_string: "two", new_string: "three\nfour" }, callId: "e1" } }, "s1");
-  expect(history.getReview("s1")).toEqual([{ path: "src/a.ts", sessionId: "s1", revision: 2, additions: 2, deletions: 1 }]);
+  expect(history.getReview("s1")).toEqual([{ path: "src/a.ts", sessionId: "s1", revision: 2, summary: "Edited file", additions: 2, deletions: 1 }]);
 });
 
 test("review can filter changes by session", () => {
@@ -36,7 +36,7 @@ test("review treats an empty previous file as all additions", () => {
   const history = new WriteHistory();
   history.record({ type: "tool/code-dispatch", data: { name: "write", arguments: { file_path: "a.ts", content: "" }, callId: "w1" } }, "s1");
   history.record({ type: "tool/code-dispatch", data: { name: "write", arguments: { file_path: "a.ts", content: "a\nb" }, callId: "w2" } }, "s1");
-  expect(history.getReview("s1")).toEqual([{ path: "a.ts", sessionId: "s1", revision: 2, additions: 2, deletions: 0 }]);
+  expect(history.getReview("s1")).toEqual([{ path: "a.ts", sessionId: "s1", revision: 2, summary: "Rewrote file", additions: 2, deletions: 0 }]);
 });
 
 test("review treats the latest write as the newest session and file", () => {

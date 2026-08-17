@@ -159,8 +159,13 @@ export function ReviewPanel({ store, sessionId }: { store: FileStore; sessionId?
               onDoubleClick={() => openChange(change, "keep")}
             >
               <FileTypeIcon path={change.path} />
-              <span className="dsh-wb-review-path">{fileName(change.path)}</span>
-              {parent ? <span className="dsh-wb-review-parent">{parent}</span> : null}
+              <span className="dsh-wb-review-copy">
+                <span className="dsh-wb-review-name">
+                  <span className="dsh-wb-review-path">{fileName(change.path)}</span>
+                  {parent ? <span className="dsh-wb-review-parent">{parent}</span> : null}
+                </span>
+                <span className="dsh-wb-review-summary">{change.summary}</span>
+              </span>
               <ReviewCounts additions={change.additions} deletions={change.deletions} />
             </button>
           );

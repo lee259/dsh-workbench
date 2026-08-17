@@ -57,7 +57,7 @@
   gap: 5px;
   box-sizing: border-box;
   min-height: 28px;
-  padding: 0 8px;
+  padding: 4px 8px;
   border: 0;
   border-radius: 4px;
   color: var(--dsw-alias-label-primary);
@@ -89,6 +89,21 @@
   white-space: nowrap;
 }
 
+.dsh-wb-review-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dsh-wb-review-name {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 5px;
+}
+
 .dsh-wb-review-parent {
   min-width: 0;
   flex: 1;
@@ -97,6 +112,14 @@
   white-space: nowrap;
   color: var(--dsw-alias-label-tertiary);
   font-size: 11px;
+}
+
+.dsh-wb-review-summary {
+  overflow: hidden;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dsh-wb-review-count {

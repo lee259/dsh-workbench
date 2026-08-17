@@ -100,6 +100,11 @@ function applyEdit(source: string, args: ToolArgs): string | null {
   return source.replace(oldString, newString);
 }
 
+function changeSummary(name: FileToolName, args: ToolArgs, before: string | null): string {
+  if (name === "write") return before == null ? "Created file" : "Rewrote file";
+  return name === "edit" ? "Edited file" : "Updated file";
+}
+
 function diffsFromMeta(meta: unknown): FileDiff[] {
   const record = asRecord(meta);
   const diffs = record?.diffs;
@@ -246,19 +251,19 @@ export class WriteHistory {
 
     if (name === "write") {
       const text = asString(args.content);
-      return text == null ? null : this.commit(path, text, sessionId, "dsh-write");
+      return text == null ? null : this.commit(path, text, sessionId, "dsh-write", undefined, changeSummary(name, args, this.revisions.get(path)?.content ?? null));
     }
 
     const previous = this.revisions.get(path);
     if (previous) {
       const next = applyEdit(previous.content, args);
-      return next == null ? previous : this.commit(path, next, sessionId, "dsh-write");
+      return next == null ? previous : this.commit(path, next, sessionId, "dsh-write", undefined, changeSummary(name, args, previous.content));
     }
 
     const oldString = asString(args.old_string);
     const newString = asString(args.new_string);
     if (oldString == null || newString == null) return null;
-    return this.commit(path, newString, sessionId, "dsh-write", oldString);
+    return this.commit(path, newString, sessionId, "dsh-write", oldString, changeSummary(name, args, oldString));
   }
 
   private commit(
@@ -267,6 +272,7 @@ export class WriteHistory {
     sessionId: string,
     source: FileRevision["source"],
     before: string | null | undefined = undefined,
+    summary = "Updated file",
   ): FileRevision {
     const previous = this.revisions.get(path);
     const revision: FileRevision = {
@@ -281,7 +287,7 @@ export class WriteHistory {
     if (source === "dsh-write") {
       const key = `${sessionId}:${path}`;
       this.reviewRevisions.delete(key);
-      this.reviewRevisions.set(key, { path: revision.path, sessionId, revision: revision.revision, ...countDiffLines(revision.before, revision.content) });
+      this.reviewRevisions.set(key, { path: revision.path, sessionId, revision: revision.revision, summary, ...countDiffLines(revision.before, revision.content) });
     }
     return revision;
   }

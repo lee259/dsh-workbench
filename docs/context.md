@@ -56,7 +56,7 @@ src/
 | `nextOpenTabs` | open + preview + path + kind → next tabs | Preview replaces the transient tab; kept tabs stay |
 | `createLocaleStore` | `t` / `setLocale` / `followDshLocale` | zh / en UI copy, following DSH settings |
 | `diffLines` / `countDiffLines` | before / after → rows or `+/−` | Shared line diff used by preview and review |
-| `reviewCountsFor` | disk + revision → `+/−` | Review counts after the same disk expansion as the preview |
+| `reviewCountsFor` | disk + revision → `+/−` | Review counts after the same disk expansion as the preview; review entries also carry a simple operation summary |
 | `editorSpec` / `viewKind` | payload source → view or diff | Write/edit opens CodeMirror merge; everything else is a read-only view |
 | `rankSearchHits` / `treeSearchHits` | query → ordered hits | Quick Open ranks basename matches first; tree search locates without opening |
 | `visibleBreadcrumbTargets` | path → crumbs without a `/` root | Explorer chrome shows `src / file`, not `/ / src / file` |

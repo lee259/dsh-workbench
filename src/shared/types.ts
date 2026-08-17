@@ -50,6 +50,7 @@ export type ReviewChange = {
   path: string;
   sessionId: string;
   revision: number;
+  summary: string;
   additions: number;
   deletions: number;
 };

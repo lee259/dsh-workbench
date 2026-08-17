@@ -101,10 +101,10 @@ Inspect, navigate, and review what the agent touched. Diffs stay on captured DSH
 - Syntax highlighting, folding, and live refresh when the workspace changes on disk
 - Image previews and rendered Markdown, including relative images
 - Change review: captured DSH writes by session, with `+/−` counts
+- Short operation summaries for each captured write
 
 ### Next
 
-- A short change summary on each captured write
 - Follow the agent: auto-open or reveal files as DSH writes them
 - Workspace content search (`⌘/Ctrl+⇧+F`)
 - Attach a file or folder from the tree as composer context
