@@ -64,6 +64,11 @@ export function apply(ctx: HostContext): void {
   const activity = new ActivityStore(identify);
   const pump = createChangePump();
   let watchHandle: WorkspaceWatchHandle | null = null;
+  const eventClients = new Set<ServerResponse>();
+  const broadcastWrite = (path: string) => {
+    const data = JSON.stringify({ path });
+    for (const client of eventClients) client.write(`event: write\ndata: ${data}\n\n`);
+  };
   const startWatch = () => {
     watchHandle?.close();
     watchHandle = startWorkspaceWatch(root, (filename) => {
@@ -174,11 +179,15 @@ export function apply(ctx: HostContext): void {
       res.setHeader("cache-control", "no-cache");
       res.setHeader("connection", "keep-alive");
       res.write(":\n\n");
+      eventClients.add(res);
       ensureWatch();
       const stop = pump.subscribe(() => {
         res.write("event: change\ndata: {}\n\n");
       });
-      req.on("close", stop);
+      req.on("close", () => {
+        eventClients.delete(res);
+        stop();
+      });
     },
   });
 
@@ -222,7 +231,8 @@ export function apply(ctx: HostContext): void {
   ctx.on("session/created", hydrate);
   ctx.on("session/event", (session, event) => {
     rememberRoot(session);
-    history.record(event, String(session.id));
+    const revision = history.record(event, String(session.id));
+    if (revision?.source === "dsh-write") broadcastWrite(revision.path);
     activity.record(event, String(session.id));
   });
 }

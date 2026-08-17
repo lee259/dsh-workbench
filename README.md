@@ -102,10 +102,10 @@ Inspect, navigate, and review what the agent touched. Diffs stay on captured DSH
 - Image previews and rendered Markdown, including relative images
 - Change review: captured DSH writes by session, with `+/−` counts
 - Short operation summaries for each captured write
+- Follow the agent: open and reveal the latest DSH-written file
 
 ### Next
 
-- Follow the agent: auto-open or reveal files as DSH writes them
 - Workspace content search (`⌘/Ctrl+⇧+F`)
 - Attach a file or folder from the tree as composer context
 - Associate the Git worktree for the current workspace, without inventing a Git `HEAD` diff

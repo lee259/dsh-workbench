@@ -28,3 +28,16 @@ test("workspace events subscribe to change and close the source", () => {
   stop();
   expect(log).toEqual(["change", "close"]);
 });
+
+test("workspace events forward captured write paths", () => {
+  const listeners = new Map<string, (event?: { data?: string }) => void>();
+  const seen: string[] = [];
+  const stop = followWorkspaceEvents(() => {}, (url) => ({
+    addEventListener(type, listener) { expect(url).toBe("/api/dsh-workbench/events"); listeners.set(type, listener); },
+    close() {},
+  }), (event) => seen.push(event.path));
+  listeners.get("write")?.({ data: JSON.stringify({ path: "src/a.ts" }) });
+  listeners.get("write")?.({ data: "bad" });
+  stop();
+  expect(seen).toEqual(["src/a.ts"]);
+});

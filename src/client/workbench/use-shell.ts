@@ -145,7 +145,9 @@ export function useWorkbenchShell() {
     useEffect(() => followWorkspaceEvents(() => {
       store.noteDiskChange();
       if (store.getSnapshot().active) void store.reload();
-    }), []);
+    }, undefined, ({ path }) => {
+      void store.open(path, "diff", undefined, true, "keep");
+    }), [store]);
 
     useEffect(() => {
       if (state.visible) { setMounted(true); setClosing(false); return; }
