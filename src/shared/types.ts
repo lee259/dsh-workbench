@@ -1,6 +1,7 @@
 export const FILE_API_PATH = "/api/dsh-workbench/file";
 export const FILE_ASSET_API_PATH = "/api/dsh-workbench/asset";
 export const FILES_API_PATH = "/api/dsh-workbench/files";
+export const CONTENT_SEARCH_API_PATH = "/api/dsh-workbench/search";
 export const ACTIVITY_API_PATH = "/api/dsh-workbench/activity";
 export const REVIEW_API_PATH = "/api/dsh-workbench/review";
 export const WORKSPACE_API_PATH = "/api/dsh-workbench/workspace";
@@ -35,6 +36,13 @@ export type WorkspaceFile = {
 export type WorkspaceTree = {
   files: WorkspaceFile[];
   directories: string[];
+};
+
+export type ContentSearchHit = {
+  path: string;
+  line: number;
+  column: number;
+  text: string;
 };
 
 export type FileRevision = {

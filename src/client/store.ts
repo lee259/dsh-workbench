@@ -1,4 +1,4 @@
-import { FILE_API_PATH, FILES_API_PATH, normalizePath, type FileOpenMode, type FilePayload, type WorkspaceFile, type WorkspaceTree } from "../shared/types.js";
+import { CONTENT_SEARCH_API_PATH, FILE_API_PATH, FILES_API_PATH, normalizePath, type ContentSearchHit, type FileOpenMode, type FilePayload, type WorkspaceFile, type WorkspaceTree } from "../shared/types.js";
 import { nextOpenTabs, type TabOpenKind } from "./chrome/tab-model.js";
 import { viewKind, type ViewKind } from "./preview/editor-spec.js";
 
@@ -66,6 +66,13 @@ export async function fetchWorkspaceTree(): Promise<WorkspaceTree> {
   const payload = await response.json() as WorkspaceTree & { error?: string };
   if (!response.ok) throw new Error(payload.error || "read_failed");
   return { files: payload.files ?? [], directories: payload.directories ?? [] };
+}
+
+export async function searchWorkspaceContent(query: string): Promise<ContentSearchHit[]> {
+  const response = await fetch(`${CONTENT_SEARCH_API_PATH}?q=${encodeURIComponent(query)}`);
+  const payload = await response.json() as { hits?: ContentSearchHit[]; error?: string };
+  if (!response.ok) throw new Error(payload.error || "read_failed");
+  return payload.hits ?? [];
 }
 
 function payloadForMode(payload: FilePayload, mode: FileOpenMode): FilePayload {

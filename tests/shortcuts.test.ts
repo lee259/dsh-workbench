@@ -9,6 +9,7 @@ test("panel shortcuts hide and toggle visibility", () => {
   expect(shortcutAction({ key: "Escape" }, { ...state, visible: false })).toBe(null);
   expect(shortcutAction({ key: "p", metaKey: true }, state)).toEqual({ type: "search" });
   expect(shortcutAction({ key: "p", ctrlKey: true }, state)).toEqual({ type: "search" });
+  expect(shortcutAction({ key: "f", ctrlKey: true, shiftKey: true }, state)).toEqual({ type: "contentSearch" });
 });
 
 test("file shortcuts close and activate tabs", () => {

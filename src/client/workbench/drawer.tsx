@@ -26,7 +26,7 @@ function previewMeta(state: FileState, t: LocaleStore["t"]): string {
 }
 
 export function WorkbenchDrawer() {
-  const { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, diffMode, setDiffMode, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, mounted, closing, showTreeAt, resizeTree, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
+  const { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, diffMode, setDiffMode, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, mounted, closing, showTreeAt, resizeTree, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
 
   if (!mounted) return null;
 
@@ -80,6 +80,7 @@ export function WorkbenchDrawer() {
           resizeTree={resizeTree}
           previewCommands={previewCommands}
           searchOpen={searchOpen}
+          searchMode={searchMode}
           setSearchOpen={setSearchOpen}
           CodeView={CodeView}
           WorkspaceTreePanel={WorkspaceTreePanel}

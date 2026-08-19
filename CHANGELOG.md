@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.0 - 2026-08-19
+
+### Features
+
+- Add workspace content search with `⌘/Ctrl+⇧+F`.
+- Show matching lines and open results directly at the matching line.
+
 ## 0.7.0 - 2026-08-17
 
 ### Features

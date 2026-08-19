@@ -1,7 +1,7 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { createPathIdentity, type PathIdentity } from "./path-identity.js";
-import { MAX_IMAGE_PREVIEW_BYTES, MAX_PREVIEW_BYTES, type WorkspaceErrorCode, type WorkspaceFile, type WorkspaceTree } from "../shared/types.js";
+import { MAX_IMAGE_PREVIEW_BYTES, MAX_PREVIEW_BYTES, type ContentSearchHit, type WorkspaceErrorCode, type WorkspaceFile, type WorkspaceTree } from "../shared/types.js";
 
 export type WorkspaceError = {
   ok: false;
@@ -46,6 +46,7 @@ export type Workspace = {
   read(requested: string): Promise<DiskFile | WorkspaceError>;
   list(query?: string, limit?: number): Promise<WorkspaceFile[]>;
   tree(limit?: number): Promise<WorkspaceTree>;
+  searchContent(query: string, limit?: number): Promise<ContentSearchHit[]>;
 };
 
 export function createWorkspace(options: {
@@ -167,6 +168,39 @@ export function createWorkspace(options: {
         }
       }));
       return files.filter((file): file is WorkspaceFile => file != null);
+    },
+    async searchContent(query, limit = 200) {
+      const needle = query.trim().toLowerCase();
+      if (!needle) return [];
+      const hits: ContentSearchHit[] = [];
+      const visit = async (absolute: string, relativePath: string): Promise<void> => {
+        if (hits.length >= limit) return;
+        let entries;
+        try { entries = await reader.readDir(absolute); } catch { return; }
+        for (const entry of entries) {
+          if (hits.length >= limit) return;
+          const childAbsolute = join(absolute, entry.name);
+          const childRelative = relativePath ? `${relativePath}/${entry.name}` : entry.name;
+          if (entry.isDirectory) {
+            if (!ignoredDirectories.has(entry.name)) await visit(childAbsolute, childRelative);
+            continue;
+          }
+          if (!entry.isFile) continue;
+          let info;
+          try { info = await reader.stat(childAbsolute); } catch { continue; }
+          if (info.size > maxBytes) continue;
+          let content;
+          try { content = await reader.readFile(childAbsolute); } catch { continue; }
+          const lines = content.split("\n");
+          for (let index = 0; index < lines.length && hits.length < limit; index += 1) {
+            const text = lines[index] ?? "";
+            const column = text.toLowerCase().indexOf(needle);
+            if (column >= 0) hits.push({ path: childRelative, line: index + 1, column, text: text.trim() });
+          }
+        }
+      };
+      await visit(root, "");
+      return hits;
     },
   };
 }

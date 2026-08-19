@@ -32,12 +32,15 @@ export type MessageKey =
   | "shortcutHint"
   | "resetWidth"
   | "searchFiles"
+  | "searchContent"
   | "searchPlaceholder"
+  | "contentSearchPlaceholder"
   | "searching"
   | "searchNoResults"
   | "searchHint"
   | "searchError"
   | "searchTypeHint"
+  | "contentSearchHint"
   | "recentFiles"
   | "treeFilter"
   | "treeFilterPlaceholder"
@@ -104,12 +107,15 @@ const zh: Record<MessageKey, string> = {
   shortcutHint: "快捷键：⌥⌘B",
   resetWidth: "双击恢复默认宽度",
   searchFiles: "打开文件",
+  searchContent: "搜索文件内容",
   searchPlaceholder: "输入文件名…",
+  contentSearchPlaceholder: "输入要搜索的内容…",
   searching: "正在搜索…",
   searchNoResults: "没有匹配的文件",
   searchHint: "⌘/Ctrl+P 打开文件",
   searchError: "文件搜索失败",
   searchTypeHint: "输入文件名以打开",
+  contentSearchHint: "输入内容以搜索工作区",
   recentFiles: "最近打开",
   treeFilter: "在文件树中定位",
   treeFilterPlaceholder: "筛选并定位到文件…",
@@ -177,12 +183,15 @@ const en: Record<MessageKey, string> = {
   shortcutHint: "Shortcut: ⌥⌘B",
   resetWidth: "Double-click to reset width",
   searchFiles: "Open file",
+  searchContent: "Search file contents",
   searchPlaceholder: "Type a file name…",
+  contentSearchPlaceholder: "Search workspace contents…",
   searching: "Searching…",
   searchNoResults: "No matching files",
   searchHint: "⌘/Ctrl+P to open a file",
   searchError: "File search failed",
   searchTypeHint: "Type a file name to open it",
+  contentSearchHint: "Type text to search the workspace",
   recentFiles: "Recent",
   treeFilter: "Locate in file tree",
   treeFilterPlaceholder: "Filter and locate a file…",

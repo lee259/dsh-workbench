@@ -15,6 +15,7 @@ export type ShortcutAction =
   | { type: "close"; path: string }
   | { type: "activate"; path: string }
   | { type: "search" }
+  | { type: "contentSearch" }
   | { type: "toggle" }
   | { type: "toggleTree" }
   | { type: "find" }
@@ -56,6 +57,9 @@ export function shortcutAction(event: ShortcutEvent, state: ShortcutState): Shor
   }
   if (hasMod(event) && !event.shiftKey && event.key.toLowerCase() === "p") {
     return { type: "search" };
+  }
+  if (hasMod(event) && event.shiftKey && event.key.toLowerCase() === "f") {
+    return { type: "contentSearch" };
   }
   if (state.visible && state.active && hasMod(event) && !event.shiftKey && event.key.toLowerCase() === "f") {
     return { type: "find" };

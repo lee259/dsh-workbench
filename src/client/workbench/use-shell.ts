@@ -25,6 +25,7 @@ export function useWorkbenchShell() {
     const [width, setWidth] = useState(savedSidebarWidth);
     const [pathCopied, setPathCopied] = useState(false);
     const [searchOpen, setSearchOpenState] = useState(false);
+    const [searchMode, setSearchMode] = useState<"files" | "content">("files");
     const [diffMode, setDiffMode] = useState(false);
     const [treeVisible, setTreeVisible] = useState(savedTreeVisible);
     const [treeWidth, setTreeWidth] = useState(savedTreeWidth);
@@ -119,7 +120,7 @@ export function useWorkbenchShell() {
       const onKey = (event: KeyboardEvent) => {
         const action = shortcutAction(event, state);
         if (!action) return;
-        if (action.type === "search") { event.preventDefault(); if (!state.visible) store.show(); setSearchOpen(true); return; }
+        if (action.type === "search" || action.type === "contentSearch") { event.preventDefault(); if (!state.visible) store.show(); setSearchMode(action.type === "contentSearch" ? "content" : "files"); setSearchOpen(true); return; }
         if (action.type === "toggle") { event.preventDefault(); if (state.visible) store.hide(); else store.show(); return; }
         if (action.type === "toggleTree") { event.preventDefault(); if (!state.visible) store.show(); setTreeOpen(!treeVisible); return; }
         if (action.type === "find") {
@@ -178,5 +179,5 @@ export function useWorkbenchShell() {
 
     const showTreeAt = (path: string) => { setTreeOpen(true); setDiffMode(false); setRevealPath(path); };
     const resizeTree = (next: number) => { const value = clampTreeWidth(next); setTreeWidth(value); persistTreeWidth(value); };
-    return { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, diffMode, setDiffMode, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, mounted, closing, showTreeAt, resizeTree, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey };
+    return { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, setSearchMode, diffMode, setDiffMode, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, mounted, closing, showTreeAt, resizeTree, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey };
 }

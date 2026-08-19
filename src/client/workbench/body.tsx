@@ -14,6 +14,7 @@ type CodeViewProps = {
 
 type SearchPanelProps = {
   onClose: () => void;
+  mode?: "files" | "content";
 };
 
 type WorkspaceTreePanelProps = {
@@ -35,6 +36,7 @@ export function WorkbenchBody({
     resizeTree,
     previewCommands,
     searchOpen,
+    searchMode,
     setSearchOpen,
     CodeView,
     WorkspaceTreePanel,
@@ -50,6 +52,7 @@ export function WorkbenchBody({
     resizeTree(width: number): void;
     previewCommands: { current: PreviewCommands | null };
     searchOpen: boolean;
+    searchMode: "files" | "content";
     setSearchOpen(open: boolean): void;
     CodeView: ComponentType<CodeViewProps>;
     WorkspaceTreePanel: ComponentType<WorkspaceTreePanelProps>;
@@ -102,7 +105,7 @@ export function WorkbenchBody({
         </div>
         {searchOpen ? (
           <div className="dsh-wb-search-overlay">
-            <SearchPanel onClose={() => setSearchOpen(false)} />
+            <SearchPanel mode={searchMode} onClose={() => setSearchOpen(false)} />
           </div>
         ) : null}
       </>

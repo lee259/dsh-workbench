@@ -6,7 +6,7 @@ import {
   type ChangeEvent,
   type KeyboardEvent,
 } from "react";
-import type { WorkspaceFile } from "../../shared/types.js";
+import type { ContentSearchHit, WorkspaceFile } from "../../shared/types.js";
 import {
   highlightSegments,
   moveSearchFocus,
@@ -15,7 +15,7 @@ import {
   type SearchHit,
 } from "./search-model.js";
 import { FileTypeIcon, Icon } from "../chrome/icons.js";
-import { fetchWorkspaceFiles } from "../store.js";
+import { fetchWorkspaceFiles, searchWorkspaceContent } from "../store.js";
 import { treeFileOpenMode } from "./tree-model.js";
 import { useWorkbenchServices } from "../workbench/runtime.js";
 
@@ -25,18 +25,19 @@ function formatBytes(size: number): string {
   return `${Math.round(size / (102.4 * 1024)) / 10} MB`;
 }
 
-export function SearchPanel({ onClose }: { onClose: () => void }) {
+export function SearchPanel({ onClose, mode = "files" }: { onClose: () => void; mode?: "files" | "content" }) {
     const { store, i18n } = useWorkbenchServices();
     const t = i18n.t;
     const fileState = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<WorkspaceFile[]>([]);
+    const [contentResults, setContentResults] = useState<ContentSearchHit[]>([]);
     const [loading, setLoading] = useState(false);
     const [failed, setFailed] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement | null>(null);
     const needle = query.trim();
-    const hits: SearchHit[] = needle ? rankSearchHits(results, needle) : recentSearchHits(fileState.open);
+    const hits: SearchHit[] = mode === "files" ? (needle ? rankSearchHits(results, needle) : recentSearchHits(fileState.open)) : [];
 
     useEffect(() => {
       inputRef.current?.focus();
@@ -53,13 +54,16 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
       const timer = window.setTimeout(() => {
         setLoading(true);
         setFailed(false);
-        void fetchWorkspaceFiles(needle).then((files) => {
+        const request = mode === "content" ? searchWorkspaceContent(needle) : fetchWorkspaceFiles(needle);
+        void request.then((next) => {
           if (cancelled) return;
-          setResults(files);
+          if (mode === "content") setContentResults(next as ContentSearchHit[]);
+          else setResults(next as WorkspaceFile[]);
           setActiveIndex(0);
         }).catch(() => {
           if (cancelled) return;
           setResults([]);
+          setContentResults([]);
           setFailed(true);
         }).finally(() => {
           if (!cancelled) setLoading(false);
@@ -69,11 +73,16 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
         cancelled = true;
         window.clearTimeout(timer);
       };
-    }, [needle]);
+    }, [needle, mode]);
 
     const open = (path: string) => {
       onClose();
       void store.open(path, treeFileOpenMode(), undefined, true, "preview");
+    };
+
+    const openContent = (hit: ContentSearchHit) => {
+      onClose();
+      void store.open(hit.path, "view", hit.line, true, "preview");
     };
 
     const onSearchKey = (event: KeyboardEvent) => {
@@ -84,10 +93,19 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
       }
       if (event.key === "ArrowDown" || event.key === "ArrowUp") {
         event.preventDefault();
-        setActiveIndex((current) => moveSearchFocus(hits.length, current, event.key === "ArrowDown" ? 1 : -1));
+        const count = mode === "content" ? contentResults.length : hits.length;
+        setActiveIndex((current) => moveSearchFocus(count, current, event.key === "ArrowDown" ? 1 : -1));
         return;
       }
       if (event.key === "Enter") {
+        if (mode === "content") {
+          const hit = contentResults[activeIndex];
+          if (hit) {
+            event.preventDefault();
+            openContent(hit);
+          }
+          return;
+        }
         const hit = hits[activeIndex] ?? hits[0];
         if (hit) {
           event.preventDefault();
@@ -122,18 +140,28 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
       </button>
     );
 
+    const renderContentHit = (hit: ContentSearchHit, index: number) => (
+      <button key={`${hit.path}:${hit.line}`} type="button" className={`dsh-wb-search-result${index === activeIndex ? " is-active" : ""}`} onMouseEnter={() => setActiveIndex(index)} onClick={() => openContent(hit)}>
+        <span className="dsh-wb-search-result-glyph">{hit.line}</span>
+        <span className="dsh-wb-search-result-copy">
+          <span className="dsh-wb-search-result-name">{hit.path}</span>
+          <span className="dsh-wb-search-result-parent">{hit.text || " "}</span>
+        </span>
+      </button>
+    );
+
     return (
-      <section className="dsh-wb-search" aria-label={t("searchFiles")}>
+        <section className="dsh-wb-search" aria-label={t(mode === "content" ? "searchContent" : "searchFiles")}>
         <div className="dsh-wb-search-box">
           <Icon name="search" />
           <input
             ref={inputRef}
             value={query}
             type="search"
-            aria-label={t("searchFiles")}
+            aria-label={t(mode === "content" ? "searchContent" : "searchFiles")}
             aria-controls="dsh-wb-search-results"
             aria-activedescendant={hits[activeIndex] ? `dsh-wb-search-hit-${activeIndex}` : undefined}
-            placeholder={t("searchPlaceholder")}
+            placeholder={t(mode === "content" ? "contentSearchPlaceholder" : "searchPlaceholder")}
             onChange={(event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value)}
             onKeyDown={onSearchKey}
           />
@@ -147,13 +175,13 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
             <Icon name="close" />
           </button>
         </div>
-        <div id="dsh-wb-search-results" className="dsh-wb-search-results" role="listbox" aria-label={t("searchFiles")}>
+        <div id="dsh-wb-search-results" className="dsh-wb-search-results" role="listbox" aria-label={t(mode === "content" ? "searchContent" : "searchFiles")}>
           {!needle && hits.length > 0 ? <div className="dsh-wb-search-state">{t("recentFiles")}</div> : null}
-          {!needle && hits.length === 0 ? <div className="dsh-wb-search-state">{t("searchTypeHint")}</div> : null}
-          {needle && loading && hits.length === 0 ? <div className="dsh-wb-search-state">{t("searching")}</div> : null}
+          {!needle && hits.length === 0 ? <div className="dsh-wb-search-state">{t(mode === "content" ? "contentSearchHint" : "searchTypeHint")}</div> : null}
+          {needle && loading && (mode === "content" ? contentResults.length : hits.length) === 0 ? <div className="dsh-wb-search-state">{t("searching")}</div> : null}
           {needle && !loading && failed ? <div className="dsh-wb-search-state">{t("searchError")}</div> : null}
-          {needle && !loading && !failed && hits.length === 0 ? <div className="dsh-wb-search-state">{t("searchNoResults")}</div> : null}
-          {hits.map(renderHit)}
+          {needle && !loading && !failed && (mode === "content" ? contentResults.length : hits.length) === 0 ? <div className="dsh-wb-search-state">{t("searchNoResults")}</div> : null}
+          {mode === "content" ? contentResults.map(renderContentHit) : hits.map(renderHit)}
         </div>
       </section>
     );

@@ -117,3 +117,17 @@ test("searches past the tree file limit", async () => {
     { path: "src/target-after-tree-limit.ts", size: 1 },
   ]);
 });
+
+test("searches file contents while skipping dependency directories", async () => {
+  const workspace = createWorkspace({
+    root: "/repo",
+    fs: memoryFs({
+      "/repo/src/a.ts": { isFile: true, content: "const needle = true;\nother" },
+      "/repo/src/b.ts": { isFile: true, content: "none" },
+      "/repo/node_modules/pkg/index.js": { isFile: true, content: "needle" },
+    }),
+  });
+  expect(await workspace.searchContent("NEEDLE")).toEqual([
+    { path: "src/a.ts", line: 1, column: 6, text: "const needle = true;" },
+  ]);
+});
