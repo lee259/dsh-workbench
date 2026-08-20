@@ -5,7 +5,8 @@
 
 .dsh-wb-sidebar {
   position: fixed;
-  z-index: 1201;
+  /* Keep DSH menus, tooltips, and modals above the workbench panel. */
+  z-index: 40;
   top: 0;
   right: 0;
   bottom: 0;
@@ -17,23 +18,29 @@
   background: var(--dsw-alias-bg-layer-1);
   border-left: 1px solid var(--dsw-alias-border-l1);
   box-shadow: var(--dsw-shadow-lv2);
-  animation: dsh-wb-slide-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  will-change: transform, opacity;
+  /* DSH Tooltip renders its fixed bubble beside the trigger, rather than
+     portalling it to body. A transform here would make the panel its fixed
+     containing block and shift every bubble by the panel's left offset. */
+  animation: dsh-wb-fade-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  will-change: opacity;
 }
 
 .dsh-wb-sidebar[data-state="closing"] {
   pointer-events: none;
-  animation: dsh-wb-slide-out 160ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: dsh-wb-fade-out 160ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
-/* When the sidebar is open, nudge the page content to the left
-   (the panel itself is position: fixed on the right). */
-body.dsh-wb-sidebar-transition {
-  transition: margin-right 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+/* Reserve space from the app shell, not <body>, so conversation reflows while
+   the document-level host layout remains stable. */
+#root.dsh-wb-sidebar-transition {
+  transition:
+    margin-right 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    width 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-body.dsh-wb-sidebar-open {
+#root.dsh-wb-sidebar-open {
   margin-right: min(var(--dsh-wb-sidebar-width, 520px), 100vw);
+  width: calc(100% - min(var(--dsh-wb-sidebar-width, 520px), 100vw));
 }
 
 .dsh-wb-resize-handle {

@@ -159,13 +159,19 @@ export function useWorkbenchShell() {
     }, [state.visible, mounted]);
 
     useEffect(() => {
-      document.body.classList.add("dsh-wb-sidebar-transition");
-      return () => { document.body.classList.remove("dsh-wb-sidebar-transition"); document.body.classList.remove("dsh-wb-sidebar-open"); };
+      const appRoot = document.getElementById("root");
+      appRoot?.classList.add("dsh-wb-sidebar-transition");
+      return () => {
+        appRoot?.classList.remove("dsh-wb-sidebar-transition");
+        appRoot?.classList.remove("dsh-wb-sidebar-open");
+        appRoot?.style.removeProperty("--dsh-wb-sidebar-width");
+      };
     }, []);
 
     useEffect(() => {
-      document.body.classList.toggle("dsh-wb-sidebar-open", state.visible);
-      document.body.style.setProperty("--dsh-wb-sidebar-width", `${width}px`);
+      const appRoot = document.getElementById("root");
+      appRoot?.classList.toggle("dsh-wb-sidebar-open", state.visible);
+      appRoot?.style.setProperty("--dsh-wb-sidebar-width", `${width}px`);
       writeSidebarWidth(window.localStorage, width);
     }, [state.visible, width]);
 

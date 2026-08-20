@@ -4,6 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { REVIEW_API_PATH, type ReviewChange } from "../../shared/types.js";
 import { followWorkspaceEvents } from "../workspace-events.js";
 import { lastWorkbenchSession, sessionIdFromEvent } from "../workspace-identity.js";
+import { WorkbenchTooltip } from "../chrome/tooltip.js";
 
 export function WorkbenchToggle() {
   const { store, i18n } = useWorkbenchServices();
@@ -48,13 +49,13 @@ export function WorkbenchToggle() {
   const hasReview = changes.length > 0;
   const label = state.visible ? t("hidePanel") : t("showPanel");
   return (
+    <WorkbenchTooltip label={`${label} · ${t("shortcutHint")}`}>
     <button
       className={`dsh-wb-toggle${hasReview ? " is-review" : ""}`}
       type="button"
       aria-label={label}
       aria-expanded={state.visible}
       data-open={state.visible ? "true" : "false"}
-      data-dsh-wb-tooltip={`${label} · ${t("shortcutHint")}`}
       onClick={() => {
         if (state.visible) {
           store.hide();
@@ -76,5 +77,6 @@ export function WorkbenchToggle() {
       </span>
       <Icon name="panel" />
     </button>
+    </WorkbenchTooltip>
   );
 }

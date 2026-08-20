@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.9.0 - 2026-08-20
+
+### Features
+
+- Add native DSH file-tree context actions to open or reveal files, reference them in the conversation, and copy their absolute paths.
+- Render conversation file references as native composer chips.
+
+### Fixes
+
+- Keep native DSH tooltips anchored to workbench controls.
+
+### Changed
+
+- Load the client bundle through the DSH module-loader factory and reuse host Tooltip primitives.
+
 ## 0.8.0 - 2026-08-19
 
 ### Features

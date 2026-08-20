@@ -3,6 +3,7 @@ import { FileTypeIcon, Icon, NewTabIcon } from "../chrome/icons.js";
 import { visibleBreadcrumbTargets } from "../explorer/tree-model.js";
 import { Fragment } from "react";
 import { useWorkbenchServices } from "./runtime.js";
+import { WorkbenchTooltip } from "../chrome/tooltip.js";
 
 export function WorkbenchHeader({
     state,
@@ -27,7 +28,7 @@ export function WorkbenchHeader({
     pathCopied: boolean;
     setPathCopied(value: boolean): void;
   }) {
-    const { store, i18n } = useWorkbenchServices();
+    const { store, i18n, absolutePath } = useWorkbenchServices();
     const t = i18n.t;
     return (
       <>
@@ -52,35 +53,37 @@ export function WorkbenchHeader({
                   >
                     {path.split("/").pop() || path}
                   </button>
+                  <WorkbenchTooltip label={t("closeFile")}>
                   <button
                     className="dsh-wb-tab-close"
                     type="button"
-                    data-dsh-wb-tooltip={t("closeFile")}
                     aria-label={`${t("closeFile")}: ${path}`}
                     onClick={() => store.close(path)}
                   >
                     ×
                   </button>
+                  </WorkbenchTooltip>
                 </div>
               );
             })}
+            <WorkbenchTooltip label={t("searchHint")}>
             <button
               type="button"
               className="dsh-wb-tabbar-add"
               aria-label={t("newTab")}
-              data-dsh-wb-tooltip={t("searchHint")}
               onClick={() => setSearchOpen(true)}
             >
               <NewTabIcon />
             </button>
+            </WorkbenchTooltip>
           </div>
           <div className="dsh-wb-tab-actions">
+            <WorkbenchTooltip label={t(diffMode ? "previewMode" : "diffMode")}>
             <button
               className="dsh-wb-button dsh-wb-icon-button"
               type="button"
               aria-label={t(diffMode ? "previewMode" : "diffMode")}
               aria-pressed={diffMode}
-              data-dsh-wb-tooltip={t(diffMode ? "previewMode" : "diffMode")}
               onClick={() => {
                 setDiffMode(!diffMode);
                 if (!treeVisible) setTreeOpen(true);
@@ -88,15 +91,17 @@ export function WorkbenchHeader({
             >
               <Icon name={diffMode ? "folder" : "commit"} />
             </button>
+            </WorkbenchTooltip>
+            <WorkbenchTooltip label={t("hidePanel")}>
             <button
               className="dsh-wb-button dsh-wb-icon-button dsh-wb-close-button"
               type="button"
               aria-label={t("close")}
-              data-dsh-wb-tooltip={t("hidePanel")}
               onClick={() => store.hide()}
             >
               <Icon name="close" />
             </button>
+            </WorkbenchTooltip>
           </div>
         </nav>
         {state.path ? (
@@ -118,24 +123,25 @@ export function WorkbenchHeader({
             ))}
             <span className="dsh-wb-meta">{meta}</span>
             <div className="dsh-wb-path-actions" aria-label={t("viewOptions")}>
+              <WorkbenchTooltip label={t(treeVisible ? "hideTree" : "showTree")}>
               <button
                 className="dsh-wb-button dsh-wb-icon-button"
                 type="button"
                 aria-label={t(treeVisible ? "hideTree" : "showTree")}
                 aria-pressed={treeVisible}
-                data-dsh-wb-tooltip={t(treeVisible ? "hideTree" : "showTree")}
                 onClick={() => setTreeOpen(!treeVisible)}
               >
                 <Icon name={treeVisible ? "panel-open" : "panel-closed"} />
               </button>
+              </WorkbenchTooltip>
+              <WorkbenchTooltip label={t(pathCopied ? "pathCopied" : "copyPath")}>
               <button
                 className="dsh-wb-path"
                 type="button"
                 aria-label={t(pathCopied ? "pathCopied" : "copyPath")}
-                data-dsh-wb-tooltip={t(pathCopied ? "pathCopied" : "copyPath")}
                 onClick={() => {
                   if (!navigator.clipboard) return;
-                  void navigator.clipboard.writeText(state.path).then(() => {
+                  void navigator.clipboard.writeText(absolutePath?.(state.path) ?? state.path).then(() => {
                     setPathCopied(true);
                     window.setTimeout(() => setPathCopied(false), 1400);
                   });
@@ -143,6 +149,7 @@ export function WorkbenchHeader({
               >
                 <Icon name={pathCopied ? "check" : "copy"} />
               </button>
+              </WorkbenchTooltip>
             </div>
           </nav>
         ) : null}

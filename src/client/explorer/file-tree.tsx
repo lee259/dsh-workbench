@@ -10,9 +10,16 @@ import {
   type MouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import {
+  IconCodeOutline16,
+  IconCopyOutline16,
+  IconFolderOpen16,
+  IconLinkOutline16,
+  Menu,
+} from "@deepseek-ai/dsh-client-ui-primitives";
 import type { FileOpenMode, WorkspaceTree as WorkspaceTreeData } from "../../shared/types.js";
 import { FileTypeIcon, Icon, TreeChevron } from "../chrome/icons.js";
-import { insertDraftText } from "./draft-insert.js";
+import { WorkbenchTooltip } from "../chrome/tooltip.js";
 import { highlightSegments, moveSearchFocus, treeSearchHits } from "./search-model.js";
 import { fetchWorkspaceTree } from "../store.js";
 import { useWorkbenchServices } from "../workbench/runtime.js";
@@ -82,7 +89,7 @@ export function WorkspaceTreePanel({
     openMode?: FileOpenMode;
     commandsRef?: { current: TreeCommands | null };
   }) {
-    const { store, i18n } = useWorkbenchServices();
+    const { store, i18n, references, absolutePath } = useWorkbenchServices();
     const t = i18n.t;
     const fileState = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
     const [tree, setTree] = useState<WorkspaceTreeData>(emptyTree);
@@ -98,7 +105,6 @@ export function WorkspaceTreePanel({
     const [contextMenu, setContextMenu] = useState<{ path: string; x: number; y: number } | null>(null);
     const listRef = useRef<HTMLDivElement | null>(null);
     const searchRef = useRef<HTMLInputElement | null>(null);
-    const contextMenuRef = useRef<HTMLDivElement | null>(null);
     const contextMenuTriggerRef = useRef<HTMLElement | null>(null);
     const normalizedQuery = query.trim();
     const rows = flattenVisibleRows(tree, open);
@@ -185,17 +191,6 @@ export function WorkspaceTreePanel({
       return () => window.cancelAnimationFrame(frame);
     }, [pendingReveal]);
 
-    useEffect(() => {
-      const close = () => closeContextMenu();
-      window.addEventListener("click", close);
-      return () => window.removeEventListener("click", close);
-    }, []);
-
-    useEffect(() => {
-      if (!contextMenu) return undefined;
-      const frame = window.requestAnimationFrame(() => contextMenuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus());
-      return () => window.cancelAnimationFrame(frame);
-    }, [contextMenu]);
 
     useEffect(() => {
       if (!commandsRef) return;
@@ -249,7 +244,7 @@ export function WorkspaceTreePanel({
       event.preventDefault();
       event.stopPropagation();
       contextMenuTriggerRef.current = event.currentTarget as HTMLElement;
-      setContextMenu({ path, x: Math.min(event.clientX, Math.max(8, window.innerWidth - 178)), y: Math.min(event.clientY, Math.max(8, window.innerHeight - 98)) });
+      setContextMenu({ path, x: event.clientX, y: event.clientY });
     };
 
     const onTreeKeyDown = (event: KeyboardEvent, path = focusedPath || fileState.active || rows[0]?.path) => {
@@ -267,36 +262,36 @@ export function WorkspaceTreePanel({
       const selected = item.path === fileState.active;
       const focused = item.path === focusedPath;
       return (
-        <button
-          key={item.path}
-          id={`dsh-wb-tree-row-${item.path}`}
-          type="button"
-          role="treeitem"
-          tabIndex={focused ? 0 : -1}
-          data-path={item.path}
-          data-depth={item.depth}
-          aria-level={item.depth + 1}
-          aria-selected={selected}
-          aria-expanded={internal ? isOpen : undefined}
-          className={`dsh-wb-tree-row${selected ? " is-selected" : ""}${focused ? " is-focused" : ""}`}
-          style={{ paddingLeft: `${6 + item.depth * 14}px` }}
-          draggable={!internal}
-          onDragStart={(event: DragEvent) => {
-            if (!internal) {
-              event.dataTransfer.setData("text/plain", item.path);
-              event.dataTransfer.effectAllowed = "copy";
-            }
-          }}
-          onContextMenu={(event: MouseEvent) => showContextMenu(event, item.path)}
-          onKeyDown={(event: KeyboardEvent) => onTreeKeyDown(event, item.path)}
-          onFocus={() => setFocusedPath(item.path)}
-          onDoubleClick={internal ? undefined : () => openFromTree(item.path, "keep")}
-          onClick={internal ? () => toggleDirectory(item.path) : () => openFromTree(item.path)}
-        >
-          <TreeChevron open={isOpen} leaf={!internal} />
-          <FileTypeIcon path={item.name} directory={internal} open={isOpen} />
-          <span className="dsh-wb-tree-name">{item.name}</span>
-        </button>
+          <button
+            key={item.path}
+            id={`dsh-wb-tree-row-${item.path}`}
+            type="button"
+            role="treeitem"
+            tabIndex={focused ? 0 : -1}
+            data-path={item.path}
+            data-depth={item.depth}
+            aria-level={item.depth + 1}
+            aria-selected={selected}
+            aria-expanded={internal ? isOpen : undefined}
+            className={`dsh-wb-tree-row${selected ? " is-selected" : ""}${focused ? " is-focused" : ""}`}
+            style={{ paddingLeft: `${6 + item.depth * 14}px` }}
+            draggable={!internal}
+            onDragStart={(event: DragEvent) => {
+              if (!internal) {
+                event.dataTransfer.setData("text/plain", item.path);
+                event.dataTransfer.effectAllowed = "copy";
+              }
+            }}
+            onContextMenu={(event: MouseEvent) => showContextMenu(event, item.path)}
+            onKeyDown={(event: KeyboardEvent) => onTreeKeyDown(event, item.path)}
+            onFocus={() => setFocusedPath(item.path)}
+            onDoubleClick={internal ? undefined : () => openFromTree(item.path, "keep")}
+            onClick={internal ? () => toggleDirectory(item.path) : () => openFromTree(item.path)}
+          >
+            <TreeChevron open={isOpen} leaf={!internal} />
+            <FileTypeIcon path={item.name} directory={internal} open={isOpen} />
+            <span className="dsh-wb-tree-name">{item.name}</span>
+          </button>
       );
     });
 
@@ -392,9 +387,11 @@ export function WorkspaceTreePanel({
                 }}
               />
               {normalizedQuery ? (
-                <button type="button" className="dsh-wb-tree-search-clear" aria-label={t("clearSearch")} data-dsh-wb-tooltip={t("clearSearch")} onClick={() => setQuery("")}>
+                <WorkbenchTooltip label={t("clearSearch")}>
+                <button type="button" className="dsh-wb-tree-search-clear" aria-label={t("clearSearch")} onClick={() => setQuery("")}>
                   <Icon name="close" />
                 </button>
+                </WorkbenchTooltip>
               ) : null}
             </div>
           </div>
@@ -438,41 +435,35 @@ export function WorkspaceTreePanel({
               {renderNodes()}
             </div>
           )}
-          {contextMenu ? (
-            <div
-              className="dsh-wb-context-menu"
-              role="menu"
-              aria-label={t("fileMenu")}
-              style={{ left: contextMenu.x, top: contextMenu.y }}
-              ref={contextMenuRef}
-              onClick={(event: MouseEvent) => event.stopPropagation()}
-              onKeyDown={(event: KeyboardEvent) => {
-                const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]'));
-                const index = items.indexOf(document.activeElement as HTMLElement);
-                if (event.key === "Escape") {
-                  event.preventDefault();
-                  closeContextMenu();
-                  return;
-                }
-                if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-                  event.preventDefault();
-                  const offset = event.key === "ArrowDown" ? 1 : -1;
-                  items[(index + offset + items.length) % items.length]?.focus();
-                }
-              }}
-            >
-              <button type="button" role="menuitem" onClick={() => menuIsDirectory ? locate(menuPath) : openFromTree(menuPath, "keep")}>
-                {t(menuIsDirectory ? "revealInTree" : "openFileAction")}
-              </button>
-              <button type="button" role="menuitem" onClick={() => { insertDraftText(document, menuPath); closeContextMenu(); }}>
-                {t("insertPathAction")}
-              </button>
-              <button type="button" role="menuitem" onClick={() => { if (navigator.clipboard) void navigator.clipboard.writeText(menuPath); closeContextMenu(); }}>
-                {t("copyPathAction")}
-              </button>
-            </div>
-          ) : null}
         </aside>
+        <Menu
+          open={contextMenu !== null}
+          onClose={closeContextMenu}
+          items={[
+            {
+              id: "open",
+              label: t(menuIsDirectory ? "revealInTree" : "openFileAction"),
+              icon: menuIsDirectory ? <IconFolderOpen16 size={14} /> : <IconCodeOutline16 size={14} />,
+            },
+            { id: "reference", label: t("referencePathAction"), icon: <IconLinkOutline16 size={14} /> },
+            { id: "copy", label: t("copyPathAction"), icon: <IconCopyOutline16 size={14} /> },
+          ]}
+          onSelect={(id: string) => {
+            if (id === "open") menuIsDirectory ? locate(menuPath) : openFromTree(menuPath, "keep");
+            if (id === "reference") {
+              references?.addPath(menuPath, menuIsDirectory);
+              closeContextMenu();
+            }
+            if (id === "copy") {
+              if (navigator.clipboard) void navigator.clipboard.writeText(absolutePath?.(menuPath) ?? menuPath);
+              closeContextMenu();
+            }
+          }}
+          portal
+          align="start"
+          getAnchorRect={() => contextMenu === null ? null : new DOMRect(contextMenu.x, contextMenu.y, 0, 0)}
+          anchor={<span />}
+        />
       </>
     );
 }

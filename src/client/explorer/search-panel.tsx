@@ -18,6 +18,7 @@ import { FileTypeIcon, Icon } from "../chrome/icons.js";
 import { fetchWorkspaceFiles, searchWorkspaceContent } from "../store.js";
 import { treeFileOpenMode } from "./tree-model.js";
 import { useWorkbenchServices } from "../workbench/runtime.js";
+import { WorkbenchTooltip } from "../chrome/tooltip.js";
 
 function formatBytes(size: number): string {
   if (size < 1024) return `${size} B`;
@@ -165,15 +166,16 @@ export function SearchPanel({ onClose, mode = "files" }: { onClose: () => void; 
             onChange={(event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value)}
             onKeyDown={onSearchKey}
           />
+          <WorkbenchTooltip label={t("close")}>
           <button
             type="button"
             className="dsh-wb-search-close"
             aria-label={t("close")}
-            data-dsh-wb-tooltip={t("close")}
             onClick={onClose}
           >
             <Icon name="close" />
           </button>
+          </WorkbenchTooltip>
         </div>
         <div id="dsh-wb-search-results" className="dsh-wb-search-results" role="listbox" aria-label={t(mode === "content" ? "searchContent" : "searchFiles")}>
           {!needle && hits.length > 0 ? <div className="dsh-wb-search-state">{t("recentFiles")}</div> : null}

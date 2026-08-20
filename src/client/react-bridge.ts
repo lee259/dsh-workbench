@@ -1,5 +1,7 @@
 type ReactRuntime = Record<string, any>;
+type ReactDomRuntime = { createPortal(children: unknown, container: Element): unknown };
 let runtime: ReactRuntime | undefined;
+let domRuntime: ReactDomRuntime | undefined;
 const ComponentBase = class {};
 const PureComponentBase = class {};
 export function setReactRuntime(value: ReactRuntime): void {
@@ -13,7 +15,10 @@ export function setReactRuntime(value: ReactRuntime): void {
     Object.setPrototypeOf(PureComponentBase.prototype, runtime.PureComponent.prototype);
   }
 }
+export function setReactDomRuntime(value: ReactDomRuntime): void { domRuntime = value; }
 function getRuntime(): ReactRuntime { if (!runtime) throw new Error("dsh-workbench React runtime is not ready"); return runtime; }
+function getDomRuntime(): ReactDomRuntime { if (!domRuntime) throw new Error("dsh-workbench React DOM runtime is not ready"); return domRuntime; }
+export const createPortal = (children: unknown, container: Element): unknown => getDomRuntime().createPortal(children, container);
 export const createElement = (...args: any[]) => getRuntime().createElement(...args);
 function createJsxElement(type: any, props: any, key: any): any {
   const current = getRuntime();

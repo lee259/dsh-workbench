@@ -283,13 +283,13 @@ test("file drawer copies the active path", async () => {
       size: 16,
     }));
     await store.open("src/example.ts");
-    const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
+    const ui = createWorkbenchUi(React, store, createLocaleStore("en"), { absolutePath: (path) => `/repo/${path}` });
     const drawer = ui.FileDrawer();
     const copyPath = findElement(drawer, (node) => node.props?.className === "dsh-wb-path");
     expect(copyPath).toBeTruthy();
     copyPath.props.onClick();
     await Promise.resolve();
-    expect(copied).toEqual(["src/example.ts"]);
+    expect(copied).toEqual(["/repo/src/example.ts"]);
   } finally {
     Object.defineProperty(globalThis, "navigator", { configurable: true, value: originalNavigator });
     Object.defineProperty(globalThis, "window", { configurable: true, value: originalWindow });
@@ -386,7 +386,7 @@ test("workbench controls expose accurate accessibility state", async () => {
   const toggle = findElement(ui.WorkbenchToggle(), (node) => node.type === "button");
   expect(toggle.props["aria-expanded"]).toBe(false);
   expect(toggle.props["data-open"]).toBe("false");
-  expect(toggle.props["data-dsh-wb-tooltip"]).toMatch(/Shortcut/);
+  expect(toggle.props["data-dsh-wb-tooltip"]).toBeUndefined();
   expect(toggle.props.children[0].type).toBe("span");
   expect(toggle.props.children[1].props.name).toBe("panel");
   await store.open("src/example.ts");

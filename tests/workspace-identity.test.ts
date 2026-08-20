@@ -1,5 +1,11 @@
 import { expect, test } from "vitest";
-import { followDshSession, followDshWorkspace, lastWorkbenchSession, notifyWorkbenchSession, retargetWorkbenchRoot, sessionIdFromEvent, workbenchShouldReset, workspacePathFromDsh } from "../src/client/workspace-identity.js";
+import { followDshSession, followDshWorkspace, lastWorkbenchSession, notifyWorkbenchSession, retargetWorkbenchRoot, sessionIdFromEvent, workbenchShouldReset, workspaceAbsolutePath, workspacePathFromDsh } from "../src/client/workspace-identity.js";
+
+test("workspace paths become absolute only when needed", () => {
+  expect(workspaceAbsolutePath("/repo/workbench", "src/index.ts")).toBe("/repo/workbench/src/index.ts");
+  expect(workspaceAbsolutePath("/repo/workbench/", "/tmp/file.ts")).toBe("/tmp/file.ts");
+  expect(workspaceAbsolutePath("C:\\repo\\workbench", "src\\index.ts")).toBe("C:\\repo\\workbench\\src\\index.ts");
+});
 
 test("workspace path prefers the current session cwd", () => {
   expect(workspacePathFromDsh(

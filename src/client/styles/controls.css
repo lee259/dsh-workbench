@@ -30,18 +30,3 @@
   background: var(--dsh-wb-button-active-fill);
   box-shadow: inset 0 0 0 1px var(--dsh-wb-button-active-border);
 }
-
-.dsh-wb-tooltip {
-  position: fixed;
-  z-index: 1400;
-  max-width: min(320px, calc(100vw - 16px));
-  padding: 8px 10px;
-  border: 1px solid var(--dsh-wb-tooltip-border);
-  border-radius: 8px;
-  color: var(--dsh-wb-tooltip-label);
-  background: var(--dsh-wb-tooltip-fill);
-  box-shadow: var(--dsh-wb-tooltip-shadow);
-  font-size: 12px;
-  line-height: 18px;
-  pointer-events: none;
-}

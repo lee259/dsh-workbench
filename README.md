@@ -104,11 +104,29 @@ Inspect, navigate, and review what the agent touched. Diffs stay on captured DSH
 - Short operation summaries for each captured write
 - Follow the agent: open and reveal the latest DSH-written file
 - Workspace content search (`⌘/Ctrl+⇧+F`) with line-focused results
+- Reference files, folders, and selected preview lines in the composer
 
 ### Next
 
-- Attach a file or folder from the tree as composer context
-- Associate the Git worktree for the current workspace, without inventing a Git `HEAD` diff
+The target is a Codex-like development experience inside DeepSeek Harness: reuse proven
+workspace interactions where they help, while keeping DSH-native write capture and
+session review as the workbench's center of gravity.
+
+1. Add a real editor mode with draft state, save, conflict detection, and a clear return
+   path to the agent conversation.
+2. Add the surrounding development loop in small slices: terminal, Git worktree/status,
+   and background task or sub-agent visibility.
+3. Tighten the conversation loop: open/reveal targets, review-to-conversation feedback,
+   and session-scoped workspace state.
+
+The existing DSH event capture, `meta.diffs`, session review, operation summaries, and
+agent-follow behavior remain the differentiating foundation.
+
+### Near-term sequence
+
+- Editable preview with save and external-change conflict handling
+- Git worktree association and status, without inventing a Git `HEAD` diff
+- Terminal and background task surfaces
 
 ### Exploring
 

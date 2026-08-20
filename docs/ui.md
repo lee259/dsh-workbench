@@ -65,8 +65,9 @@ black fill, white text, 8px radius, and `8px 10px` padding. They open after
 - One primary action per surface: click a row to open, double-click to pin.
 - Hover uses nav-item-hover. Selected uses nav-item-active.
 - Keyboard: `focus-visible` 2px business outline, offset `-2px`.
-- Icon-only buttons use `aria-label` and `data-dsh-wb-tooltip`. The tooltip is
-  mounted on `document.body`, so it is not clipped by panel overflow and also
-  appears on keyboard focus.
+- Icon-only buttons use `aria-label` and the host Tooltip component. It appears
+  on pointer hover and keyboard focus. Do not retain a CSS transform on the
+  sidebar while it is open: the Tooltip bubble renders beside its trigger and
+  a transformed sidebar would offset its fixed positioning.
 - Show `+/−` counts when they are non-zero.
 - Review and the file tree share one rail. Same head height, same row, same hover. The mode toggle replaces the list.

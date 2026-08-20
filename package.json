@@ -1,6 +1,6 @@
 {
   "name": "dsh-workbench",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "A right-side file workspace for DeepSeek Harness Web.",
   "license": "MIT",
   "author": "lee259",
@@ -52,8 +52,11 @@
       "inject": [
         "@deepseek-ai/dsh-client-runtime",
         "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-modules",
+        "@deepseek-ai/dsh-client-ui-slots",
         "@deepseek-ai/dsh-client-ui-conversation",
-        "@deepseek-ai/dsh-client-ui-tool"
+        "@deepseek-ai/dsh-client-ui-tool",
+        "@deepseek-ai/dsh-client-ui-input-trigger"
       ],
       "platform": "web"
     }
@@ -70,7 +73,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "rm -rf lib && node scripts/embed-css.mjs && tsc -p tsconfig.json && tsdown && mv lib/client.iife.js lib/client.js && rm -f lib/client.iife.js",
+    "build": "rm -rf lib && node scripts/embed-css.mjs && tsc -p tsconfig.json && tsdown",
     "prepare": "pnpm run build",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -79,8 +82,12 @@
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",
     "@deepseek-ai/dsh-client-locale": "*",
+    "@deepseek-ai/dsh-client-modules": "*",
     "@deepseek-ai/dsh-client-runtime": "*",
     "@deepseek-ai/dsh-client-ui-conversation": "*",
+    "@deepseek-ai/dsh-client-ui-input-trigger": "*",
+    "@deepseek-ai/dsh-client-ui-primitives": "*",
+    "@deepseek-ai/dsh-client-ui-slots": "*",
     "@deepseek-ai/dsh-client-ui-tool": "*",
     "@deepseek-ai/dsh-session": "*"
   },

@@ -2,7 +2,12 @@ import { createContext, useContext, useSyncExternalStore, type ReactNode } from 
 import type { LocaleStore } from "../../shared/i18n.js";
 import type { FileStore } from "../store.js";
 
-export type WorkbenchRuntimeServices = { readonly store: FileStore; readonly i18n: LocaleStore };
+export type WorkbenchRuntimeServices = {
+  readonly store: FileStore;
+  readonly i18n: LocaleStore;
+  readonly references?: { addPath(path: string, directory?: boolean): boolean };
+  readonly absolutePath?: (path: string) => string;
+};
 let runtimeContext: ReturnType<typeof createContext<WorkbenchRuntimeServices | null>> | null = null;
 
 function getRuntimeContext() {

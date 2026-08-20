@@ -52,6 +52,7 @@ export type MessageKey =
   | "treeMatchCount"
   | "treeEmpty"
   | "revealInTree"
+  | "referencePathAction"
   | "insertPathAction"
   | "workspaceTree"
   | "openFile"
@@ -127,6 +128,7 @@ const zh: Record<MessageKey, string> = {
   treeMatchCount: "{count} 个匹配",
   treeEmpty: "工作区是空的",
   revealInTree: "在树中显示",
+  referencePathAction: "引用到对话",
   insertPathAction: "插入路径到输入框",
   workspaceTree: "工作区文件树",
   openFile: "打开文件",
@@ -203,6 +205,7 @@ const en: Record<MessageKey, string> = {
   treeMatchCount: "{count} matches",
   treeEmpty: "Workspace is empty",
   revealInTree: "Reveal in tree",
+  referencePathAction: "Reference in conversation",
   insertPathAction: "Insert path into input",
   workspaceTree: "Workspace files",
   openFile: "Open file",

@@ -26,7 +26,7 @@ export type DshSnapshotStore<T> = {
 };
 
 export type DshWorkspaceFaces = {
-  sessions?: { list?: DshSnapshotStore<DshSessionList> };
+  sessions?: { list?: DshSnapshotStore<DshSessionList>; scope?(sessionId: string): unknown };
   workspaces?: { list?: DshSnapshotStore<DshWorkspaceList> };
 };
 
@@ -50,6 +50,12 @@ export function workspacePathFromDsh(sessions?: DshSessionList, workspaces?: Dsh
   if (typeof recent?.path === "string" && recent.path.trim()) return recent.path.trim();
   const first = items[0];
   return typeof first?.path === "string" && first.path.trim() ? first.path.trim() : null;
+}
+
+export function workspaceAbsolutePath(root: string, path: string): string {
+  if (!root || /^(?:[A-Za-z]:[\\/]|[\\/])/.test(path)) return path;
+  const separator = root.includes("\\") ? "\\" : "/";
+  return `${root.replace(/[\\/]+$/, "")}${separator}${path.replace(/^[\\/]+/, "")}`;
 }
 
 export async function retargetWorkbenchRoot(

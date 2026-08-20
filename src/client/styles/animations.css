@@ -1,24 +1,22 @@
 /* ── Animations ──────────────────────────────────────────────────── */
 
-@keyframes dsh-wb-slide-in {
+@keyframes dsh-wb-fade-in {
   from {
     opacity: 0;
-    transform: translateX(24px);
   }
 
   to {
     opacity: 1;
-    transform: translateX(0);
   }
 }
 
-@keyframes dsh-wb-slide-out {
+@keyframes dsh-wb-fade-out {
   from {
-    transform: translateX(0);
+    opacity: 1;
   }
 
   to {
-    transform: translateX(100%);
+    opacity: 0;
   }
 }
 
