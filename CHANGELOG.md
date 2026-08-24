@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.10.0 - 2026-08-24
+
+### Features
+
+- Align diff review with the Codex-style workspace file tree and session state.
+- Show only changed files in diff mode with add, delete, and mixed-change icons.
+
+### Fixes
+
+- Reset tabs and diff state when switching sessions, then restore diff mode for sessions with changes.
+- Keep the last diff tab closed instead of reopening it automatically.
+
 ## 0.9.0 - 2026-08-20
 
 ### Features
