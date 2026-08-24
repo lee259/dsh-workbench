@@ -90,6 +90,22 @@ test("close clears the open file", async () => {
   expect(store.getSnapshot().visible).toBe(true);
 });
 
+test("closing the last diff tab stays closed after the initial diff reveal", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: "after",
+    before: "before",
+    source: "dsh-write",
+    revision: 1,
+    size: 5,
+  }));
+  await store.open("a.ts", "diff");
+  store.close("a.ts");
+  expect(store.getSnapshot().open).toEqual([]);
+  expect(store.getSnapshot().active).toBe("");
+  expect(store.getSnapshot().visible).toBe(false);
+});
+
 test("show and hide only change panel visibility", async () => {
   const store = createFileStore(async (path) => ({
     path,

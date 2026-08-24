@@ -1,5 +1,5 @@
 import { createElement } from "react";
-import { Check, ChevronRight, Copy, FilePlus2, FileText, Folder, FolderOpen, GitCommitHorizontal, PanelRightClose, PanelRightOpen, Search, X, type IconNode } from "lucide";
+import { Check, ChevronRight, Copy, FilePlus2, FileText, Folder, FolderOpen, GitCommitHorizontal, Minus, PanelRightClose, PanelRightOpen, Plus, Search, Split, X, type IconNode } from "lucide";
 
 function renderIcon(icon: IconNode, className: string, size: number, strokeWidth: number) {
   return createElement(
@@ -65,4 +65,9 @@ export function EmptyFileIcon() {
 
 export function NewTabIcon() {
   return renderIcon(FilePlus2, "dsh-wb-tab-icon", 14, 1.5);
+}
+
+export function TreeChangeIcon({ kind }: { kind: "add" | "delete" | "both" }) {
+  const icon = kind === "add" ? Plus : kind === "delete" ? Minus : Split;
+  return renderIcon(icon, `dsh-wb-tree-change-icon is-${kind}`, 14, 1.8);
 }

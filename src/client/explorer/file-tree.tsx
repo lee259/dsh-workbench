@@ -16,10 +16,12 @@ import {
   IconFolderOpen16,
   IconLinkOutline16,
   Menu,
+  writeClipboard,
 } from "@deepseek-ai/dsh-client-ui-primitives";
-import type { FileOpenMode, WorkspaceTree as WorkspaceTreeData } from "../../shared/types.js";
-import { FileTypeIcon, Icon, TreeChevron } from "../chrome/icons.js";
+import { normalizePath, type FileOpenMode, type ReviewChange, type WorkspaceTree as WorkspaceTreeData } from "../../shared/types.js";
+import { FileTypeIcon, Icon, TreeChangeIcon, TreeChevron } from "../chrome/icons.js";
 import { WorkbenchTooltip } from "../chrome/tooltip.js";
+import { fetchReview, initialDiffPath } from "../review/review-data.js";
 import { highlightSegments, moveSearchFocus, treeSearchHits } from "./search-model.js";
 import { fetchWorkspaceTree } from "../store.js";
 import { useWorkbenchServices } from "../workbench/runtime.js";
@@ -81,12 +83,14 @@ export function WorkspaceTreePanel({
     onResize,
     revealPath = "",
     openMode = "view",
+    sessionId,
     commandsRef,
   }: {
     width: number;
     onResize: (width: number) => void;
     revealPath?: string;
     openMode?: FileOpenMode;
+    sessionId?: string;
     commandsRef?: { current: TreeCommands | null };
   }) {
     const { store, i18n, references, absolutePath } = useWorkbenchServices();
@@ -101,14 +105,14 @@ export function WorkspaceTreePanel({
     const [focusedPath, setFocusedPath] = useState(fileState.active);
     const [locatePath, setLocatePath] = useState("");
     const [pendingReveal, setPendingReveal] = useState("");
+    const [reviewChanges, setReviewChanges] = useState<ReviewChange[]>([]);
+    const initialDiffOpen = useRef(false);
     const lastReveal = useRef(0);
     const [contextMenu, setContextMenu] = useState<{ path: string; x: number; y: number } | null>(null);
     const listRef = useRef<HTMLDivElement | null>(null);
     const searchRef = useRef<HTMLInputElement | null>(null);
     const contextMenuTriggerRef = useRef<HTMLElement | null>(null);
     const normalizedQuery = query.trim();
-    const rows = flattenVisibleRows(tree, open);
-    const hits = treeSearchHits(tree, normalizedQuery);
     const filtering = Boolean(normalizedQuery);
 
     const refreshTree = useCallback(() => {
@@ -154,10 +158,52 @@ export function WorkspaceTreePanel({
       closeContextMenu();
     };
 
+    const reviewByPath = new Map(reviewChanges.map((change) => [normalizePath(change.path), change]));
+    const changedPaths = new Set(reviewByPath.keys());
+    const displayTree = openMode === "diff"
+      ? {
+        files: tree.files.filter((file) => changedPaths.has(normalizePath(file.path))),
+        directories: tree.directories.filter((directory) => [...changedPaths].some((path) => path.startsWith(`${directory}/`))),
+      }
+      : tree;
+    const rows = flattenVisibleRows(displayTree, open);
+    const hits = treeSearchHits(displayTree, normalizedQuery);
+
     const openFromTree = (path: string, kind: "preview" | "keep" = "preview") => {
-      void store.open(path, openMode === "diff" ? "diff" : treeFileOpenMode(), undefined, false, kind);
+      const mode = openMode === "diff" && reviewByPath.has(path) ? "diff" : treeFileOpenMode();
+      void store.open(path, mode, undefined, false, kind);
       closeContextMenu();
     };
+
+    useEffect(() => {
+      if (openMode !== "diff") {
+        initialDiffOpen.current = false;
+        setReviewChanges([]);
+        return undefined;
+      }
+      let cancelled = false;
+      void fetchReview(sessionId)
+        .then((payload) => {
+          if (!cancelled) setReviewChanges(payload.changes ?? []);
+        })
+        .catch(() => {
+          if (!cancelled) setReviewChanges([]);
+        });
+      return () => { cancelled = true; };
+    }, [openMode, sessionId]);
+
+    useEffect(() => {
+      if (openMode !== "diff" || reviewChanges.length === 0 || initialDiffOpen.current) return;
+      initialDiffOpen.current = true;
+      const directories = reviewChanges.flatMap((change) => ancestorDirectories(normalizePath(change.path)));
+      setOpen((current) => {
+        const next = mergeOpenDirectories(current, directories);
+        persistTreeOpen(next);
+        return next;
+      });
+      const path = initialDiffPath(fileState.active, reviewChanges);
+      if (path) void store.open(path, "diff", undefined, true, "keep");
+    }, [fileState.active, openMode, reviewChanges, store]);
 
     useEffect(() => {
       if (fileState.visible) refreshTree();
@@ -261,6 +307,14 @@ export function WorkspaceTreePanel({
       const isOpen = open.includes(item.path);
       const selected = item.path === fileState.active;
       const focused = item.path === focusedPath;
+      const change = reviewByPath.get(normalizePath(item.path));
+      const changeKind = change
+        ? change.additions > 0 && change.deletions > 0
+          ? "both"
+          : change.additions > 0
+            ? "add"
+            : "delete"
+        : null;
       return (
           <button
             key={item.path}
@@ -291,6 +345,9 @@ export function WorkspaceTreePanel({
             <TreeChevron open={isOpen} leaf={!internal} />
             <FileTypeIcon path={item.name} directory={internal} open={isOpen} />
             <span className="dsh-wb-tree-name">{item.name}</span>
+            {!internal && changeKind ? (
+              <span className="dsh-wb-tree-change" aria-hidden="true"><TreeChangeIcon kind={changeKind} /></span>
+            ) : null}
           </button>
       );
     });
@@ -455,7 +512,7 @@ export function WorkspaceTreePanel({
               closeContextMenu();
             }
             if (id === "copy") {
-              if (navigator.clipboard) void navigator.clipboard.writeText(absolutePath?.(menuPath) ?? menuPath);
+              void writeClipboard(absolutePath?.(menuPath) ?? menuPath);
               closeContextMenu();
             }
           }}

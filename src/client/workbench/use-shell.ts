@@ -7,6 +7,7 @@ import type { PreviewCommands } from "../preview/preview-nav.js";
 import type { FileState } from "../store.js";
 import { WORKSPACE_API_PATH } from "../../shared/types.js";
 import { followWorkspaceEvents } from "../workspace-events.js";
+import { fetchReview } from "../review/review-data.js";
 import { lastWorkbenchSession, sessionIdFromEvent, workbenchShouldReset } from "../workspace-identity.js";
 import { useWorkbenchServices } from "./runtime.js";
 
@@ -41,6 +42,7 @@ export function useWorkbenchShell() {
     const sessionRef = useRef("");
     const workspaceKeyRef = useRef(workspaceKey);
     const searchRestoreRef = useRef<HTMLElement | null>(null);
+    const sessionModeRequestRef = useRef(0);
     workspaceKeyRef.current = workspaceKey;
 
     const setSearchOpen = useCallback((open: boolean) => {
@@ -67,7 +69,7 @@ export function useWorkbenchShell() {
 
     const applyIdentity = useCallback((root: string, sessionId: string) => {
       const nextRoot = root || rootRef.current;
-      if (workbenchShouldReset(rootRef.current, nextRoot)) resetChrome();
+      if (workbenchShouldReset(rootRef.current, nextRoot, sessionRef.current, sessionId)) resetChrome();
       if (nextRoot && nextRoot !== rootRef.current) {
         rootRef.current = nextRoot;
         workspaceKeyRef.current = nextRoot;
@@ -100,6 +102,23 @@ export function useWorkbenchShell() {
         window.removeEventListener("dsh-wb-session-change", onSessionChange);
       };
     }, [applyIdentity, syncWorkspace]);
+
+    useEffect(() => {
+      if (!sessionId) return undefined;
+      const requestId = ++sessionModeRequestRef.current;
+      let cancelled = false;
+      void fetchReview(sessionId)
+        .then((payload) => {
+          if (cancelled || requestId !== sessionModeRequestRef.current) return;
+          const hasDiff = (payload.changes?.length ?? 0) > 0;
+          setDiffMode(hasDiff);
+          if (hasDiff) setTreeOpen(true);
+        })
+        .catch(() => {
+          if (!cancelled && requestId === sessionModeRequestRef.current) setDiffMode(false);
+        });
+      return () => { cancelled = true; };
+    }, [sessionId]);
 
     const setTreeOpen = (next: boolean) => {
       setTreeVisible(next);

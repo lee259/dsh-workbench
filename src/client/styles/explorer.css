@@ -10,6 +10,14 @@
   flex: 1;
 }
 
+.dsh-wb-code-column {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
 .dsh-wb-rail {
   display: flex;
   min-width: 0;
@@ -244,6 +252,28 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.dsh-wb-tree-change {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  margin-left: auto;
+  place-items: center;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.dsh-wb-tree-change-icon.is-add {
+  color: var(--dsw-alias-state-success-primary);
+}
+
+.dsh-wb-tree-change-icon.is-delete {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.dsh-wb-tree-change-icon.is-both {
+  color: var(--dsw-alias-label-secondary);
 }
 
 .dsh-wb-icon-svg {

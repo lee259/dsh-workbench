@@ -4,7 +4,6 @@ import { EmptyFileIcon } from "../chrome/icons.js";
 import type { PreviewCommands } from "../preview/preview-nav.js";
 import type { TreeCommands } from "../explorer/file-tree.js";
 import type { FileOpenMode } from "../../shared/types.js";
-import { ReviewRail } from "../review/review-panel.js";
 import { useWorkbenchServices } from "./runtime.js";
 
 type CodeViewProps = {
@@ -23,6 +22,7 @@ type WorkspaceTreePanelProps = {
   revealPath?: string;
   commandsRef?: { current: TreeCommands | null };
   openMode?: FileOpenMode;
+  sessionId?: string;
 };
 
 export function WorkbenchBody({
@@ -60,47 +60,42 @@ export function WorkbenchBody({
   }) {
     const { store, i18n } = useWorkbenchServices();
     const t = i18n.t;
-    const reviewVisible = treeVisible && diffMode;
-    const treeVisibleNow = treeVisible && !diffMode;
-    const reviewRailRef = useRef<HTMLDivElement | null>(null);
+    const treeVisibleNow = treeVisible;
     const treeRailRef = useRef<HTMLDivElement | null>(null);
-
-    useEffect(() => {
-      reviewRailRef.current?.toggleAttribute("inert", !reviewVisible);
-    }, [reviewVisible]);
 
     useEffect(() => {
       treeRailRef.current?.toggleAttribute("inert", !treeVisibleNow);
     }, [treeVisibleNow]);
     return (
       <>
-        <div className="dsh-wb-main">
-          <main className="dsh-wb-code">
-            {state.path ? (
-              <CodeView state={state} commandsRef={previewCommands} />
-            ) : (
-              <div className="dsh-wb-empty">
-                <div className="dsh-wb-empty-icon"><EmptyFileIcon /></div>
-                <strong>{t("openFile")}</strong>
-                <span>{t("selectFile")}</span>
-              </div>
-            )}
-          </main>
-          <div
-            ref={reviewRailRef}
-            className={`dsh-wb-rail ${diffMode ? (treeVisible ? "is-open" : "is-closed") : "is-inactive"}`}
-            aria-hidden={!reviewVisible}
-            style={{ width: treeVisible ? treeWidth : 0 }}
-          >
-            <ReviewRail store={store} sessionId={sessionId} width={treeWidth} onResize={resizeTree} />
+        <div className={`dsh-wb-main${diffMode ? " is-diff" : ""}`}>
+          <div className="dsh-wb-code-column">
+            <main className="dsh-wb-code">
+              {state.path ? (
+                <CodeView state={state} commandsRef={previewCommands} />
+              ) : (
+                <div className="dsh-wb-empty">
+                  <div className="dsh-wb-empty-icon"><EmptyFileIcon /></div>
+                  <strong>{t("openFile")}</strong>
+                  <span>{t("selectFile")}</span>
+                </div>
+              )}
+            </main>
           </div>
           <div
             ref={treeRailRef}
-            className={`dsh-wb-rail ${!diffMode ? (treeVisible ? "is-open" : "is-closed") : "is-inactive"}`}
+            className={`dsh-wb-rail ${treeVisible ? "is-open" : "is-closed"}`}
             aria-hidden={!treeVisibleNow}
             style={{ width: treeVisible ? treeWidth : 0 }}
           >
-            <WorkspaceTreePanel width={treeWidth} revealPath={revealPath} commandsRef={treeCommands} onResize={resizeTree} />
+            <WorkspaceTreePanel
+              width={treeWidth}
+              revealPath={revealPath}
+              commandsRef={treeCommands}
+              onResize={resizeTree}
+              openMode={diffMode ? "diff" : "view"}
+              sessionId={sessionId}
+            />
           </div>
         </div>
         {searchOpen ? (

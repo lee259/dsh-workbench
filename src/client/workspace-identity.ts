@@ -105,8 +105,15 @@ export function followDshWorkspace(ctx: DshWorkspaceFaces, onPath: (path: string
   });
 }
 
-export function workbenchShouldReset(previousRoot: string, nextRoot: string): boolean {
-  return Boolean(previousRoot && nextRoot && previousRoot !== nextRoot);
+export function workbenchShouldReset(
+  previousRoot: string,
+  nextRoot: string,
+  previousSession = "",
+  nextSession = "",
+): boolean {
+  const rootChanged = Boolean(previousRoot && nextRoot && previousRoot !== nextRoot);
+  const sessionChanged = Boolean(previousSession && nextSession && previousSession !== nextSession);
+  return rootChanged || sessionChanged;
 }
 
 export function followDshSession(ctx: DshWorkspaceFaces, onSession: (sessionId: string) => void): () => void {

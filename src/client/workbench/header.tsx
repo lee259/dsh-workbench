@@ -2,6 +2,7 @@ import type { FileState } from "../store.js";
 import { FileTypeIcon, Icon, NewTabIcon } from "../chrome/icons.js";
 import { visibleBreadcrumbTargets } from "../explorer/tree-model.js";
 import { Fragment } from "react";
+import { HoverCard, writeClipboard } from "@deepseek-ai/dsh-client-ui-primitives";
 import { useWorkbenchServices } from "./runtime.js";
 import { WorkbenchTooltip } from "../chrome/tooltip.js";
 
@@ -36,6 +37,7 @@ export function WorkbenchHeader({
           <div className="dsh-wb-tabstrip">
             {state.open.map((path) => {
               const kind = state.views[path] ?? "view";
+              const fullPath = absolutePath?.(path) ?? path;
               return (
                 <div
                   className={`dsh-wb-tab is-${kind}${path === state.active ? " is-active" : ""}${path === state.preview ? " is-preview" : ""}`}
@@ -43,16 +45,24 @@ export function WorkbenchHeader({
                   role="presentation"
                 >
                   <FileTypeIcon path={path} />
-                  <button
-                    className="dsh-wb-tab-name"
-                    type="button"
-                    role="tab"
-                    aria-selected={path === state.active}
-                    onClick={() => void store.activate(path)}
-                    onDoubleClick={() => store.pin(path)}
-                  >
-                    {path.split("/").pop() || path}
-                  </button>
+                  <HoverCard
+                    anchor={(
+                      <button
+                        className="dsh-wb-tab-name"
+                        type="button"
+                        role="tab"
+                        aria-selected={path === state.active}
+                        onClick={() => void store.activate(path)}
+                        onDoubleClick={() => store.pin(path)}
+                      >
+                        {path.split("/").pop() || path}
+                      </button>
+                    )}
+                    content={<span className="dsh-wb-path-hovercard">{fullPath}</span>}
+                    copyText={fullPath}
+                    copyLabel={t("copyPath")}
+                    copiedLabel={t("pathCopied")}
+                  />
                   <WorkbenchTooltip label={t("closeFile")}>
                   <button
                     className="dsh-wb-tab-close"
@@ -140,8 +150,8 @@ export function WorkbenchHeader({
                 type="button"
                 aria-label={t(pathCopied ? "pathCopied" : "copyPath")}
                 onClick={() => {
-                  if (!navigator.clipboard) return;
-                  void navigator.clipboard.writeText(absolutePath?.(state.path) ?? state.path).then(() => {
+                  void writeClipboard(absolutePath?.(state.path) ?? state.path).then((copied) => {
+                    if (!copied) return;
                     setPathCopied(true);
                     window.setTimeout(() => setPathCopied(false), 1400);
                   });

@@ -1,10 +1,11 @@
-import { REVIEW_API_PATH, type ReviewChange } from "../../shared/types.js";
+import type { ReviewChange } from "../../shared/types.js";
 import type { FileStore } from "../store.js";
 import { FileTypeIcon } from "../chrome/icons.js";
 import { clampTreeWidth } from "../explorer/file-tree.js";
 import { MAX_TREE_WIDTH, MIN_TREE_WIDTH } from "../explorer/tree-model.js";
 import { useWorkbenchServices } from "../workbench/runtime.js";
 import { followWorkspaceEvents } from "../workspace-events.js";
+import { fetchReview } from "./review-data.js";
 import {
   useCallback,
   useEffect,
@@ -16,7 +17,7 @@ import {
   type ReactNode,
 } from "react";
 
-type ReviewResponse = { changes?: ReviewChange[]; sessionId?: string | null };
+type ReviewResponse = Awaited<ReturnType<typeof fetchReview>>;
 
 function fileName(path: string): string {
   return path.split("/").pop() || path;
@@ -105,9 +106,7 @@ export function ReviewPanel({ store, sessionId }: { store: FileStore; sessionId?
       setError(false);
     }
     try {
-      const response = await fetch(`${REVIEW_API_PATH}?session=${encodeURIComponent(selected)}`);
-      if (!response.ok) throw new Error("review request failed");
-      const next = await response.json() as ReviewResponse;
+      const next = await fetchReview(selected);
       if (id !== requestId.current) return;
       setData(next);
     } catch {

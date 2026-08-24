@@ -1,5 +1,7 @@
 import { expect, test } from "vitest";
 import { followDshSession, followDshWorkspace, lastWorkbenchSession, notifyWorkbenchSession, retargetWorkbenchRoot, sessionIdFromEvent, workbenchShouldReset, workspaceAbsolutePath, workspacePathFromDsh } from "../src/client/workspace-identity.js";
+import { initialDiffPath } from "../src/client/review/review-data.js";
+import type { ReviewChange } from "../src/shared/types.js";
 
 test("workspace paths become absolute only when needed", () => {
   expect(workspaceAbsolutePath("/repo/workbench", "src/index.ts")).toBe("/repo/workbench/src/index.ts");
@@ -98,6 +100,8 @@ test("workbench resets only when the workspace root changes", () => {
   expect(workbenchShouldReset("/repo", "/repo")).toBe(false);
   expect(workbenchShouldReset("", "/repo")).toBe(false);
   expect(workbenchShouldReset("/a", "/b")).toBe(true);
+  expect(workbenchShouldReset("/repo", "/repo", "s1", "s2")).toBe(true);
+  expect(workbenchShouldReset("/repo", "/repo", "s1", "s1")).toBe(false);
 });
 
 test("notifyWorkbenchSession remembers the latest session for late subscribers", () => {
@@ -108,6 +112,13 @@ test("notifyWorkbenchSession remembers the latest session for late subscribers",
 test("sessionIdFromEvent reads a session change detail", () => {
   expect(sessionIdFromEvent({} as Event)).toBe("");
   expect(sessionIdFromEvent(new CustomEvent("dsh-wb-session-change", { detail: "s9" }))).toBe("s9");
+});
+
+test("initial diff opens the active changed file or the first change", () => {
+  const changes = [{ path: "b.ts" }, { path: "c.ts" }] as ReviewChange[];
+  expect(initialDiffPath("b.ts", changes)).toBe("b.ts");
+  expect(initialDiffPath("a.ts", changes)).toBe("b.ts");
+  expect(initialDiffPath("", [])).toBe("");
 });
 
 test("retargetWorkbenchRoot posts the new root then notifies the shell", async () => {

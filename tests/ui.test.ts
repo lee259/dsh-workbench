@@ -289,6 +289,7 @@ test("file drawer copies the active path", async () => {
     expect(copyPath).toBeTruthy();
     copyPath.props.onClick();
     await Promise.resolve();
+    await Promise.resolve();
     expect(copied).toEqual(["/repo/src/example.ts"]);
   } finally {
     Object.defineProperty(globalThis, "navigator", { configurable: true, value: originalNavigator });
@@ -422,9 +423,10 @@ test("file drawer plus button and breadcrumbs are wired", async () => {
   expect(findElement(drawer, (node) => node.props?.["aria-label"] === "Show review")).toBeTruthy();
   expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree")).toBeTruthy();
   const rails = findElements(drawer, (node) => node.props?.className?.startsWith("dsh-wb-rail"));
-  expect(rails).toHaveLength(2);
-  expect(rails.filter((node) => node.props["aria-hidden"])).toHaveLength(1);
-  expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-review")).toBeTruthy();
+  expect(rails).toHaveLength(1);
+  expect(rails[0].props["aria-hidden"]).toBe(false);
+  expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-code-column")).toBeTruthy();
+  expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-review")).toBe(undefined);
 });
 
 test("file drawer shows the workspace tree by default", () => {

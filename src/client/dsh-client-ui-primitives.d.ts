@@ -20,6 +20,17 @@ declare module "@deepseek-ai/dsh-client-ui-primitives" {
     children: ReactNode;
   }>;
 
+  export function writeClipboard(text: string): Promise<boolean>;
+
+  export const HoverCard: ComponentType<{
+    anchor: ReactNode;
+    content: ReactNode;
+    openDelayMs?: number;
+    copyText?: string;
+    copyLabel?: string;
+    copiedLabel?: string;
+  }>;
+
   export const IconCodeOutline16: ComponentType<{ size?: number }>;
   export const IconCopyOutline16: ComponentType<{ size?: number }>;
   export const IconFolderOpen16: ComponentType<{ size?: number }>;

@@ -88,6 +88,15 @@
   font-size: 12px;
 }
 
+.dsh-wb-path-hovercard {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #fff;
+  font-family: var(--ds-font-family-code, ui-monospace, monospace);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .dsh-wb-tab.is-preview .dsh-wb-tab-name {
   font-style: italic;
 }
