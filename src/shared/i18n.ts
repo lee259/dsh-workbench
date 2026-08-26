@@ -57,6 +57,8 @@ export type MessageKey =
   | "workspaceTree"
   | "openFile"
   | "newTab"
+  | "reviewTab"
+  | "tabTypeMenu"
   | "filePath"
   | "resizeTree"
   | "fileMenu"
@@ -74,7 +76,9 @@ export type MessageKey =
   | "reviewEmpty"
   | "reviewEmptyHint"
   | "reviewFiles"
-  | "editedFiles";
+  | "editedFiles"
+  | "collapseDiff"
+  | "expandDiff";
 
 const zh: Record<MessageKey, string> = {
   loadingTitle: "正在读取文件",
@@ -133,6 +137,8 @@ const zh: Record<MessageKey, string> = {
   workspaceTree: "工作区文件树",
   openFile: "打开文件",
   newTab: "新建标签页",
+  reviewTab: "审查",
+  tabTypeMenu: "选择标签类型",
   filePath: "文件路径",
   resizeTree: "调整文件树宽度",
   fileMenu: "文件操作",
@@ -151,6 +157,8 @@ const zh: Record<MessageKey, string> = {
   reviewEmptyHint: "DSH 写入文件后会显示在这里",
   reviewFiles: "个文件",
   editedFiles: "已编辑 {count} 个文件",
+  collapseDiff: "折叠 diff",
+  expandDiff: "展开 diff",
 };
 
 const en: Record<MessageKey, string> = {
@@ -210,6 +218,8 @@ const en: Record<MessageKey, string> = {
   workspaceTree: "Workspace files",
   openFile: "Open file",
   newTab: "New tab",
+  reviewTab: "Review",
+  tabTypeMenu: "Choose tab type",
   filePath: "File path",
   resizeTree: "Resize file tree",
   fileMenu: "File actions",
@@ -228,6 +238,8 @@ const en: Record<MessageKey, string> = {
   reviewEmptyHint: "DSH file writes will appear here",
   reviewFiles: "files",
   editedFiles: "{count} files edited",
+  collapseDiff: "Collapse diff",
+  expandDiff: "Expand diff",
 };
 
 const catalogs: Record<Locale, Record<MessageKey, string>> = { zh, en };

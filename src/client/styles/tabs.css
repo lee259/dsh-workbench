@@ -3,6 +3,7 @@
 
 .dsh-wb-tabs {
   display: flex;
+  position: relative;
   align-items: center;
   gap: 0;
   box-sizing: border-box;
@@ -16,7 +17,7 @@
 .dsh-wb-tabstrip {
   display: flex;
   min-width: 0;
-  flex: 1;
+  flex: 0 1 auto;
   align-items: center;
   overflow-x: auto;
   scrollbar-width: none;
@@ -154,6 +155,11 @@
 .dsh-wb-tabbar-add:hover {
   color: var(--dsh-wb-button-hover-label);
   background: var(--dsh-wb-button-hover-fill);
+}
+
+.dsh-wb-tab-type-picker {
+  position: relative;
+  flex: 0 0 auto;
 }
 
 .dsh-wb-tabbar-add:active,

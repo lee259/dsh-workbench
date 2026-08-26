@@ -26,7 +26,7 @@ function previewMeta(state: FileState, t: LocaleStore["t"]): string {
 }
 
 export function WorkbenchDrawer() {
-  const { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, diffMode, setDiffMode, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, mounted, closing, showTreeAt, resizeTree, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
+  const { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, diffMode, setDiffMode, reviewTabOpen, openReviewTab, closeReviewTab, reviewRevealPath, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab, activateEmptyFileTab, closeEmptyFileTab, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
 
   if (!mounted) return null;
 
@@ -60,6 +60,18 @@ export function WorkbenchDrawer() {
           state={state}
           diffMode={diffMode}
           setDiffMode={setDiffMode}
+          reviewTabOpen={reviewTabOpen}
+          openReviewTab={openReviewTab}
+          closeReviewTab={closeReviewTab}
+          emptyTabOpen={emptyTabOpen}
+          setEmptyTabOpen={setEmptyTabOpen}
+          emptyFileTabs={emptyFileTabs}
+          emptyFilePaths={emptyFilePaths}
+          activeEmptyFileTab={activeEmptyFileTab}
+          setActiveEmptyFileTab={setActiveEmptyFileTab}
+          newFileTab={newFileTab}
+          activateEmptyFileTab={activateEmptyFileTab}
+          closeEmptyFileTab={closeEmptyFileTab}
           treeVisible={treeVisible}
           setTreeOpen={setTreeOpen}
           setSearchOpen={setSearchOpen}
@@ -72,7 +84,16 @@ export function WorkbenchDrawer() {
           key={workspaceKey}
           state={state}
           sessionId={sessionId}
+          reviewRevealPath={reviewRevealPath}
+          diffCommands={diffCommands}
           diffMode={diffMode}
+          emptyTabOpen={emptyTabOpen}
+          activeEmptyFileTab={activeEmptyFileTab}
+          activeEmptyFilePath={emptyFilePaths[activeEmptyFileTab] ?? ""}
+          setEmptyTabOpen={setEmptyTabOpen}
+          openReviewTab={openReviewTab}
+          newFileTab={newFileTab}
+          setDiffMode={setDiffMode}
           treeVisible={treeVisible}
           treeWidth={treeWidth}
           revealPath={revealPath}

@@ -21,7 +21,7 @@ import {
 import { normalizePath, type FileOpenMode, type ReviewChange, type WorkspaceTree as WorkspaceTreeData } from "../../shared/types.js";
 import { FileTypeIcon, Icon, TreeChangeIcon, TreeChevron } from "../chrome/icons.js";
 import { WorkbenchTooltip } from "../chrome/tooltip.js";
-import { fetchReview, initialDiffPath } from "../review/review-data.js";
+import { fetchReview } from "../review/review-data.js";
 import { highlightSegments, moveSearchFocus, treeSearchHits } from "./search-model.js";
 import { fetchWorkspaceTree } from "../store.js";
 import { useWorkbenchServices } from "../workbench/runtime.js";
@@ -106,7 +106,6 @@ export function WorkspaceTreePanel({
     const [locatePath, setLocatePath] = useState("");
     const [pendingReveal, setPendingReveal] = useState("");
     const [reviewChanges, setReviewChanges] = useState<ReviewChange[]>([]);
-    const initialDiffOpen = useRef(false);
     const lastReveal = useRef(0);
     const [contextMenu, setContextMenu] = useState<{ path: string; x: number; y: number } | null>(null);
     const listRef = useRef<HTMLDivElement | null>(null);
@@ -170,21 +169,32 @@ export function WorkspaceTreePanel({
     const hits = treeSearchHits(displayTree, normalizedQuery);
 
     const openFromTree = (path: string, kind: "preview" | "keep" = "preview") => {
-      const mode = openMode === "diff" && reviewByPath.has(path) ? "diff" : treeFileOpenMode();
+      const change = reviewByPath.get(normalizePath(path));
+      if (openMode === "diff" && change) {
+        setFocusedPath(path);
+        window.dispatchEvent(new CustomEvent("dsh-wb-diff-reveal", { detail: change.path }));
+        closeContextMenu();
+        return;
+      }
+      const mode = treeFileOpenMode();
       void store.open(path, mode, undefined, false, kind);
+      window.dispatchEvent(new CustomEvent("dsh-wb-file-tab-activate", { detail: path }));
       closeContextMenu();
     };
 
     useEffect(() => {
       if (openMode !== "diff") {
-        initialDiffOpen.current = false;
         setReviewChanges([]);
         return undefined;
       }
       let cancelled = false;
       void fetchReview(sessionId)
         .then((payload) => {
-          if (!cancelled) setReviewChanges(payload.changes ?? []);
+          if (!cancelled) {
+            const changes = payload.changes ?? [];
+            setReviewChanges(changes);
+            if (openMode === "diff" && changes[0] && !fileState.active) setFocusedPath(changes[0].path);
+          }
         })
         .catch(() => {
           if (!cancelled) setReviewChanges([]);
@@ -193,17 +203,14 @@ export function WorkspaceTreePanel({
     }, [openMode, sessionId]);
 
     useEffect(() => {
-      if (openMode !== "diff" || reviewChanges.length === 0 || initialDiffOpen.current) return;
-      initialDiffOpen.current = true;
+      if (openMode !== "diff" || reviewChanges.length === 0) return;
       const directories = reviewChanges.flatMap((change) => ancestorDirectories(normalizePath(change.path)));
       setOpen((current) => {
         const next = mergeOpenDirectories(current, directories);
         persistTreeOpen(next);
         return next;
       });
-      const path = initialDiffPath(fileState.active, reviewChanges);
-      if (path) void store.open(path, "diff", undefined, true, "keep");
-    }, [fileState.active, openMode, reviewChanges, store]);
+    }, [openMode, reviewChanges]);
 
     useEffect(() => {
       if (fileState.visible) refreshTree();
@@ -305,7 +312,7 @@ export function WorkspaceTreePanel({
     const renderNodes = () => rows.map((item) => {
       const internal = item.kind === "directory";
       const isOpen = open.includes(item.path);
-      const selected = item.path === fileState.active;
+      const selected = openMode === "diff" ? item.path === focusedPath : item.path === fileState.active;
       const focused = item.path === focusedPath;
       const change = reviewByPath.get(normalizePath(item.path));
       const changeKind = change

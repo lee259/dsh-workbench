@@ -11,7 +11,3 @@ export async function fetchReview(sessionId?: string): Promise<ReviewResponse> {
   if (!response.ok) throw new Error("review request failed");
   return await response.json() as ReviewResponse;
 }
-
-export function initialDiffPath(active: string, changes: readonly ReviewChange[]): string {
-  return changes.some((change) => change.path === active) ? active : changes[0]?.path ?? "";
-}

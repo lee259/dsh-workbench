@@ -27,7 +27,11 @@ const getWorkbenchRuntime = runtimeSingleton((): WorkbenchRuntime => {
   const i18n = createLocaleStore();
   const references = createConversationReferences();
   installFileOpenCapture((path, mode, line) => {
-    void store.open(path, mode, line);
+    if (mode === "diff") {
+      window.dispatchEvent(new CustomEvent("dsh-wb-review-request", { detail: path }));
+      return;
+    }
+    window.dispatchEvent(new CustomEvent("dsh-wb-file-request", { detail: { path, mode, line } }));
   });
   setReactRuntime(React);
   setReactDomRuntime(ReactDOM);

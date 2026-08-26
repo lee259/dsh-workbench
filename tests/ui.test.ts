@@ -420,7 +420,7 @@ test("file drawer plus button and breadcrumbs are wired", async () => {
   expect(segments.length >= 3).toBeTruthy();
   expect(segments.every((node) => typeof node.props.onClick === "function")).toBeTruthy();
   expect(findElement(drawer, (node) => node.props?.["aria-label"] === "Hide file tree")).toBe(undefined);
-  expect(findElement(drawer, (node) => node.props?.["aria-label"] === "Show review")).toBeTruthy();
+  expect(findElement(drawer, (node) => node.props?.["aria-label"] === "Show review")).toBe(undefined);
   expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree")).toBeTruthy();
   const rails = findElements(drawer, (node) => node.props?.className?.startsWith("dsh-wb-rail"));
   expect(rails).toHaveLength(1);
@@ -478,7 +478,7 @@ test("real read tool row opens a view", async () => {
   expect(store.getSnapshot().payload?.source).toBe("workspace");
 });
 
-test("real edit tool row opens a diff", async () => {
+test("real edit tool row opens review mode", async () => {
   const modes = [];
   const store = createFileStore(async (path, mode) => {
     modes.push(mode);
@@ -488,6 +488,6 @@ test("real edit tool row opens a diff", async () => {
   expect(button).toBeTruthy();
   button.props.onClick({ preventDefault() {}, stopPropagation() {} });
   await Promise.resolve();
-  expect(modes).toEqual(["diff"]);
-  expect(store.getSnapshot().payload?.source).toBe("dsh-write");
+  expect(modes).toEqual([]);
+  expect(store.getSnapshot().visible).toBe(true);
 });

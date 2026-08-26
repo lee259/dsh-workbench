@@ -10,6 +10,18 @@ export function WorkbenchHeader({
     state,
     diffMode,
     setDiffMode,
+    reviewTabOpen,
+    openReviewTab,
+    closeReviewTab,
+    emptyTabOpen,
+    setEmptyTabOpen,
+    emptyFileTabs,
+    emptyFilePaths,
+    activeEmptyFileTab,
+    setActiveEmptyFileTab,
+    newFileTab,
+    activateEmptyFileTab,
+    closeEmptyFileTab,
     treeVisible,
     setTreeOpen,
     setSearchOpen,
@@ -21,6 +33,18 @@ export function WorkbenchHeader({
     state: FileState;
     diffMode: boolean;
     setDiffMode(next: boolean): void;
+    reviewTabOpen: boolean;
+    openReviewTab(): void;
+    closeReviewTab(): void;
+    emptyTabOpen: boolean;
+    setEmptyTabOpen(open: boolean): void;
+    emptyFileTabs: string[];
+    emptyFilePaths: Record<string, string>;
+    activeEmptyFileTab: string;
+    setActiveEmptyFileTab(value: string): void;
+    newFileTab(): void;
+    activateEmptyFileTab(id: string): void;
+    closeEmptyFileTab(id: string): void;
     treeVisible: boolean;
     setTreeOpen(next: boolean): void;
     setSearchOpen(open: boolean): void;
@@ -35,12 +59,36 @@ export function WorkbenchHeader({
       <>
         <nav className="dsh-wb-tabs" aria-label={t("openFiles")} role="tablist">
           <div className="dsh-wb-tabstrip">
-            {state.open.map((path) => {
+            {reviewTabOpen ? (
+              <div className={`dsh-wb-tab is-review${diffMode ? " is-active" : ""}`} role="presentation">
+                <Icon name="commit" />
+                <button
+                  className="dsh-wb-tab-name"
+                  type="button"
+                  role="tab"
+                  aria-selected={diffMode}
+                  onClick={openReviewTab}
+                >
+                  {t("reviewTab")}
+                </button>
+                <WorkbenchTooltip label={t("closeFile")}>
+                  <button
+                    className="dsh-wb-tab-close"
+                    type="button"
+                    aria-label={`${t("closeFile")}: ${t("reviewTab")}`}
+                    onClick={closeReviewTab}
+                  >
+                    ×
+                  </button>
+                </WorkbenchTooltip>
+              </div>
+            ) : null}
+            {state.open.filter((path) => !Object.values(emptyFilePaths).includes(path)).map((path) => {
               const kind = state.views[path] ?? "view";
               const fullPath = absolutePath?.(path) ?? path;
               return (
                 <div
-                  className={`dsh-wb-tab is-${kind}${path === state.active ? " is-active" : ""}${path === state.preview ? " is-preview" : ""}`}
+                  className={`dsh-wb-tab is-${kind}${!diffMode && !emptyTabOpen && !activeEmptyFileTab && path === state.active ? " is-active" : ""}${path === state.preview ? " is-preview" : ""}`}
                   key={path}
                   role="presentation"
                 >
@@ -51,8 +99,8 @@ export function WorkbenchHeader({
                         className="dsh-wb-tab-name"
                         type="button"
                         role="tab"
-                        aria-selected={path === state.active}
-                        onClick={() => void store.activate(path)}
+                        aria-selected={!diffMode && !emptyTabOpen && !activeEmptyFileTab && path === state.active}
+                        onClick={() => { setEmptyTabOpen(false); setActiveEmptyFileTab(""); setDiffMode(false); void store.activate(path); }}
                         onDoubleClick={() => store.pin(path)}
                       >
                         {path.split("/").pop() || path}
@@ -76,32 +124,75 @@ export function WorkbenchHeader({
                 </div>
               );
             })}
-            <WorkbenchTooltip label={t("searchHint")}>
+            {emptyTabOpen ? (
+              <div className="dsh-wb-tab is-empty is-active" role="presentation">
+                <button
+                  className="dsh-wb-tab-name"
+                  type="button"
+                  role="tab"
+                  aria-selected="true"
+                  onClick={() => setEmptyTabOpen(true)}
+                >
+                  {t("newTab")}
+                </button>
+                <WorkbenchTooltip label={t("closeFile")}>
+                  <button
+                    className="dsh-wb-tab-close"
+                    type="button"
+                    aria-label={`${t("closeFile")}: ${t("newTab")}`}
+                    onClick={() => setEmptyTabOpen(false)}
+                  >
+                    ×
+                  </button>
+                </WorkbenchTooltip>
+              </div>
+            ) : null}
+            {emptyFileTabs.map((id) => (
+              <div className={`dsh-wb-tab is-file${activeEmptyFileTab === id ? " is-active" : ""}`} key={id} role="presentation">
+                <FileTypeIcon path="" />
+                <button
+                  className="dsh-wb-tab-name"
+                  type="button"
+                  role="tab"
+                  aria-selected={activeEmptyFileTab === id}
+                  onClick={() => { setEmptyTabOpen(false); setDiffMode(false); activateEmptyFileTab(id); }}
+                >
+                  {emptyFilePaths[id] ? emptyFilePaths[id].split("/").pop() || t("file") : t("file")}
+                </button>
+                <WorkbenchTooltip label={t("closeFile")}>
+                  <button
+                    className="dsh-wb-tab-close"
+                    type="button"
+                    aria-label={`${t("closeFile")}: ${t("file")}`}
+                    onClick={() => closeEmptyFileTab(id)}
+                  >
+                    ×
+                  </button>
+                </WorkbenchTooltip>
+              </div>
+            ))}
+          </div>
+          <div className="dsh-wb-tab-type-picker">
+            <WorkbenchTooltip label={t("newTab")}>
             <button
               type="button"
               className="dsh-wb-tabbar-add"
               aria-label={t("newTab")}
-              onClick={() => setSearchOpen(true)}
+              onClick={() => {
+                if (reviewTabOpen) {
+                  newFileTab();
+                } else {
+                  setEmptyTabOpen(true);
+                  setActiveEmptyFileTab("");
+                  setDiffMode(false);
+                }
+              }}
             >
               <NewTabIcon />
             </button>
             </WorkbenchTooltip>
           </div>
           <div className="dsh-wb-tab-actions">
-            <WorkbenchTooltip label={t(diffMode ? "previewMode" : "diffMode")}>
-            <button
-              className="dsh-wb-button dsh-wb-icon-button"
-              type="button"
-              aria-label={t(diffMode ? "previewMode" : "diffMode")}
-              aria-pressed={diffMode}
-              onClick={() => {
-                setDiffMode(!diffMode);
-                if (!treeVisible) setTreeOpen(true);
-              }}
-            >
-              <Icon name={diffMode ? "folder" : "commit"} />
-            </button>
-            </WorkbenchTooltip>
             <WorkbenchTooltip label={t("hidePanel")}>
             <button
               className="dsh-wb-button dsh-wb-icon-button dsh-wb-close-button"
@@ -114,9 +205,9 @@ export function WorkbenchHeader({
             </WorkbenchTooltip>
           </div>
         </nav>
-        {state.path ? (
+        {!emptyTabOpen && (state.path || diffMode) ? (
           <nav className="dsh-wb-pathbar" aria-label={t("filePath")}>
-            {visibleBreadcrumbTargets(state.path).map((item, index) => (
+            {!diffMode ? visibleBreadcrumbTargets(state.path).map((item, index) => (
               <Fragment key={item.path}>
                 {index > 0 ? <span className="dsh-wb-path-separator">/</span> : null}
                 <button
@@ -130,7 +221,7 @@ export function WorkbenchHeader({
                   {item.label}
                 </button>
               </Fragment>
-            ))}
+            )) : <span className="dsh-wb-meta">{t("reviewTab")}</span>}
             <span className="dsh-wb-meta">{meta}</span>
             <div className="dsh-wb-path-actions" aria-label={t("viewOptions")}>
               <WorkbenchTooltip label={t(treeVisible ? "hideTree" : "showTree")}>
@@ -144,7 +235,7 @@ export function WorkbenchHeader({
                 <Icon name={treeVisible ? "panel-open" : "panel-closed"} />
               </button>
               </WorkbenchTooltip>
-              <WorkbenchTooltip label={t(pathCopied ? "pathCopied" : "copyPath")}>
+              {state.path ? <WorkbenchTooltip label={t(pathCopied ? "pathCopied" : "copyPath")}>
               <button
                 className="dsh-wb-path"
                 type="button"
@@ -159,7 +250,7 @@ export function WorkbenchHeader({
               >
                 <Icon name={pathCopied ? "check" : "copy"} />
               </button>
-              </WorkbenchTooltip>
+              </WorkbenchTooltip> : null}
             </div>
           </nav>
         ) : null}

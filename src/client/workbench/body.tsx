@@ -1,9 +1,10 @@
 import { useEffect, useRef, type ComponentType } from "react";
 import type { FileState } from "../store.js";
-import { EmptyFileIcon } from "../chrome/icons.js";
+import { EmptyFileIcon, Icon } from "../chrome/icons.js";
 import type { PreviewCommands } from "../preview/preview-nav.js";
 import type { TreeCommands } from "../explorer/file-tree.js";
 import type { FileOpenMode } from "../../shared/types.js";
+import { DiffPanel, type DiffPanelCommands } from "../preview/diff-panel.js";
 import { useWorkbenchServices } from "./runtime.js";
 
 type CodeViewProps = {
@@ -25,10 +26,41 @@ type WorkspaceTreePanelProps = {
   sessionId?: string;
 };
 
+function EmptyTabChooser({
+    onReview,
+    onFile,
+  }: {
+    onReview(): void;
+    onFile(): void;
+  }) {
+    const { i18n } = useWorkbenchServices();
+    return (
+      <div className="dsh-wb-empty-tab">
+        <button type="button" className="dsh-wb-empty-tab-option" onClick={onReview}>
+          <Icon name="commit" />
+          <span>{i18n.t("reviewTab")}</span>
+        </button>
+        <button type="button" className="dsh-wb-empty-tab-option" onClick={onFile}>
+          <Icon name="folder" />
+          <span>{i18n.t("file")}</span>
+        </button>
+      </div>
+    );
+}
+
 export function WorkbenchBody({
     state,
     sessionId,
+    reviewRevealPath,
+    diffCommands,
     diffMode,
+    emptyTabOpen,
+    activeEmptyFileTab,
+    activeEmptyFilePath,
+    setEmptyTabOpen,
+    openReviewTab,
+    newFileTab,
+    setDiffMode,
     treeVisible,
     treeWidth,
     revealPath,
@@ -44,7 +76,16 @@ export function WorkbenchBody({
   }: {
     state: FileState;
     sessionId: string;
+    reviewRevealPath?: string;
+    diffCommands: { current: DiffPanelCommands | null };
     diffMode: boolean;
+    emptyTabOpen: boolean;
+    activeEmptyFileTab: string;
+    activeEmptyFilePath: string;
+    setEmptyTabOpen(open: boolean): void;
+    openReviewTab(): void;
+    newFileTab(): void;
+    setDiffMode(next: boolean): void;
     treeVisible: boolean;
     treeWidth: number;
     revealPath: string;
@@ -58,9 +99,9 @@ export function WorkbenchBody({
     WorkspaceTreePanel: ComponentType<WorkspaceTreePanelProps>;
     SearchPanel: ComponentType<SearchPanelProps>;
   }) {
-    const { store, i18n } = useWorkbenchServices();
+    const { i18n } = useWorkbenchServices();
     const t = i18n.t;
-    const treeVisibleNow = treeVisible;
+    const treeVisibleNow = treeVisible && !emptyTabOpen;
     const treeRailRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
@@ -71,7 +112,18 @@ export function WorkbenchBody({
         <div className={`dsh-wb-main${diffMode ? " is-diff" : ""}`}>
           <div className="dsh-wb-code-column">
             <main className="dsh-wb-code">
-              {state.path ? (
+              {emptyTabOpen ? (
+                <EmptyTabChooser
+                  onReview={openReviewTab}
+                  onFile={newFileTab}
+                />
+              ) : activeEmptyFileTab && !activeEmptyFilePath ? (
+                <div className="dsh-wb-empty"><strong>{t("openFile")}</strong><span>{t("selectFile")}</span></div>
+              ) : activeEmptyFileTab && state.path !== activeEmptyFilePath ? (
+                <div className="dsh-wb-empty"><strong>{t("reading")}</strong></div>
+              ) : diffMode ? (
+                <DiffPanel ref={diffCommands} sessionId={sessionId} revealPath={reviewRevealPath} />
+              ) : state.path ? (
                 <CodeView state={state} commandsRef={previewCommands} />
               ) : (
                 <div className="dsh-wb-empty">
@@ -84,9 +136,9 @@ export function WorkbenchBody({
           </div>
           <div
             ref={treeRailRef}
-            className={`dsh-wb-rail ${treeVisible ? "is-open" : "is-closed"}`}
+            className={`dsh-wb-rail ${treeVisibleNow ? "is-open" : "is-closed"}`}
             aria-hidden={!treeVisibleNow}
-            style={{ width: treeVisible ? treeWidth : 0 }}
+            style={{ width: treeVisibleNow ? treeWidth : 0 }}
           >
             <WorkspaceTreePanel
               width={treeWidth}

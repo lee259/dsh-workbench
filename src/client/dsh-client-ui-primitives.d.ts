@@ -31,8 +31,12 @@ declare module "@deepseek-ai/dsh-client-ui-primitives" {
     copiedLabel?: string;
   }>;
 
-  export const IconCodeOutline16: ComponentType<{ size?: number }>;
-  export const IconCopyOutline16: ComponentType<{ size?: number }>;
-  export const IconFolderOpen16: ComponentType<{ size?: number }>;
-  export const IconLinkOutline16: ComponentType<{ size?: number }>;
+  export const IconCheckOutline16: ComponentType<{ size?: number; className?: string }>;
+  export const IconChevronRightOutline14: ComponentType<{ size?: number; className?: string }>;
+  export const IconCloseFill14: ComponentType<{ size?: number; className?: string }>;
+  export const IconCodeOutline16: ComponentType<{ size?: number; className?: string }>;
+  export const IconCopyOutline16: ComponentType<{ size?: number; className?: string }>;
+  export const IconFolderOpen16: ComponentType<{ size?: number; className?: string }>;
+  export const IconPlusOutline16: ComponentType<{ size?: number; className?: string }>;
+  export const IconLinkOutline16: ComponentType<{ size?: number; className?: string }>;
 }

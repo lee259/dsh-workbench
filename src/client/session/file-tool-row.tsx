@@ -27,11 +27,22 @@ export function FileToolRow({ toolName, block }: { toolName: string; block?: unk
             className="dsh-wb-tool-path"
             data-dsh-wb-mode={isWriteLikeTool(toolName) ? "diff" : "view"}
             type="button"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              void store.open(filePath, isWriteLikeTool(toolName) ? "diff" : "view");
-            }}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (isWriteLikeTool(toolName)) {
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(new CustomEvent("dsh-wb-review-request", { detail: filePath }));
+                  }
+                  if (!store.getSnapshot().visible) store.show();
+                  return;
+                }
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("dsh-wb-file-request", { detail: { path: filePath, mode: "view" } }));
+                  return;
+                }
+                void store.open(filePath, "view");
+              }}
           >
             {filePath}
           </button>

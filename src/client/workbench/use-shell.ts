@@ -4,12 +4,14 @@ import { DEFAULT_SIDEBAR_WIDTH, sidebarWidthFromKey, sidebarWidthFromPointer, re
 import { clampTreeWidth, persistTreeWidth, savedTreeWidth, type TreeCommands } from "../explorer/file-tree.js";
 import { readTreeVisible, writeTreeOpen, writeTreeVisible } from "../explorer/tree-model.js";
 import type { PreviewCommands } from "../preview/preview-nav.js";
+import type { DiffPanelCommands } from "../preview/diff-panel.js";
 import type { FileState } from "../store.js";
-import { WORKSPACE_API_PATH } from "../../shared/types.js";
+import { normalizePath, WORKSPACE_API_PATH, type ReviewChange } from "../../shared/types.js";
 import { followWorkspaceEvents } from "../workspace-events.js";
 import { fetchReview } from "../review/review-data.js";
 import { lastWorkbenchSession, sessionIdFromEvent, workbenchShouldReset } from "../workspace-identity.js";
 import { useWorkbenchServices } from "./runtime.js";
+import { useWorkbenchTabs } from "./use-workbench-tabs.js";
 
 function savedSidebarWidth(): number {
   try { return readSidebarWidth(window.localStorage); } catch { return DEFAULT_SIDEBAR_WIDTH; }
@@ -17,6 +19,13 @@ function savedSidebarWidth(): number {
 
 function savedTreeVisible(): boolean {
   try { return readTreeVisible(window.localStorage); } catch { return true; }
+}
+
+function workspacePath(path: string, root: string): string {
+  const value = normalizePath(path);
+  const base = normalizePath(root).replace(/\/$/, "");
+  if (base && (value === base || value.startsWith(`${base}/`))) return value.slice(base.length + 1);
+  return value;
 }
 
 export function useWorkbenchShell() {
@@ -28,6 +37,9 @@ export function useWorkbenchShell() {
     const [searchOpen, setSearchOpenState] = useState(false);
     const [searchMode, setSearchMode] = useState<"files" | "content">("files");
     const [diffMode, setDiffMode] = useState(false);
+    const [reviewTabOpen, setReviewTabOpen] = useState(false);
+    const [reviewChanges, setReviewChanges] = useState<ReviewChange[]>([]);
+    const [reviewRevealPath, setReviewRevealPath] = useState("");
     const [treeVisible, setTreeVisible] = useState(savedTreeVisible);
     const [treeWidth, setTreeWidth] = useState(savedTreeWidth);
     const [revealPath, setRevealPath] = useState("");
@@ -36,13 +48,20 @@ export function useWorkbenchShell() {
     const [mounted, setMounted] = useState(state.visible);
     const [closing, setClosing] = useState(false);
     const previewCommands = useRef<PreviewCommands | null>(null);
+    const diffCommands = useRef<DiffPanelCommands | null>(null);
     const treeCommands = useRef<TreeCommands | null>(null);
     const sidebarRef = useRef<HTMLElement | null>(null);
     const rootRef = useRef("");
     const sessionRef = useRef("");
+    const reviewRequestRef = useRef(0);
     const workspaceKeyRef = useRef(workspaceKey);
     const searchRestoreRef = useRef<HTMLElement | null>(null);
     const sessionModeRequestRef = useRef(0);
+    const tabs = useWorkbenchTabs({
+      activateFile: (path) => { void store.activate(path); },
+      closeFile: (path) => store.close(path),
+    });
+    const { emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab, activateEmptyFileTab, closeEmptyFileTab, bindEmptyFilePath } = tabs;
     workspaceKeyRef.current = workspaceKey;
 
     const setSearchOpen = useCallback((open: boolean) => {
@@ -61,6 +80,10 @@ export function useWorkbenchShell() {
     const resetChrome = useCallback(() => {
       store.close();
       setDiffMode(false);
+      setReviewTabOpen(false);
+      setReviewChanges([]);
+      setReviewRevealPath("");
+      tabs.reset();
       setRevealPath("");
       setSearchOpen(false);
       setPathCopied(false);
@@ -111,11 +134,15 @@ export function useWorkbenchShell() {
         .then((payload) => {
           if (cancelled || requestId !== sessionModeRequestRef.current) return;
           const hasDiff = (payload.changes?.length ?? 0) > 0;
+          setReviewChanges(payload.changes ?? []);
+          setReviewTabOpen(hasDiff);
           setDiffMode(hasDiff);
           if (hasDiff) setTreeOpen(true);
         })
         .catch(() => {
           if (!cancelled && requestId === sessionModeRequestRef.current) setDiffMode(false);
+          if (!cancelled && requestId === sessionModeRequestRef.current) setReviewTabOpen(false);
+          if (!cancelled && requestId === sessionModeRequestRef.current) setReviewChanges([]);
         });
       return () => { cancelled = true; };
     }, [sessionId]);
@@ -125,15 +152,60 @@ export function useWorkbenchShell() {
       writeTreeVisible(window.localStorage, next);
     };
 
+    const createFileTab = () => {
+      newFileTab();
+      setDiffMode(false);
+      setTreeOpen(true);
+    };
+
     useEffect(() => {
-      const onReviewRequest = () => {
+      const onReviewRequest = async (event: Event) => {
+        const requestId = ++reviewRequestRef.current;
+        const rawPath = event instanceof CustomEvent && typeof event.detail === "string" ? event.detail : "";
+        const path = workspacePath(rawPath, rootRef.current);
+        let target = reviewChanges.find((change) => normalizePath(change.path) === path);
+        if (!target && sessionId) {
+          try {
+            target = (await fetchReview(sessionId)).changes?.find((change) => normalizePath(change.path) === path);
+          } catch {
+            target = undefined;
+          }
+        }
+        if (requestId !== reviewRequestRef.current) return;
+        if (target) setReviewRevealPath(target.path);
         setTreeOpen(true);
+        setReviewTabOpen(true);
         setDiffMode(true);
         if (!state.visible) store.show();
       };
       window.addEventListener("dsh-wb-review-request", onReviewRequest);
       return () => window.removeEventListener("dsh-wb-review-request", onReviewRequest);
-    }, [state.visible, store]);
+    }, [reviewChanges, sessionId, state.visible, store]);
+
+    useEffect(() => {
+      const onFileRequest = (event: Event) => {
+        const detail = event instanceof CustomEvent ? event.detail : "";
+        const rawPath = typeof detail === "string" ? detail : detail && typeof detail === "object" && "path" in detail && typeof detail.path === "string" ? detail.path : "";
+        const mode = typeof detail === "object" && detail && "mode" in detail && detail.mode === "diff" ? "diff" : "view";
+        const line = typeof detail === "object" && detail && "line" in detail && typeof detail.line === "number" ? detail.line : undefined;
+        if (!rawPath) return;
+        setEmptyTabOpen(false);
+        setDiffMode(false);
+        if (activeEmptyFileTab) bindEmptyFilePath(workspacePath(rawPath, rootRef.current));
+        void store.open(rawPath, mode, line);
+      };
+      window.addEventListener("dsh-wb-file-request", onFileRequest);
+      return () => window.removeEventListener("dsh-wb-file-request", onFileRequest);
+    }, [activeEmptyFileTab, bindEmptyFilePath, store]);
+
+    useEffect(() => {
+      const path = activeEmptyFileTab ? emptyFilePaths[activeEmptyFileTab] : "";
+      if (path && state.active !== path) void store.activate(path);
+    }, [activeEmptyFileTab, emptyFilePaths, state.active, store]);
+
+    useEffect(() => {
+      if (diffMode && reviewRevealPath) diffCommands.current?.reveal(reviewRevealPath);
+    }, [diffMode, reviewRevealPath]);
 
     useEffect(() => {
       const onKey = (event: KeyboardEvent) => {
@@ -166,7 +238,7 @@ export function useWorkbenchShell() {
       store.noteDiskChange();
       if (store.getSnapshot().active) void store.reload();
     }, undefined, ({ path }) => {
-      void store.open(path, "diff", undefined, true, "keep");
+      window.dispatchEvent(new CustomEvent("dsh-wb-review-request", { detail: path }));
     }), [store]);
 
     useEffect(() => {
@@ -202,7 +274,21 @@ export function useWorkbenchShell() {
       window.addEventListener("pointerup", onUp, { once: true });
     };
 
-    const showTreeAt = (path: string) => { setTreeOpen(true); setDiffMode(false); setRevealPath(path); };
+    const showTreeAt = (path: string) => { setActiveEmptyFileTab(""); setTreeOpen(true); setDiffMode(false); setRevealPath(path); };
+    const openReviewTab = () => { setActiveEmptyFileTab(""); setEmptyTabOpen(false); setReviewTabOpen(true); setDiffMode(true); setTreeOpen(true); };
+    const closeReviewTab = () => { setReviewTabOpen(false); setDiffMode(false); };
     const resizeTree = (next: number) => { const value = clampTreeWidth(next); setTreeWidth(value); persistTreeWidth(value); };
-    return { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, setSearchMode, diffMode, setDiffMode, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, mounted, closing, showTreeAt, resizeTree, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey };
+    useEffect(() => {
+      const onFileTabActivate = (event: Event) => {
+        const path = event instanceof CustomEvent && typeof event.detail === "string" ? event.detail : "";
+        if (path && activeEmptyFileTab) {
+          bindEmptyFilePath(path);
+          return;
+        }
+        setActiveEmptyFileTab("");
+      };
+      window.addEventListener("dsh-wb-file-tab-activate", onFileTabActivate);
+      return () => window.removeEventListener("dsh-wb-file-tab-activate", onFileTabActivate);
+    }, [activeEmptyFileTab, bindEmptyFilePath]);
+    return { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, setSearchMode, diffMode, setDiffMode, reviewTabOpen, openReviewTab, closeReviewTab, reviewRevealPath, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab: createFileTab, activateEmptyFileTab, closeEmptyFileTab, bindEmptyFilePath, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey };
 }

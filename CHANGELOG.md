@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.11.0 - 2026-08-26
+
+### Features
+
+- Rebuild diff review as a Codex-style review tab that lists all changed files in one panel.
+- Add independent review and file tabs, including isolated empty file tabs and session-aware state restoration.
+- Add collapsible diff sections, path copying, file-tree diff navigation, and targeted diff reveal.
+- Align workbench icons with DSH primitives while keeping unsupported glyphs safe and local.
+
+### Fixes
+
+- Keep file and review tabs isolated when switching tabs or sessions.
+- Route edit links to the review panel and read links to file tabs without cross-tab reuse.
+- Preserve the file tree and review state when agent changes arrive.
+
 ## 0.10.0 - 2026-08-24
 
 ### Features
