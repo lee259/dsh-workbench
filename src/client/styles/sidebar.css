@@ -43,6 +43,11 @@
   width: calc(100% - min(var(--dsh-wb-sidebar-width, 520px), 100vw));
 }
 
+html.dsh-wb-is-resizing #root.dsh-wb-sidebar-transition,
+html.dsh-wb-is-resizing .dsh-wb-rail {
+  transition: none;
+}
+
 .dsh-wb-resize-handle {
   position: absolute;
   z-index: 2;
@@ -52,6 +57,14 @@
   width: 8px;
   background: transparent;
   cursor: col-resize;
+  touch-action: none;
+  transition: background-color var(--dsh-wb-motion-fast), box-shadow var(--dsh-wb-motion-fast);
+}
+
+html.dsh-wb-is-resizing .dsh-wb-resize-handle[data-resizing],
+html.dsh-wb-is-resizing .dsh-wb-tree-resize[data-resizing] {
+  background: var(--dsh-wb-resize-fill);
+  box-shadow: inset 2px 0 var(--dsh-wb-focus-ring);
 }
 
 .dsh-wb-resize-handle:focus-visible {

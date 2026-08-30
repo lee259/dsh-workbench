@@ -11,5 +11,6 @@
   --dsh-wb-nav-item-hover-fill: var(--dsw-specific-sidebar-nav-item-hover);
   --dsh-wb-nav-item-active-fill: var(--dsw-specific-sidebar-nav-item-active);
   --dsh-wb-focus-ring: var(--dsw-alias-state-business-primary);
+  --dsh-wb-resize-fill: var(--dsw-alias-state-business-tertiary);
   --dsh-wb-motion-fast: 120ms ease-out;
 }

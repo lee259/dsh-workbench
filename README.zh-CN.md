@@ -4,7 +4,7 @@
 [![CI](https://github.com/lee259/dsh-workbench/actions/workflows/ci.yml/badge.svg)](https://github.com/lee259/dsh-workbench/actions)
 [![License](https://img.shields.io/github/license/lee259/dsh-workbench)](./LICENSE)
 
-[English](./README.md) · [Issues](https://github.com/lee259/dsh-workbench/issues) · [npm](https://www.npmjs.com/package/dsh-workbench)
+[English](./README.md) · [更新日志](./CHANGELOG.zh-CN.md) · [Issues](https://github.com/lee259/dsh-workbench/issues) · [npm](https://www.npmjs.com/package/dsh-workbench)
 
 [DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart) 的右侧文件工作区。在 DSH Web 会话里点击路径，即可在对话旁边阅读或对比文件。
 

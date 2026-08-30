@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.2 - 2026-08-31
+
+### Fixes
+
+- Keep a file selected in a dedicated file tab from being replaced by the next tree preview, so switching file tabs always activates the selected file.
+- Make sidebar and file-rail resize feedback follow the active separator only, while keeping resize movement in sync with the pointer.
+
 ## 0.11.1 - 2026-08-30
 
 ### Compatibility

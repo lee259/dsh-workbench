@@ -23,4 +23,4 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
       - run: pnpm test
-      - run: pnpm pack --dry-run
+      - run: npm_config_ignore_scripts=true pnpm pack --dry-run

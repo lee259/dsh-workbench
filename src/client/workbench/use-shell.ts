@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { shortcutAction } from "../chrome/shortcuts.js";
 import { DEFAULT_SIDEBAR_WIDTH, sidebarWidthFromKey, sidebarWidthFromPointer, readSidebarWidth, writeSidebarWidth } from "../chrome/sidebar.js";
+import { startResizeDrag } from "../chrome/resize-drag.js";
 import { clampTreeWidth, persistTreeWidth, savedTreeWidth, type TreeCommands } from "../explorer/file-tree.js";
 import { readTreeVisible, writeTreeOpen, writeTreeVisible } from "../explorer/tree-model.js";
 import type { PreviewCommands } from "../preview/preview-nav.js";
@@ -266,12 +267,11 @@ export function useWorkbenchShell() {
       writeSidebarWidth(window.localStorage, width);
     }, [state.visible, width]);
 
-    const resizeStart = (event: { preventDefault(): void }) => {
+    const resizeStart = (event: React.PointerEvent<HTMLElement>) => {
       event.preventDefault();
-      const onMove = (move: PointerEvent) => setWidth(sidebarWidthFromPointer(move.clientX, window.innerWidth));
-      const onUp = () => { window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp); };
-      window.addEventListener("pointermove", onMove);
-      window.addEventListener("pointerup", onUp, { once: true });
+      startResizeDrag(event.currentTarget, event.pointerId, (move) => {
+        setWidth(sidebarWidthFromPointer(move.clientX, window.innerWidth));
+      });
     };
 
     const showTreeAt = (path: string) => { setActiveEmptyFileTab(""); setTreeOpen(true); setDiffMode(false); setRevealPath(path); };
@@ -283,12 +283,13 @@ export function useWorkbenchShell() {
         const path = event instanceof CustomEvent && typeof event.detail === "string" ? event.detail : "";
         if (path && activeEmptyFileTab) {
           bindEmptyFilePath(path);
+          store.pin(path);
           return;
         }
         setActiveEmptyFileTab("");
       };
       window.addEventListener("dsh-wb-file-tab-activate", onFileTabActivate);
       return () => window.removeEventListener("dsh-wb-file-tab-activate", onFileTabActivate);
-    }, [activeEmptyFileTab, bindEmptyFilePath]);
+    }, [activeEmptyFileTab, bindEmptyFilePath, store]);
     return { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, setSearchMode, diffMode, setDiffMode, reviewTabOpen, openReviewTab, closeReviewTab, reviewRevealPath, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab: createFileTab, activateEmptyFileTab, closeEmptyFileTab, bindEmptyFilePath, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey };
 }

@@ -62,6 +62,8 @@
   flex: 0 0 6px;
   margin-left: -3px;
   cursor: col-resize;
+  touch-action: none;
+  transition: background-color var(--dsh-wb-motion-fast), box-shadow var(--dsh-wb-motion-fast);
 }
 
 .dsh-wb-tree-resize:focus-visible {

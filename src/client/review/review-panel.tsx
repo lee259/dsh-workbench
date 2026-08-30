@@ -2,6 +2,7 @@ import type { ReviewChange } from "../../shared/types.js";
 import type { FileStore } from "../store.js";
 import { FileTypeIcon } from "../chrome/icons.js";
 import { clampTreeWidth } from "../explorer/file-tree.js";
+import { startResizeDrag } from "../chrome/resize-drag.js";
 import { MAX_TREE_WIDTH, MIN_TREE_WIDTH } from "../explorer/tree-model.js";
 import { useWorkbenchServices } from "../workbench/runtime.js";
 import { followWorkspaceEvents } from "../workspace-events.js";
@@ -63,13 +64,9 @@ export function ReviewRail({
         tabIndex={0}
         onPointerDown={(event: ReactPointerEvent) => {
           event.preventDefault();
-          const onMove = (move: PointerEvent) => onResize(window.innerWidth - move.clientX);
-          const onUp = () => {
-            window.removeEventListener("pointermove", onMove);
-            window.removeEventListener("pointerup", onUp);
-          };
-          window.addEventListener("pointermove", onMove);
-          window.addEventListener("pointerup", onUp, { once: true });
+          startResizeDrag(event.currentTarget, event.pointerId, (move) => {
+            onResize(window.innerWidth - move.clientX);
+          });
         }}
         onKeyDown={(event: KeyboardEvent) => {
           if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
