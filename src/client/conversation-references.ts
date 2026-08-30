@@ -13,13 +13,18 @@ type ComposerInput = {
   insertReference(reference: ReferenceInsert, span: { start: number; end: number; draftRev: number }): boolean;
 };
 
+type SessionInput = ComposerInput & {
+  insertReference?: ComposerInput["insertReference"];
+};
+
 type WorkbenchContext = {
-  get(name: "conversation" | "inputTriggers"): unknown;
+  get(name: string): unknown;
   effect(factory: () => (() => void) | void, name: string): void;
   sessions?: {
     list?: { getSnapshot(): DshSessionList };
     scope?(sessionId: string): unknown;
   };
+  uiSession?: unknown;
 };
 
 type InputTriggers = {
@@ -33,6 +38,44 @@ type InputTriggers = {
 };
 
 type Conversation = { input: { for(scope: unknown): ComposerInput } };
+
+function serviceFrom(context: unknown, name: string): unknown {
+  if (!context || typeof context !== "object") return undefined;
+  const value = context as Record<string, unknown>;
+  if (value[name] !== undefined) return value[name];
+  const get = value.get;
+  if (typeof get !== "function") return undefined;
+  try {
+    return (get as (key: string) => unknown).call(context, name);
+  } catch {
+    return undefined;
+  }
+}
+
+function inputFor(context: WorkbenchContext, scope: unknown): ComposerInput | undefined {
+  const scoped = serviceFrom(scope, "uiSession") ?? serviceFrom(scope, "conversation");
+  const uiSession = scoped ?? context.uiSession;
+  const candidates = [uiSession, serviceFrom(context, "conversation")];
+  for (const candidate of candidates) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const value = candidate as Record<string, unknown>;
+    const input = value.input;
+    const nestedInput = input && typeof input === "object" ? input as Record<string, unknown> : undefined;
+    const resolverOwner = typeof value.inputFor === "function" || typeof value.for === "function" ? candidate : input;
+    const resolver = value.inputFor ?? value.for ?? nestedInput?.for;
+    if (typeof resolver === "function") {
+      try {
+        const resolved = (resolver as (arg: unknown) => unknown).call(resolverOwner, scope);
+        if (resolved && typeof resolved === "object" && typeof (resolved as SessionInput).insertReference === "function") {
+          return resolved as ComposerInput;
+        }
+      } catch {
+        // Try the next compatibility face.
+      }
+    }
+  }
+  return undefined;
+}
 
 const SOURCE = "workbench-file";
 
@@ -51,6 +94,11 @@ export function createConversationReferences(): ConversationReferences {
   return {
     bind(next) {
       ctx = next;
+      try {
+        next.uiSession = next.get("uiSession") ?? next.uiSession;
+      } catch {
+        // Older runtimes do not expose the split uiSession service.
+      }
       const inputTriggers = next.get("inputTriggers") as InputTriggers | undefined;
       if (!inputTriggers) return;
       next.effect(() => inputTriggers.registerSource({
@@ -70,9 +118,9 @@ export function createConversationReferences(): ConversationReferences {
       if (!ctx || !value) return false;
       const sessionId = lastWorkbenchSession() || currentSessionId(ctx.sessions?.list?.getSnapshot());
       const scope = sessionId ? ctx.sessions?.scope?.(sessionId) : undefined;
-      const conversation = ctx.get("conversation") as Conversation | undefined;
-      if (!scope || !conversation) return false;
-      const input = conversation.input.for(scope);
+      if (!scope) return false;
+      const input = inputFor(ctx, scope);
+      if (!input) return false;
       const current = input.state.getSnapshot();
       const prefix = current.draft.trim() ? " " : "";
       const markerAt = current.draft.length + prefix.length;

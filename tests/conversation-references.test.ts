@@ -39,3 +39,26 @@ test("file references become composer chips through the DSH input machine", () =
     span: { start: 13, end: 14, draftRev: 4 },
   });
 });
+
+test("file references use the controller input face when conversation is split", () => {
+  let draft = "Explain";
+  let inserted = false;
+  const input = {
+    state: { getSnapshot: () => ({ draft, draftRev: 1 }) },
+    setDraft(next: string) { draft = next; },
+    insertReference() { inserted = true; return true; },
+  };
+  const references = createConversationReferences();
+  references.bind({
+    get(name) {
+      if (name === "inputTriggers") return { registerSource() { return () => {}; } };
+      if (name === "uiSession") return { inputFor: () => input };
+      return undefined;
+    },
+    effect(factory) { factory(); },
+    sessions: { list: { getSnapshot: () => ({ current: "s1" }) }, scope: () => ({}) },
+  });
+  expect(references.addPath("src/main.ts")).toBe(true);
+  expect(inserted).toBe(true);
+  expect(draft).toBe("Explain @");
+});

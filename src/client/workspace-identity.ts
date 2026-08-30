@@ -2,6 +2,7 @@ import { WORKSPACE_API_PATH } from "../shared/types.js";
 
 export type DshSessionSummary = {
   cwd?: string;
+  workspaceId?: string;
 };
 
 export type DshSessionList = {
@@ -17,6 +18,8 @@ export type DshWorkspaceItem = {
 
 export type DshWorkspaceList = {
   items?: readonly DshWorkspaceItem[];
+  order?: readonly string[];
+  byId?: Record<string, DshWorkspaceItem | undefined>;
   recentWorkspaceId?: string;
 };
 
@@ -24,6 +27,13 @@ export type DshSnapshotStore<T> = {
   getSnapshot(): T;
   subscribe(listener: () => void): () => void;
 };
+
+function workspaceItems(workspaces?: DshWorkspaceList): readonly DshWorkspaceItem[] {
+  if (workspaces?.items) return workspaces.items;
+  if (!workspaces?.byId) return [];
+  const order = workspaces.order ?? Object.keys(workspaces.byId);
+  return order.map((id) => workspaces.byId?.[id]).filter((item): item is DshWorkspaceItem => Boolean(item));
+}
 
 export type DshWorkspaceFaces = {
   sessions?: { list?: DshSnapshotStore<DshSessionList>; scope?(sessionId: string): unknown };
@@ -41,7 +51,7 @@ export function workspacePathFromDsh(sessions?: DshSessionList, workspaces?: Dsh
   const cwd = currentId ? sessions?.byId?.[currentId]?.cwd : undefined;
   if (typeof cwd === "string" && cwd.trim()) return cwd.trim();
 
-  const items = workspaces?.items ?? [];
+  const items = workspaceItems(workspaces);
   if (currentId) {
     const owned = items.find((item) => item.sessionIds?.includes(currentId));
     if (typeof owned?.path === "string" && owned.path.trim()) return owned.path.trim();

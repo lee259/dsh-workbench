@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.1 - 2026-08-30
+
+### Compatibility
+
+- Follow the DeepSeek Harness controller workspace projection (`byId` + `order`) while retaining the legacy workspace-list shape.
+- Resolve file-reference input through the split controller conversation face as well as the legacy composer face.
+- Keep the stable client runtime package in the default install path while accepting the newer controller-shaped client data at runtime.
+
 ## 0.11.0 - 2026-08-26
 
 ### Features

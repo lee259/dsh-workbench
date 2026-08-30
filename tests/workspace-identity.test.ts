@@ -40,6 +40,20 @@ test("workspace path falls back to the recent workspace", () => {
   )).toBe("/repo/two");
 });
 
+test("workspace path reads the controller list shape", () => {
+  expect(workspacePathFromDsh(
+    { current: "s1", byId: { s1: { workspaceId: "w2" } } },
+    {
+      recentWorkspaceId: "w1",
+      order: ["w1", "w2"],
+      byId: {
+        w1: { workspaceId: "w1", path: "/repo/one" },
+        w2: { workspaceId: "w2", path: "/repo/two", sessionIds: ["s1"] },
+      },
+    },
+  )).toBe("/repo/two");
+});
+
 test("followDshWorkspace emits only when the resolved path changes", () => {
   let snapshot: { current?: string; byId?: Record<string, { cwd?: string }> } = { current: "s1", byId: { s1: { cwd: "/a" } } };
   const listeners = new Set<() => void>();
