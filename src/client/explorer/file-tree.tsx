@@ -21,6 +21,7 @@ import {
 import { normalizePath, type FileOpenMode, type ReviewChange, type WorkspaceTree as WorkspaceTreeData } from "../../shared/types.js";
 import { FileTypeIcon, Icon, TreeChangeIcon, TreeChevron } from "../chrome/icons.js";
 import { startResizeDrag } from "../chrome/resize-drag.js";
+import type { TabOpenKind } from "../chrome/tab-model.js";
 import { WorkbenchTooltip } from "../chrome/tooltip.js";
 import { fetchReview } from "../review/review-data.js";
 import { highlightSegments, moveSearchFocus, treeSearchHits } from "./search-model.js";
@@ -86,6 +87,7 @@ export function WorkspaceTreePanel({
     openMode = "view",
     sessionId,
     commandsRef,
+    onFileOpen,
   }: {
     width: number;
     onResize: (width: number) => void;
@@ -93,6 +95,7 @@ export function WorkspaceTreePanel({
     openMode?: FileOpenMode;
     sessionId?: string;
     commandsRef?: { current: TreeCommands | null };
+    onFileOpen?(path: string, mode: FileOpenMode, kind: TabOpenKind): void;
   }) {
     const { store, i18n, references, absolutePath } = useWorkbenchServices();
     const t = i18n.t;
@@ -178,8 +181,8 @@ export function WorkspaceTreePanel({
         return;
       }
       const mode = treeFileOpenMode();
-      void store.open(path, mode, undefined, false, kind);
-      window.dispatchEvent(new CustomEvent("dsh-wb-file-tab-activate", { detail: path }));
+      if (onFileOpen) onFileOpen(path, mode, kind);
+      else void store.open(path, mode, undefined, false, kind);
       closeContextMenu();
     };
 

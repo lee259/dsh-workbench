@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.3 - 2026-08-31
+
+### Fixes
+
+- Keep dedicated file tabs stable while replacing their selected file, including rapid tree and conversation-file opens.
+- Close tabs by selecting the previous available tab across review, regular file, empty, and dedicated file tab types; close the workbench only when none remain.
+
 ## 0.11.2 - 2026-08-31
 
 ### Fixes

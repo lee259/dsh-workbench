@@ -46,3 +46,9 @@ test("closing an empty file tab removes only that tab and its binding", () => {
     activeId: "empty-file-2",
   });
 });
+
+test("closing the active file tab selects the previous tab first", () => {
+  const state = addEmptyFileTab(addEmptyFileTab(addEmptyFileTab(emptyFileTabs(), "first"), "second"), "third");
+  expect(closeEmptyFileTab(state, "third").activeId).toBe("second");
+  expect(closeEmptyFileTab(activateEmptyFileTab(state, "second"), "second").activeId).toBe("first");
+});

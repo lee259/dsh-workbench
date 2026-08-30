@@ -32,8 +32,10 @@ export function clearActiveEmptyFileTab(state: EmptyFileTabs): EmptyFileTabs {
 
 export function closeEmptyFileTab(state: EmptyFileTabs, id: string): EmptyFileTabs {
   if (!state.ids.includes(id)) return state;
+  const index = state.ids.indexOf(id);
   const ids = state.ids.filter((item) => item !== id);
   const paths = { ...state.paths };
   delete paths[id];
-  return { ids, paths, activeId: state.activeId === id ? "" : state.activeId };
+  const activeId = state.activeId === id ? state.ids[index - 1] ?? state.ids[index + 1] ?? "" : state.activeId;
+  return { ids, paths, activeId };
 }

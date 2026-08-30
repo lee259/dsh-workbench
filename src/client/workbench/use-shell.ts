@@ -7,7 +7,8 @@ import { readTreeVisible, writeTreeOpen, writeTreeVisible } from "../explorer/tr
 import type { PreviewCommands } from "../preview/preview-nav.js";
 import type { DiffPanelCommands } from "../preview/diff-panel.js";
 import type { FileState } from "../store.js";
-import { normalizePath, WORKSPACE_API_PATH, type ReviewChange } from "../../shared/types.js";
+import type { TabOpenKind } from "../chrome/tab-model.js";
+import { normalizePath, WORKSPACE_API_PATH, type FileOpenMode, type ReviewChange } from "../../shared/types.js";
 import { followWorkspaceEvents } from "../workspace-events.js";
 import { fetchReview } from "../review/review-data.js";
 import { lastWorkbenchSession, sessionIdFromEvent, workbenchShouldReset } from "../workspace-identity.js";
@@ -60,9 +61,9 @@ export function useWorkbenchShell() {
     const sessionModeRequestRef = useRef(0);
     const tabs = useWorkbenchTabs({
       activateFile: (path) => { void store.activate(path); },
-      closeFile: (path) => store.close(path),
+      closeFile: (path, keepPanelOpen) => store.close(path, keepPanelOpen),
     });
-    const { emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab, activateEmptyFileTab, closeEmptyFileTab, bindEmptyFilePath } = tabs;
+    const { emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab, activateEmptyFileTab, closeEmptyFileTab, bindEmptyFilePath, replaceActiveEmptyFilePath } = tabs;
     workspaceKeyRef.current = workspaceKey;
 
     const setSearchOpen = useCallback((open: boolean) => {
@@ -77,6 +78,17 @@ export function useWorkbenchShell() {
       searchRestoreRef.current = null;
       if (target) window.setTimeout(() => target.focus(), 0);
     }, []);
+
+    const openTreeFile = useCallback((path: string, mode: FileOpenMode, line: number | undefined, kind: TabOpenKind) => {
+      const replacement = replaceActiveEmptyFilePath(path);
+      if (!replacement) {
+        setActiveEmptyFileTab("");
+        void store.open(path, mode, line, false, kind);
+        return;
+      }
+      if (replacement.previousPath && replacement.previousPath !== path && !replacement.shared) store.close(replacement.previousPath, true);
+      void store.open(path, mode, line, false, "keep");
+    }, [replaceActiveEmptyFilePath, setActiveEmptyFileTab, store]);
 
     const resetChrome = useCallback(() => {
       store.close();
@@ -192,12 +204,11 @@ export function useWorkbenchShell() {
         if (!rawPath) return;
         setEmptyTabOpen(false);
         setDiffMode(false);
-        if (activeEmptyFileTab) bindEmptyFilePath(workspacePath(rawPath, rootRef.current));
-        void store.open(rawPath, mode, line);
+        openTreeFile(workspacePath(rawPath, rootRef.current), mode, line, "preview");
       };
       window.addEventListener("dsh-wb-file-request", onFileRequest);
       return () => window.removeEventListener("dsh-wb-file-request", onFileRequest);
-    }, [activeEmptyFileTab, bindEmptyFilePath, store]);
+    }, [openTreeFile]);
 
     useEffect(() => {
       const path = activeEmptyFileTab ? emptyFilePaths[activeEmptyFileTab] : "";
@@ -278,18 +289,8 @@ export function useWorkbenchShell() {
     const openReviewTab = () => { setActiveEmptyFileTab(""); setEmptyTabOpen(false); setReviewTabOpen(true); setDiffMode(true); setTreeOpen(true); };
     const closeReviewTab = () => { setReviewTabOpen(false); setDiffMode(false); };
     const resizeTree = (next: number) => { const value = clampTreeWidth(next); setTreeWidth(value); persistTreeWidth(value); };
-    useEffect(() => {
-      const onFileTabActivate = (event: Event) => {
-        const path = event instanceof CustomEvent && typeof event.detail === "string" ? event.detail : "";
-        if (path && activeEmptyFileTab) {
-          bindEmptyFilePath(path);
-          store.pin(path);
-          return;
-        }
-        setActiveEmptyFileTab("");
-      };
-      window.addEventListener("dsh-wb-file-tab-activate", onFileTabActivate);
-      return () => window.removeEventListener("dsh-wb-file-tab-activate", onFileTabActivate);
-    }, [activeEmptyFileTab, bindEmptyFilePath, store]);
-    return { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, setSearchMode, diffMode, setDiffMode, reviewTabOpen, openReviewTab, closeReviewTab, reviewRevealPath, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab: createFileTab, activateEmptyFileTab, closeEmptyFileTab, bindEmptyFilePath, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey };
+    const handleTreeFileOpen = useCallback((path: string, mode: FileOpenMode, kind: TabOpenKind) => {
+      openTreeFile(path, mode, undefined, kind);
+    }, [openTreeFile]);
+    return { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, setSearchMode, diffMode, setDiffMode, reviewTabOpen, openReviewTab, closeReviewTab, reviewRevealPath, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab: createFileTab, activateEmptyFileTab, closeEmptyFileTab, bindEmptyFilePath, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey };
 }

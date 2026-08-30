@@ -90,7 +90,7 @@ test("close clears the open file", async () => {
   expect(store.getSnapshot().visible).toBe(true);
 });
 
-test("closing the last diff tab stays closed after the initial diff reveal", async () => {
+test("closing the last file tab closes the workbench", async () => {
   const store = createFileStore(async (path) => ({
     path,
     content: "after",
@@ -104,6 +104,70 @@ test("closing the last diff tab stays closed after the initial diff reveal", asy
   expect(store.getSnapshot().open).toEqual([]);
   expect(store.getSnapshot().active).toBe("");
   expect(store.getSnapshot().visible).toBe(false);
+});
+
+test("closing the last tracked file can keep the workbench open for another tab type", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 1,
+  }));
+  await store.open("a.ts");
+  store.close("a.ts", true);
+  expect(store.getSnapshot().open).toEqual([]);
+  expect(store.getSnapshot().visible).toBe(true);
+});
+
+test("closing the active file selects the previous tab first", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 1,
+  }));
+  await store.open("first.ts");
+  await store.open("second.ts");
+  await store.open("third.ts");
+  await store.activate("second.ts");
+  store.close("second.ts");
+  await Promise.resolve();
+  expect(store.getSnapshot().active).toBe("first.ts");
+});
+
+test("opening from a dedicated file tab keeps the existing preview tab", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 1,
+  }));
+  await store.open("a.ts", "view", undefined, false, "preview");
+  await store.open("b.ts", "view", undefined, false, "keep");
+  expect(store.getSnapshot().open).toEqual(["a.ts", "b.ts"]);
+  expect(store.getSnapshot().preview).toBe("a.ts");
+});
+
+test("replacing a dedicated file tab removes its previous file", async () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 1,
+  }));
+  await store.open("first.ts", "view", undefined, false, "keep");
+  store.close("first.ts", true);
+  await store.open("second.ts", "view", undefined, false, "keep");
+  expect(store.getSnapshot().open).toEqual(["second.ts"]);
+  expect(store.getSnapshot().active).toBe("second.ts");
 });
 
 test("show and hide only change panel visibility", async () => {

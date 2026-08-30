@@ -44,7 +44,7 @@ export function WorkbenchHeader({
     setActiveEmptyFileTab(value: string): void;
     newFileTab(): void;
     activateEmptyFileTab(id: string): void;
-    closeEmptyFileTab(id: string): void;
+    closeEmptyFileTab(id: string, keepPanelOpen?: boolean): void;
     treeVisible: boolean;
     setTreeOpen(next: boolean): void;
     setSearchOpen(open: boolean): void;
@@ -55,6 +55,26 @@ export function WorkbenchHeader({
   }) {
     const { store, i18n, absolutePath } = useWorkbenchServices();
     const t = i18n.t;
+    const normalFileTabs = state.open.filter((path) => !Object.values(emptyFilePaths).includes(path));
+    const hasTabsAfter = (closing: "review" | "empty" | "file" | "normal") => (
+      (closing !== "review" && reviewTabOpen)
+      || (closing !== "empty" && emptyTabOpen)
+      || (closing !== "file" && emptyFileTabs.length > 0)
+      || (closing !== "normal" && normalFileTabs.length > 0)
+      || (closing === "file" && emptyFileTabs.length > 1)
+      || (closing === "normal" && normalFileTabs.length > 1)
+    );
+    const activateNormalFile = (path: string) => {
+      setEmptyTabOpen(false);
+      setActiveEmptyFileTab("");
+      setDiffMode(false);
+      void store.activate(path);
+    };
+    const activateFileTab = (id: string) => {
+      setEmptyTabOpen(false);
+      setDiffMode(false);
+      activateEmptyFileTab(id);
+    };
     return (
       <>
         <nav className="dsh-wb-tabs" aria-label={t("openFiles")} role="tablist">
@@ -76,14 +96,20 @@ export function WorkbenchHeader({
                     className="dsh-wb-tab-close"
                     type="button"
                     aria-label={`${t("closeFile")}: ${t("reviewTab")}`}
-                    onClick={closeReviewTab}
+                    onClick={() => {
+                      closeReviewTab();
+                      if (!hasTabsAfter("review")) store.hide();
+                      else if (normalFileTabs[0]) activateNormalFile(normalFileTabs[0]);
+                      else if (emptyTabOpen) setEmptyTabOpen(true);
+                      else if (emptyFileTabs[0]) activateFileTab(emptyFileTabs[0]);
+                    }}
                   >
                     ×
                   </button>
                 </WorkbenchTooltip>
               </div>
             ) : null}
-            {state.open.filter((path) => !Object.values(emptyFilePaths).includes(path)).map((path) => {
+            {normalFileTabs.map((path) => {
               const kind = state.views[path] ?? "view";
               const fullPath = absolutePath?.(path) ?? path;
               return (
@@ -100,7 +126,7 @@ export function WorkbenchHeader({
                         type="button"
                         role="tab"
                         aria-selected={!diffMode && !emptyTabOpen && !activeEmptyFileTab && path === state.active}
-                        onClick={() => { setEmptyTabOpen(false); setActiveEmptyFileTab(""); setDiffMode(false); void store.activate(path); }}
+                        onClick={() => activateNormalFile(path)}
                         onDoubleClick={() => store.pin(path)}
                       >
                         {path.split("/").pop() || path}
@@ -116,7 +142,14 @@ export function WorkbenchHeader({
                     className="dsh-wb-tab-close"
                     type="button"
                     aria-label={`${t("closeFile")}: ${path}`}
-                    onClick={() => store.close(path)}
+                    onClick={() => {
+                      const isActive = !diffMode && !emptyTabOpen && !activeEmptyFileTab && path === state.active;
+                      store.close(path, hasTabsAfter("normal"));
+                      if (!isActive || normalFileTabs.length > 1) return;
+                      if (reviewTabOpen) openReviewTab();
+                      else if (emptyTabOpen) setEmptyTabOpen(true);
+                      else if (emptyFileTabs[0]) activateFileTab(emptyFileTabs[0]);
+                    }}
                   >
                     ×
                   </button>
@@ -140,7 +173,13 @@ export function WorkbenchHeader({
                     className="dsh-wb-tab-close"
                     type="button"
                     aria-label={`${t("closeFile")}: ${t("newTab")}`}
-                    onClick={() => setEmptyTabOpen(false)}
+                    onClick={() => {
+                      setEmptyTabOpen(false);
+                      if (!hasTabsAfter("empty")) store.hide();
+                      else if (normalFileTabs.at(-1)) activateNormalFile(normalFileTabs.at(-1) as string);
+                      else if (reviewTabOpen) openReviewTab();
+                      else if (emptyFileTabs[0]) activateFileTab(emptyFileTabs[0]);
+                    }}
                   >
                     ×
                   </button>
@@ -164,7 +203,14 @@ export function WorkbenchHeader({
                     className="dsh-wb-tab-close"
                     type="button"
                     aria-label={`${t("closeFile")}: ${t("file")}`}
-                    onClick={() => closeEmptyFileTab(id)}
+                    onClick={() => {
+                      const isActive = activeEmptyFileTab === id;
+                      closeEmptyFileTab(id, hasTabsAfter("file"));
+                      if (!isActive || emptyFileTabs.length > 1) return;
+                      if (normalFileTabs.at(-1)) activateNormalFile(normalFileTabs.at(-1) as string);
+                      else if (reviewTabOpen) openReviewTab();
+                      else if (emptyTabOpen) setEmptyTabOpen(true);
+                    }}
                   >
                     ×
                   </button>

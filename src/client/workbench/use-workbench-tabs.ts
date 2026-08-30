@@ -11,7 +11,7 @@ import {
 
 export type WorkbenchTabEffects = {
   activateFile?(path: string): void;
-  closeFile?(path: string): void;
+  closeFile?(path: string, keepPanelOpen: boolean): void;
 };
 
 export function useWorkbenchTabs(effects: WorkbenchTabEffects = {}) {
@@ -27,38 +27,65 @@ export function useWorkbenchTabs(effects: WorkbenchTabEffects = {}) {
   const emptyFilePaths = state.paths;
   const activeEmptyFileTab = state.activeId;
 
-  const setActiveEmptyFileTab = useCallback((id: string) => {
-    setState((current) => id ? activateState(current, id) : clearActiveEmptyFileTab(current));
+  const updateState = useCallback((update: (current: EmptyFileTabs) => EmptyFileTabs) => {
+    const next = update(stateRef.current);
+    stateRef.current = next;
+    setState(next);
   }, []);
+
+  const setActiveEmptyFileTab = useCallback((id: string) => {
+    updateState((current) => id ? activateState(current, id) : clearActiveEmptyFileTab(current));
+  }, [updateState]);
 
   const newFileTab = useCallback(() => {
     const id = `empty-file-${++nextId.current}`;
-    setState((current) => addEmptyFileTab(current, id));
+    updateState((current) => addEmptyFileTab(current, id));
     setEmptyTabOpen(false);
-  }, []);
+  }, [updateState]);
 
   const activateEmptyFileTab = useCallback((id: string) => {
     const current = stateRef.current;
     const path = current.paths[id];
     if (current.ids.includes(id) && path) effectsRef.current.activateFile?.(path);
-    setState((current) => activateState(current, id));
+    updateState((next) => activateState(next, id));
     setEmptyTabOpen(false);
-  }, []);
+  }, [updateState]);
 
-  const closeEmptyFileTab = useCallback((id: string) => {
-    const path = stateRef.current.paths[id];
-    if (path) effectsRef.current.closeFile?.(path);
-    setState((current) => closeState(current, id));
-  }, []);
+  const closeEmptyFileTab = useCallback((id: string, keepPanelOpen = false) => {
+    const current = stateRef.current;
+    const path = current.paths[id];
+    const next = closeState(current, id);
+    if (path) effectsRef.current.closeFile?.(path, keepPanelOpen);
+    updateState(() => next);
+    const nextPath = next.activeId ? next.paths[next.activeId] : "";
+    if (nextPath) effectsRef.current.activateFile?.(nextPath);
+  }, [updateState]);
 
   const bindEmptyFilePath = useCallback((path: string) => {
-    setState((current) => bindEmptyFileTab(current, path));
-  }, []);
+    updateState((current) => bindEmptyFileTab(current, path));
+  }, [updateState]);
+
+  const bindActiveEmptyFilePath = useCallback((path: string): boolean => {
+    const current = stateRef.current;
+    if (!current.activeId || !current.ids.includes(current.activeId)) return false;
+    updateState((next) => bindEmptyFileTab(next, path));
+    return true;
+  }, [updateState]);
+
+  const replaceActiveEmptyFilePath = useCallback((path: string): { previousPath: string; shared: boolean } | null => {
+    const current = stateRef.current;
+    const id = current.activeId;
+    if (!id || !current.ids.includes(id)) return null;
+    const previousPath = current.paths[id] ?? "";
+    const shared = Boolean(previousPath) && current.ids.some((otherId) => otherId !== id && current.paths[otherId] === previousPath);
+    updateState((next) => bindEmptyFileTab(next, path));
+    return { previousPath, shared };
+  }, [updateState]);
 
   const reset = useCallback(() => {
-    setState(createState());
+    updateState(createState);
     setEmptyTabOpen(false);
-  }, []);
+  }, [updateState]);
 
   return {
     emptyTabOpen,
@@ -71,6 +98,8 @@ export function useWorkbenchTabs(effects: WorkbenchTabEffects = {}) {
     activateEmptyFileTab,
     closeEmptyFileTab,
     bindEmptyFilePath,
+    bindActiveEmptyFilePath,
+    replaceActiveEmptyFilePath,
     reset,
   };
 }

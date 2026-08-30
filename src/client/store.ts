@@ -25,7 +25,7 @@ export type FileStore = {
   open(path: string, mode?: FileOpenMode, line?: number, reveal?: boolean, kind?: TabOpenKind): Promise<void>;
   activate(path: string, mode?: FileOpenMode, line?: number): Promise<void>;
   pin(path: string): void;
-  close(path?: string): void;
+  close(path?: string, keepPanelOpen?: boolean): void;
   reload(): Promise<void>;
   show(): void;
   hide(): void;
@@ -213,7 +213,7 @@ export function createFileStore(load: FileLoader = fetchWorkspaceFile): FileStor
       if (!state.active) return Promise.resolve();
       return loadActive(state.active, modes.get(state.active) ?? "auto", state.line);
     },
-    close(path) {
+    close(path, keepPanelOpen = false) {
       if (path == null || path === "") {
         requestId += 1;
         modes.clear();
@@ -222,10 +222,11 @@ export function createFileStore(load: FileLoader = fetchWorkspaceFile): FileStor
       }
       const key = normalizePath(path);
       modes.delete(key);
+      const index = state.open.indexOf(key);
       const open = state.open.filter((item) => item !== key);
       if (open.length === 0) {
         requestId += 1;
-        set(empty);
+        set({ ...empty, visible: keepPanelOpen && state.visible, disk: state.disk });
         return;
       }
       const preview = state.preview === key ? "" : state.preview;
@@ -235,7 +236,7 @@ export function createFileStore(load: FileLoader = fetchWorkspaceFile): FileStor
         set({ ...state, open, views, preview });
         return;
       }
-      const next = open[open.length - 1] ?? "";
+      const next = state.open[index - 1] ?? state.open[index + 1] ?? "";
       const views = { ...state.views };
       delete views[key];
       set(withActive(open, next, { loading: true, payload: null, error: "", line: null, reveal: state.reveal, disk: state.disk, views, preview }));

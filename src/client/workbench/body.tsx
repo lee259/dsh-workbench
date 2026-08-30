@@ -4,6 +4,7 @@ import { EmptyFileIcon, Icon } from "../chrome/icons.js";
 import type { PreviewCommands } from "../preview/preview-nav.js";
 import type { TreeCommands } from "../explorer/file-tree.js";
 import type { FileOpenMode } from "../../shared/types.js";
+import type { TabOpenKind } from "../chrome/tab-model.js";
 import { DiffPanel, type DiffPanelCommands } from "../preview/diff-panel.js";
 import { useWorkbenchServices } from "./runtime.js";
 
@@ -24,6 +25,7 @@ type WorkspaceTreePanelProps = {
   commandsRef?: { current: TreeCommands | null };
   openMode?: FileOpenMode;
   sessionId?: string;
+  onFileOpen?(path: string, mode: FileOpenMode, kind: TabOpenKind): void;
 };
 
 function EmptyTabChooser({
@@ -66,6 +68,7 @@ export function WorkbenchBody({
     revealPath,
     treeCommands,
     resizeTree,
+    onFileOpen,
     previewCommands,
     searchOpen,
     searchMode,
@@ -91,6 +94,7 @@ export function WorkbenchBody({
     revealPath: string;
     treeCommands: { current: TreeCommands | null };
     resizeTree(width: number): void;
+    onFileOpen(path: string, mode: FileOpenMode, kind: TabOpenKind): void;
     previewCommands: { current: PreviewCommands | null };
     searchOpen: boolean;
     searchMode: "files" | "content";
@@ -147,6 +151,7 @@ export function WorkbenchBody({
               onResize={resizeTree}
               openMode={diffMode ? "diff" : "view"}
               sessionId={sessionId}
+              onFileOpen={onFileOpen}
             />
           </div>
         </div>
