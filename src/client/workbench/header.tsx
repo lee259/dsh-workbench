@@ -1,8 +1,8 @@
 import type { FileState } from "../store.js";
-import { FileTypeIcon, Icon, NewTabIcon } from "../chrome/icons.js";
+import { FileTypeIcon, Icon, NewTabIcon, TreeChevron } from "../chrome/icons.js";
 import { visibleBreadcrumbTargets } from "../explorer/tree-model.js";
-import { Fragment } from "react";
-import { HoverCard, writeClipboard } from "@deepseek-ai/dsh-client-ui-primitives";
+import { Fragment, useState } from "react";
+import { HoverCard, Menu, writeClipboard } from "@deepseek-ai/dsh-client-ui-primitives";
 import { useWorkbenchServices } from "./runtime.js";
 import { WorkbenchTooltip } from "../chrome/tooltip.js";
 import type { ReviewScope } from "../../shared/types.js";
@@ -62,6 +62,7 @@ export function WorkbenchHeader({
   }) {
     const { store, i18n, absolutePath } = useWorkbenchServices();
     const t = i18n.t;
+    const [reviewScopeMenuOpen, setReviewScopeMenuOpen] = useState(false);
     const normalFileTabs = state.open.filter((path) => !Object.values(emptyFilePaths).includes(path));
     const hasTabsAfter = (closing: "review" | "empty" | "file" | "normal") => (
       (closing !== "review" && reviewTabOpen)
@@ -276,12 +277,33 @@ export function WorkbenchHeader({
               </Fragment>
             )) : (
               <div className="dsh-wb-review-toolbar">
-                <select className="dsh-wb-review-scope" value={reviewScope} onChange={(event) => setReviewScope(event.target.value as ReviewScope)}>
-                  <option value="session">{t("sessionEdits")}</option>
-                  <option value="uncommitted">{t("uncommitted")}</option>
-                  <option value="unstaged">{t("unstaged")}</option>
-                  <option value="staged">{t("staged")}</option>
-                </select>
+                <Menu
+                  open={reviewScopeMenuOpen}
+                  onClose={() => setReviewScopeMenuOpen(false)}
+                  items={[
+                    { id: "session", label: t("sessionEdits") },
+                    { id: "uncommitted", label: t("uncommitted") },
+                    { id: "unstaged", label: t("unstaged") },
+                    { id: "staged", label: t("staged") },
+                  ]}
+                  onSelect={(id: string) => {
+                    setReviewScope(id as ReviewScope);
+                    setReviewScopeMenuOpen(false);
+                  }}
+                  portal
+                  align="start"
+                  anchor={(
+                    <button
+                      className="dsh-wb-review-scope"
+                      type="button"
+                      aria-expanded={reviewScopeMenuOpen}
+                      onClick={() => setReviewScopeMenuOpen((open) => !open)}
+                    >
+                      <span>{t(reviewScope === "session" ? "sessionEdits" : reviewScope)}</span>
+                      <TreeChevron open />
+                    </button>
+                  )}
+                />
                 {reviewCounts.additions > 0 ? <span className="dsh-wb-review-count is-add">+{reviewCounts.additions}</span> : null}
                 {reviewCounts.deletions > 0 ? <span className="dsh-wb-review-count is-delete">−{reviewCounts.deletions}</span> : null}
               </div>

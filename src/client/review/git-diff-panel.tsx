@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { normalizePath, type FilePayload, type GitFileDiff, type ReviewScope } from "../../shared/types.js";
-import { FileTypeIcon, TreeChevron } from "../chrome/icons.js";
+import { FileTypeIcon, Icon, TreeChevron } from "../chrome/icons.js";
 import { CodeView } from "../preview/code-view.js";
 import type { FileState } from "../store.js";
 import { useWorkbenchServices } from "../workbench/runtime.js";
+import { WorkbenchTooltip } from "../chrome/tooltip.js";
+import { writeClipboard } from "@deepseek-ai/dsh-client-ui-primitives";
 import { fetchGitDiff } from "./git-diff-data.js";
 import { reviewDiffCounts } from "../../shared/review-diff.js";
 
@@ -30,6 +32,7 @@ export function GitDiffPanel({ scope, revision, files: suppliedFiles, onCountsCh
   const [worktreeFiles, setWorktreeFiles] = useState<GitFileDiff[]>([]);
   const [loading, setLoading] = useState(true);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [copiedPath, setCopiedPath] = useState("");
   const [revealPath, setRevealPath] = useState("");
   const lastCounts = useRef({ additions: -1, deletions: -1 });
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -85,6 +88,25 @@ export function GitDiffPanel({ scope, revision, files: suppliedFiles, onCountsCh
             <span className="dsh-wb-diff-file-path">{file.path}</span>
             {file.additions > 0 ? <span className="dsh-wb-diff-count is-add">+{file.additions}</span> : null}
             {file.deletions > 0 ? <span className="dsh-wb-diff-count is-delete">−{file.deletions}</span> : null}
+            <div className="dsh-wb-diff-file-actions">
+              <WorkbenchTooltip label={i18n.t(copiedPath === file.path ? "pathCopied" : "copyPath")}>
+                <button
+                  className="dsh-wb-button dsh-wb-icon-button"
+                  type="button"
+                  aria-label={i18n.t(copiedPath === file.path ? "pathCopied" : "copyPath")}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void writeClipboard(file.path).then((copied) => {
+                      if (!copied) return;
+                      setCopiedPath(file.path);
+                      window.setTimeout(() => setCopiedPath((path) => path === file.path ? "" : path), 1400);
+                    });
+                  }}
+                >
+                  <Icon name={copiedPath === file.path ? "check" : "copy"} />
+                </button>
+              </WorkbenchTooltip>
+            </div>
           </header>
           {!collapsed.has(file.path) ? <div className="dsh-wb-diff-file-editor"><CodeView state={fileState(file)} /></div> : null}
         </section>

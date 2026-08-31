@@ -1,64 +1,57 @@
 import { createConversationReferences } from "../src/client/conversation-references.js";
+import { notifyWorkbenchSession } from "../src/client/workspace-identity.js";
 import { expect, test } from "vitest";
 
-test("file references become composer chips through the DSH input machine", () => {
+test("file references append an @ path through the current session composer", () => {
   let draft = "Explain this";
-  let revision = 3;
-  let source: { name: string } | undefined;
-  let inserted: unknown;
+  let scoped = "";
   const input = {
-    state: { getSnapshot: () => ({ draft, draftRev: revision }) },
-    setDraft(next: string) { draft = next; revision += 1; },
-    insertReference(reference: unknown, span: unknown) { inserted = { reference, span }; return true; },
+    state: { getSnapshot: () => ({ draft }) },
+    setDraft(next: string) { draft = next; },
   };
   const references = createConversationReferences();
   references.bind({
-    get(name) {
-      if (name === "inputTriggers") return {
-        registerSource(next: { name: string }) { source = next; return () => {}; },
-      };
-      return { input: { for: () => input } };
-    },
-    effect(factory) { factory(); },
+    get(name) { return name === "conversation" ? { input: { for(scope: { id: string }) { scoped = scope.id; return input; } } } : undefined; },
     sessions: {
-      list: { getSnapshot: () => ({ current: "s1" }) },
-      scope: () => ({ session: "s1" }),
+      list: { getSnapshot: () => ({ current: "active-session" }) },
+      scope: (id) => ({ id }),
     },
   });
-
   expect(references.addPath(" src/main.ts ")).toBe(true);
-  expect(source?.name).toBe("workbench-file");
-  expect(draft).toBe("Explain this @");
-  expect(inserted).toEqual({
-    reference: {
-      source: "workbench-file",
-      ref: "src/main.ts",
-      label: "src/main.ts",
-      clipboardText: "src/main.ts",
-    },
-    span: { start: 13, end: 14, draftRev: 4 },
-  });
+  expect(scoped).toBe("active-session");
+  expect(draft).toBe("Explain this @src/main.ts");
 });
 
-test("file references use the controller input face when conversation is split", () => {
-  let draft = "Explain";
-  let inserted = false;
+test("file references append a trailing slash for directories", () => {
+  let draft = "";
   const input = {
-    state: { getSnapshot: () => ({ draft, draftRev: 1 }) },
+    state: { getSnapshot: () => ({ draft }) },
     setDraft(next: string) { draft = next; },
-    insertReference() { inserted = true; return true; },
   };
   const references = createConversationReferences();
   references.bind({
-    get(name) {
-      if (name === "inputTriggers") return { registerSource() { return () => {}; } };
-      if (name === "uiSession") return { inputFor: () => input };
-      return undefined;
-    },
-    effect(factory) { factory(); },
+    get: () => ({ input: { for: () => input } }),
     sessions: { list: { getSnapshot: () => ({ current: "s1" }) }, scope: () => ({}) },
   });
+  expect(references.addPath("src", true)).toBe(true);
+  expect(draft).toBe("@src/");
+});
+
+test("file references prefer the currently selected session over a stale cache", () => {
+  notifyWorkbenchSession("stale-session");
+  let usedActiveScope = false;
+  const input = { state: { getSnapshot: () => ({ draft: "" }) }, setDraft() {} };
+  const references = createConversationReferences();
+  references.bind({
+    get: () => ({ input: { for: () => input } }),
+    sessions: {
+      list: { getSnapshot: () => ({ current: "active-session" }) },
+      scope: (id) => {
+        if (id === "active-session") usedActiveScope = true;
+        return id === "active-session" ? {} : undefined;
+      },
+    },
+  });
   expect(references.addPath("src/main.ts")).toBe(true);
-  expect(inserted).toBe(true);
-  expect(draft).toBe("Explain @");
+  expect(usedActiveScope).toBe(true);
 });
