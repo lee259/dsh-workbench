@@ -7,7 +7,13 @@
 
 [English](./README.md) · [更新日志](./CHANGELOG.zh-CN.md) · [Issues](https://github.com/lee259/dsh-workbench/issues) · [npm](https://www.npmjs.com/package/dsh-workbench)
 
-[DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart) 的右侧文件工作区。在 DSH Web 会话里点击路径，即可在对话旁边阅读或对比文件。
+[DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart) Web 的 Codex 风格工作区与 Git 审查。无需离开对话，即可同时审查会话编辑和 Git 变更。
+
+## 核心能力
+
+- **按正确基线审查** — 可切换会话编辑、未提交、未暂存与已暂存；文件列表和 `+/−` 行数始终同步。
+- **在对话旁阅读和对比** — 可从 Agent 工具调用、工作区文件树或搜索打开文件，不丢失当前上下文。
+- **跟随 Agent 编辑** — 新编辑会刷新审查并定位受影响文件，不会在长列表中反复跳动。
 
 ![DSH Workbench 在 DeepSeek Harness Web 中运行](./assets/dsh-workbench-demo.png)
 

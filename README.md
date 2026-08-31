@@ -7,7 +7,13 @@
 
 [中文文档](./README.zh-CN.md) · [Changelog](./CHANGELOG.md) · [Issues](https://github.com/lee259/dsh-workbench/issues) · [npm](https://www.npmjs.com/package/dsh-workbench)
 
-Right-side file workspace for [DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart). Click a path in a DSH Web session to read or diff it beside the conversation.
+Codex-style workspace and Git review for [DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart) Web. Review a session's edits alongside Git changes without leaving the conversation.
+
+## Highlights
+
+- **Review with the right baseline** — switch between session edits, uncommitted, unstaged, and staged changes; file lists and `+/−` counts stay in sync.
+- **Read and diff beside the conversation** — open files from agent tool calls, the workspace tree, or search without losing your place.
+- **Follow agent work** — new edits refresh the review and reveal the affected file without repeatedly jumping through a long list.
 
 ![DSH Workbench in DeepSeek Harness Web](./assets/dsh-workbench-demo.png)
 
