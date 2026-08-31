@@ -1,5 +1,15 @@
 # 更新日志
 
+## 0.11.4-alpha.0 - 2026-08-31
+
+### 兼容性
+
+- 面向 DeepSeek Harness v0.1.2-alpha.2 的客户端组合，将已移除的 Runtime 包替换为 Session、Workspace Controller 与 UI Renderer。
+
+### 发布
+
+- 预发布版本发布到 npm 的 `next` dist-tag，并将对应 GitHub Release 标记为预发布；稳定版本继续使用 `latest`。
+
 ## 0.11.3 - 2026-08-31
 
 ### 修复

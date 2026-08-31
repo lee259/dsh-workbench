@@ -26,13 +26,19 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          dist_tag=latest
+          if [[ "$version" == *-* ]]; then dist_tag=next; fi
+          npm publish --provenance --access public --tag "$dist_tag"
       - name: GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="${GITHUB_REF_NAME}"
           version="${tag#v}"
+          prerelease=()
+          if [[ "$version" == *-* ]]; then prerelease=(--prerelease); fi
           notes="$(mktemp)"
           python3 - "$version" "$notes" <<'PY'
           import pathlib, re, sys
@@ -48,7 +54,7 @@ jobs:
           pathlib.Path(dest).write_text("\n".join(lines[start:end]).strip() + "\n", encoding="utf-8")
           PY
           if gh release view "$tag" >/dev/null 2>&1; then
-            gh release edit "$tag" --title "$tag" --notes-file "$notes"
+            gh release edit "$tag" --title "$tag" --notes-file "$notes" "${prerelease[@]}"
           else
-            gh release create "$tag" --title "$tag" --notes-file "$notes" --verify-tag
+            gh release create "$tag" --title "$tag" --notes-file "$notes" --verify-tag "${prerelease[@]}"
           fi

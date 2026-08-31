@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.11.4-alpha.0 - 2026-08-31
+
+### Compatibility
+
+- Target the DeepSeek Harness v0.1.2-alpha.2 client composition, replacing the removed Runtime package with the Session and Workspace Controllers plus the UI Renderer.
+
+### Distribution
+
+- Publish prerelease versions to npm's `next` dist-tag and mark their GitHub Releases as prereleases; stable versions remain on `latest`.
+
 ## 0.11.3 - 2026-08-31
 
 ### Fixes
