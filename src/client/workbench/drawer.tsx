@@ -12,6 +12,7 @@ import type { LocaleStore } from "../../shared/i18n.js";
 import type { FileState } from "../store.js";
 import { WorkbenchBody } from "./body.js";
 import { WorkbenchHeader } from "./header.js";
+import { useState } from "react";
 import { useWorkbenchShell } from "./use-shell.js";
 
 function previewMeta(state: FileState, t: LocaleStore["t"]): string {
@@ -27,6 +28,9 @@ function previewMeta(state: FileState, t: LocaleStore["t"]): string {
 
 export function WorkbenchDrawer() {
   const { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, diffMode, setDiffMode, reviewTabOpen, openReviewTab, closeReviewTab, reviewChanges, reviewRevealPath, reviewRevision, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab, activateEmptyFileTab, closeEmptyFileTab, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
+  const [gitCounts, setGitCounts] = useState({ additions: 0, deletions: 0 });
+  const sessionCounts = reviewChanges.reduce((counts, change) => ({ additions: counts.additions + change.additions, deletions: counts.deletions + change.deletions }), { additions: 0, deletions: 0 });
+  const reviewCounts = reviewScope === "session" ? sessionCounts : gitCounts;
 
   if (!mounted) return null;
 
@@ -79,6 +83,9 @@ export function WorkbenchDrawer() {
           meta={previewMeta(state, t)}
           pathCopied={pathCopied}
           setPathCopied={setPathCopied}
+          reviewScope={reviewScope}
+          setReviewScope={setReviewScope}
+          reviewCounts={reviewCounts}
         />
         <WorkbenchBody
           key={workspaceKey}
@@ -86,9 +93,8 @@ export function WorkbenchDrawer() {
           sessionId={sessionId}
           reviewRevealPath={reviewRevealPath}
           reviewRevision={reviewRevision}
-          reviewChanges={reviewChanges}
           reviewScope={reviewScope}
-          setReviewScope={setReviewScope}
+          onGitCountsChange={setGitCounts}
           diffCommands={diffCommands}
           diffMode={diffMode}
           emptyTabOpen={emptyTabOpen}

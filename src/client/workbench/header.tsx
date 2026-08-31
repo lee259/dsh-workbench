@@ -5,6 +5,7 @@ import { Fragment } from "react";
 import { HoverCard, writeClipboard } from "@deepseek-ai/dsh-client-ui-primitives";
 import { useWorkbenchServices } from "./runtime.js";
 import { WorkbenchTooltip } from "../chrome/tooltip.js";
+import type { ReviewScope } from "../../shared/types.js";
 
 export function WorkbenchHeader({
     state,
@@ -29,6 +30,9 @@ export function WorkbenchHeader({
     meta,
     pathCopied,
     setPathCopied,
+    reviewScope,
+    setReviewScope,
+    reviewCounts,
   }: {
     state: FileState;
     diffMode: boolean;
@@ -52,6 +56,9 @@ export function WorkbenchHeader({
     meta: string;
     pathCopied: boolean;
     setPathCopied(value: boolean): void;
+    reviewScope: ReviewScope;
+    setReviewScope(scope: ReviewScope): void;
+    reviewCounts: { additions: number; deletions: number };
   }) {
     const { store, i18n, absolutePath } = useWorkbenchServices();
     const t = i18n.t;
@@ -252,7 +259,7 @@ export function WorkbenchHeader({
           </div>
         </nav>
         {!emptyTabOpen && (state.path || diffMode) ? (
-          <nav className="dsh-wb-pathbar" aria-label={t("filePath")}>
+          <nav className={`dsh-wb-pathbar${diffMode ? " is-review" : ""}`} aria-label={t("filePath")}>
             {!diffMode ? visibleBreadcrumbTargets(state.path).map((item, index) => (
               <Fragment key={item.path}>
                 {index > 0 ? <span className="dsh-wb-path-separator">/</span> : null}
@@ -267,8 +274,19 @@ export function WorkbenchHeader({
                   {item.label}
                 </button>
               </Fragment>
-            )) : <span className="dsh-wb-meta">{t("reviewTab")}</span>}
-            <span className="dsh-wb-meta">{meta}</span>
+            )) : (
+              <div className="dsh-wb-review-toolbar">
+                <select className="dsh-wb-review-scope" value={reviewScope} onChange={(event) => setReviewScope(event.target.value as ReviewScope)}>
+                  <option value="session">{t("sessionEdits")}</option>
+                  <option value="uncommitted">{t("uncommitted")}</option>
+                  <option value="unstaged">{t("unstaged")}</option>
+                  <option value="staged">{t("staged")}</option>
+                </select>
+                {reviewCounts.additions > 0 ? <span className="dsh-wb-review-count is-add">+{reviewCounts.additions}</span> : null}
+                {reviewCounts.deletions > 0 ? <span className="dsh-wb-review-count is-delete">−{reviewCounts.deletions}</span> : null}
+              </div>
+            )}
+            {!diffMode ? <span className="dsh-wb-meta">{meta}</span> : null}
             <div className="dsh-wb-path-actions" aria-label={t("viewOptions")}>
               <WorkbenchTooltip label={t(treeVisible ? "hideTree" : "showTree")}>
               <button

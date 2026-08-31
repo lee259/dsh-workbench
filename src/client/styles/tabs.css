@@ -192,6 +192,12 @@
   font-size: 12px;
 }
 
+.dsh-wb-pathbar.is-review {
+  min-height: 35px;
+  height: 35px;
+  padding: 0 10px 0 8px;
+}
+
 .dsh-wb-path-root,
 .dsh-wb-path {
   display: grid;

@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, type ComponentType } from "react";
+import { useEffect, useRef, type ComponentType } from "react";
 import type { FileState } from "../store.js";
 import { EmptyFileIcon, Icon } from "../chrome/icons.js";
 import type { PreviewCommands } from "../preview/preview-nav.js";
 import type { TreeCommands } from "../explorer/file-tree.js";
-import type { FileOpenMode, ReviewChange, ReviewScope } from "../../shared/types.js";
+import type { FileOpenMode, ReviewScope } from "../../shared/types.js";
 import type { TabOpenKind } from "../chrome/tab-model.js";
 import { DiffPanel, type DiffPanelCommands } from "../preview/diff-panel.js";
 import { useWorkbenchServices } from "./runtime.js";
@@ -57,9 +57,8 @@ export function WorkbenchBody({
     sessionId,
     reviewRevealPath,
     reviewRevision,
-    reviewChanges,
     reviewScope,
-    setReviewScope,
+    onGitCountsChange,
     diffCommands,
     diffMode,
     emptyTabOpen,
@@ -87,9 +86,8 @@ export function WorkbenchBody({
     sessionId: string;
     reviewRevealPath?: string;
     reviewRevision: number;
-    reviewChanges: ReviewChange[];
     reviewScope: ReviewScope;
-    setReviewScope(scope: ReviewScope): void;
+    onGitCountsChange(counts: { additions: number; deletions: number }): void;
     diffCommands: { current: DiffPanelCommands | null };
     diffMode: boolean;
     emptyTabOpen: boolean;
@@ -115,9 +113,6 @@ export function WorkbenchBody({
   }) {
     const { i18n } = useWorkbenchServices();
     const t = i18n.t;
-    const [gitCounts, setGitCounts] = useState({ additions: 0, deletions: 0 });
-    const sessionCounts = reviewChanges.reduce((counts, change) => ({ additions: counts.additions + change.additions, deletions: counts.deletions + change.deletions }), { additions: 0, deletions: 0 });
-    const counts = reviewScope === "session" ? sessionCounts : gitCounts;
     const treeVisibleNow = treeVisible && !emptyTabOpen;
     const treeRailRef = useRef<HTMLDivElement | null>(null);
 
@@ -139,19 +134,7 @@ export function WorkbenchBody({
               ) : activeEmptyFileTab && state.path !== activeEmptyFilePath ? (
                 <div className="dsh-wb-empty"><strong>{t("reading")}</strong></div>
               ) : diffMode ? (
-                <>
-                  <div className="dsh-wb-review-toolbar">
-                    <select className="dsh-wb-review-scope" value={reviewScope} onChange={(event) => setReviewScope(event.target.value as ReviewScope)}>
-                      <option value="session">{t("sessionEdits")}</option>
-                      <option value="uncommitted">{t("uncommitted")}</option>
-                      <option value="unstaged">{t("unstaged")}</option>
-                      <option value="staged">{t("staged")}</option>
-                    </select>
-                    {counts.additions > 0 ? <span className="dsh-wb-review-count is-add">+{counts.additions}</span> : null}
-                    {counts.deletions > 0 ? <span className="dsh-wb-review-count is-delete">−{counts.deletions}</span> : null}
-                  </div>
-                  <DiffPanel ref={diffCommands} sessionId={sessionId} revealPath={reviewRevealPath} revision={reviewRevision} scope={reviewScope} onCountsChange={setGitCounts} />
-                </>
+                <DiffPanel ref={diffCommands} sessionId={sessionId} revealPath={reviewRevealPath} revision={reviewRevision} scope={reviewScope} onCountsChange={onGitCountsChange} />
               ) : state.path ? (
                 <CodeView state={state} commandsRef={previewCommands} />
               ) : (

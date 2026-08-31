@@ -154,14 +154,32 @@
   border-bottom: 1px solid var(--dsh-wb-border);
 }
 
-.dsh-wb-review-scope {
-  min-height: 28px;
-  padding: 4px 24px 4px 8px;
+.dsh-wb-pathbar.is-review .dsh-wb-review-toolbar {
+  min-height: 35px;
+  gap: 6px;
+  padding: 0;
   border: 0;
-  border-radius: 6px;
-  background: var(--dsh-wb-field-fill);
-  color: var(--dsh-wb-text);
+}
+
+.dsh-wb-pathbar.is-review .dsh-wb-review-scope {
+  min-height: 28px;
+  padding: 0 26px 0 0;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  color: var(--dsw-alias-label-primary);
+  background: transparent;
   font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dsh-wb-pathbar.is-review .dsh-wb-review-scope:focus-visible {
+  outline: 2px solid var(--dsh-wb-focus-ring);
+  outline-offset: 2px;
+}
+
+.dsh-wb-pathbar.is-review .dsh-wb-review-count {
   font-size: 14px;
   font-weight: 500;
 }
