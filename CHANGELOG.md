@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.11.4 - 2026-08-31
+
+### Features
+
+- Add Codex-style review scopes for session edits, uncommitted, unstaged, and staged Git changes, with one shared file and count source across the diff and tree.
+
+### Fixes
+
+- Keep review contents current after Git branch, commit, stash, index, and workspace changes; preserve complete session edits while comparing their latest working-tree version.
+- Restore file-path copying in diff file headers and append workspace file references to the active conversation draft through Harness's `@path` flow.
+- Debounce repeated review-file reveals while an agent makes many edits.
+
+### Changed
+
+- Align the compact review-scope picker and resizable rails with the Harness file-tree hover and keyboard-focus treatment.
+
 ## 0.11.4-alpha.1 - 2026-08-31
 
 ### Features

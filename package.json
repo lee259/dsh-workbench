@@ -1,6 +1,6 @@
 {
   "name": "dsh-workbench",
-  "version": "0.11.4-alpha.1",
+  "version": "0.11.4",
   "description": "A right-side file workspace for DeepSeek Harness Web.",
   "license": "MIT",
   "author": "lee259",
