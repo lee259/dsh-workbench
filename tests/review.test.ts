@@ -1,5 +1,20 @@
 import { WriteHistory } from "../src/host/write-history.js";
+import { reviewTreePath, scopedReviewChanges } from "../src/client/review/review-scope.js";
 import { expect, test } from "vitest";
+
+test("review tree uses the active Git scope instead of session edits", () => {
+  const session = [{ path: "session.ts", sessionId: "s1", revision: 1, summary: "Edited file", additions: 1, deletions: 0 }];
+  const git = [{ path: "git.ts", before: "before", content: "after", additions: 1, deletions: 1 }];
+  expect(scopedReviewChanges("uncommitted", session, git).map((change) => change.path)).toEqual(["git.ts"]);
+  expect(scopedReviewChanges("uncommitted", session, []).map((change) => change.path)).toEqual([]);
+  expect(scopedReviewChanges("session", session, git).map((change) => change.path)).toEqual(["session.ts"]);
+});
+
+test("review tree matches an absolute session path to its workspace file", () => {
+  const files = [{ path: "src/editor.ts" }, { path: "typings.d.ts" }];
+  expect(reviewTreePath("/repo/typings.d.ts", files)).toBe("typings.d.ts");
+  expect(reviewTreePath("/repo/src/editor.ts", files)).toBe("src/editor.ts");
+});
 
 test("review returns captured write changes with line counts", () => {
   const history = new WriteHistory();

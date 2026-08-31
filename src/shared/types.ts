@@ -4,6 +4,7 @@ export const FILES_API_PATH = "/api/dsh-workbench/files";
 export const CONTENT_SEARCH_API_PATH = "/api/dsh-workbench/search";
 export const ACTIVITY_API_PATH = "/api/dsh-workbench/activity";
 export const REVIEW_API_PATH = "/api/dsh-workbench/review";
+export const GIT_DIFF_API_PATH = "/api/dsh-workbench/git-diff";
 export const WORKSPACE_API_PATH = "/api/dsh-workbench/workspace";
 export const EVENTS_API_PATH = "/api/dsh-workbench/events";
 export const MAX_PREVIEW_BYTES = 800_000;
@@ -62,6 +63,16 @@ export type ReviewChange = {
   additions: number;
   deletions: number;
 };
+
+export type GitFileDiff = {
+  path: string;
+  before: string | null;
+  content: string;
+  additions: number;
+  deletions: number;
+};
+
+export type ReviewScope = "session" | "uncommitted" | "unstaged" | "staged";
 
 export type ActivityKind = "tool" | "code";
 export type ActivityStatus = "running" | "done" | "error";

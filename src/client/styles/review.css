@@ -144,3 +144,24 @@
 .dsh-wb-review-empty strong {
   color: var(--dsw-alias-label-secondary);
 }
+.dsh-wb-review-toolbar {
+  display: flex;
+  position: relative;
+  min-height: 44px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--dsh-wb-border);
+}
+
+.dsh-wb-review-scope {
+  min-height: 28px;
+  padding: 4px 24px 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--dsh-wb-field-fill);
+  color: var(--dsh-wb-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+}

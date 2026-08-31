@@ -77,6 +77,11 @@ export type MessageKey =
   | "reviewEmptyHint"
   | "reviewFiles"
   | "editedFiles"
+  | "sessionEdits"
+  | "uncommitted"
+  | "unstaged"
+  | "staged"
+  | "noChanges"
   | "collapseDiff"
   | "expandDiff";
 
@@ -157,6 +162,11 @@ const zh: Record<MessageKey, string> = {
   reviewEmptyHint: "DSH 写入文件后会显示在这里",
   reviewFiles: "个文件",
   editedFiles: "已编辑 {count} 个文件",
+  sessionEdits: "会话编辑",
+  uncommitted: "未提交",
+  unstaged: "未暂存",
+  staged: "已暂存",
+  noChanges: "没有变更",
   collapseDiff: "折叠 diff",
   expandDiff: "展开 diff",
 };
@@ -238,6 +248,11 @@ const en: Record<MessageKey, string> = {
   reviewEmptyHint: "DSH file writes will appear here",
   reviewFiles: "files",
   editedFiles: "{count} files edited",
+  sessionEdits: "Session edits",
+  uncommitted: "Uncommitted",
+  unstaged: "Unstaged",
+  staged: "Staged",
+  noChanges: "No changes",
   collapseDiff: "Collapse diff",
   expandDiff: "Expand diff",
 };

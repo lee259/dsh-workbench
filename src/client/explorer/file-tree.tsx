@@ -18,12 +18,14 @@ import {
   Menu,
   writeClipboard,
 } from "@deepseek-ai/dsh-client-ui-primitives";
-import { normalizePath, type FileOpenMode, type ReviewChange, type WorkspaceTree as WorkspaceTreeData } from "../../shared/types.js";
+import { normalizePath, type FileOpenMode, type ReviewScope, type WorkspaceTree as WorkspaceTreeData } from "../../shared/types.js";
 import { FileTypeIcon, Icon, TreeChangeIcon, TreeChevron } from "../chrome/icons.js";
 import { startResizeDrag } from "../chrome/resize-drag.js";
 import type { TabOpenKind } from "../chrome/tab-model.js";
 import { WorkbenchTooltip } from "../chrome/tooltip.js";
 import { fetchReview } from "../review/review-data.js";
+import { fetchGitDiff } from "../review/git-diff-data.js";
+import { reviewTreePath, scopedReviewChanges, type ScopedReviewChange } from "../review/review-scope.js";
 import { highlightSegments, moveSearchFocus, treeSearchHits } from "./search-model.js";
 import { fetchWorkspaceTree } from "../store.js";
 import { useWorkbenchServices } from "../workbench/runtime.js";
@@ -86,6 +88,8 @@ export function WorkspaceTreePanel({
     revealPath = "",
     openMode = "view",
     sessionId,
+    reviewRevision,
+    reviewScope = "session",
     commandsRef,
     onFileOpen,
   }: {
@@ -94,6 +98,8 @@ export function WorkspaceTreePanel({
     revealPath?: string;
     openMode?: FileOpenMode;
     sessionId?: string;
+    reviewRevision?: number;
+    reviewScope?: ReviewScope;
     commandsRef?: { current: TreeCommands | null };
     onFileOpen?(path: string, mode: FileOpenMode, kind: TabOpenKind): void;
   }) {
@@ -109,7 +115,7 @@ export function WorkspaceTreePanel({
     const [focusedPath, setFocusedPath] = useState(fileState.active);
     const [locatePath, setLocatePath] = useState("");
     const [pendingReveal, setPendingReveal] = useState("");
-    const [reviewChanges, setReviewChanges] = useState<ReviewChange[]>([]);
+    const [reviewChanges, setReviewChanges] = useState<ScopedReviewChange[]>([]);
     const lastReveal = useRef(0);
     const [contextMenu, setContextMenu] = useState<{ path: string; x: number; y: number } | null>(null);
     const listRef = useRef<HTMLDivElement | null>(null);
@@ -161,7 +167,7 @@ export function WorkspaceTreePanel({
       closeContextMenu();
     };
 
-    const reviewByPath = new Map(reviewChanges.map((change) => [normalizePath(change.path), change]));
+    const reviewByPath = new Map(reviewChanges.map((change) => [reviewTreePath(change.path, tree.files), change]));
     const changedPaths = new Set(reviewByPath.keys());
     const displayTree = openMode === "diff"
       ? {
@@ -192,19 +198,21 @@ export function WorkspaceTreePanel({
         return undefined;
       }
       let cancelled = false;
-      void fetchReview(sessionId)
-        .then((payload) => {
+      const changes = reviewScope === "session"
+        ? fetchReview(sessionId).then((payload) => scopedReviewChanges(reviewScope, payload.changes ?? [], []))
+        : fetchGitDiff(reviewScope).then((files) => scopedReviewChanges(reviewScope, [], files));
+      void changes
+        .then((next) => {
           if (!cancelled) {
-            const changes = payload.changes ?? [];
-            setReviewChanges(changes);
-            if (openMode === "diff" && changes[0] && !fileState.active) setFocusedPath(changes[0].path);
+            setReviewChanges(next);
+            if (openMode === "diff" && next[0] && !fileState.active) setFocusedPath(next[0].path);
           }
         })
         .catch(() => {
           if (!cancelled) setReviewChanges([]);
         });
       return () => { cancelled = true; };
-    }, [openMode, sessionId]);
+    }, [openMode, reviewRevision, reviewScope, sessionId]);
 
     useEffect(() => {
       if (openMode !== "diff" || reviewChanges.length === 0) return;

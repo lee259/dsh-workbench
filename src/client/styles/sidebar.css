@@ -67,6 +67,12 @@ html.dsh-wb-is-resizing .dsh-wb-tree-resize[data-resizing] {
   box-shadow: inset 2px 0 var(--dsh-wb-focus-ring);
 }
 
+.dsh-wb-resize-handle:hover,
+.dsh-wb-tree-resize:hover {
+  background: var(--dsh-wb-resize-fill);
+  box-shadow: inset 2px 0 var(--dsh-wb-focus-ring);
+}
+
 .dsh-wb-resize-handle:focus-visible {
   outline: 2px solid var(--dsw-alias-state-business-primary);
   outline-offset: -2px;

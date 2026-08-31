@@ -8,8 +8,13 @@ export type DiffRow = {
 
 const MAX_LCS_CELLS = 800_000;
 
+function sourceLines(content: string): string[] {
+  if (content.length === 0) return [];
+  return content.endsWith("\n") ? content.slice(0, -1).split("\n") : content.split("\n");
+}
+
 export function previewLines(content: string): DiffRow[] {
-  return content.split("\n").map((text, index) => ({
+  return sourceLines(content).map((text, index) => ({
     text,
     line: index + 1,
     kind: "same",
@@ -18,7 +23,7 @@ export function previewLines(content: string): DiffRow[] {
 
 export function countDiffLines(before: string | null, after: string): { additions: number; deletions: number } {
   if (before == null || before === "") {
-    return { additions: after.length === 0 ? 0 : after.split("\n").length, deletions: 0 };
+    return { additions: sourceLines(after).length, deletions: 0 };
   }
   const rows = diffLines(before, after);
   return {
@@ -28,8 +33,8 @@ export function countDiffLines(before: string | null, after: string): { addition
 }
 
 export function diffLines(before: string, after: string): DiffRow[] {
-  const previous = before.split("\n");
-  const current = after.split("\n");
+  const previous = sourceLines(before);
+  const current = sourceLines(after);
   if (previous.length * current.length > MAX_LCS_CELLS) {
     return greedyDiff(previous, current);
   }

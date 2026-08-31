@@ -7,6 +7,7 @@ import { writeClipboard } from "@deepseek-ai/dsh-client-ui-primitives";
 import { fetchReview } from "../review/review-data.js";
 import { useWorkbenchServices } from "../workbench/runtime.js";
 import { CodeView } from "./code-view.js";
+import { GitDiffPanel, type ReviewScope } from "../review/git-diff-panel.js";
 
 type DiffEntry = { change: ReviewChange; payload: FilePayload | null; error: boolean };
 
@@ -22,7 +23,7 @@ export type DiffPanelCommands = {
   reveal(path: string): void;
 };
 
-export const DiffPanel = forwardRef<DiffPanelCommands, { sessionId?: string; revealPath?: string }>(function DiffPanel({ sessionId, revealPath: requestedRevealPath }, ref) {
+export const DiffPanel = forwardRef<DiffPanelCommands, { sessionId?: string; revealPath?: string; revision?: number; scope?: ReviewScope; onCountsChange?(counts: { additions: number; deletions: number }): void }>(function DiffPanel({ sessionId, revealPath: requestedRevealPath, revision, scope = "session", onCountsChange }, ref) {
   const { i18n } = useWorkbenchServices();
   const t = i18n.t;
   const [entries, setEntries] = useState<DiffEntry[]>([]);
@@ -67,7 +68,7 @@ export const DiffPanel = forwardRef<DiffPanelCommands, { sessionId?: string; rev
       .catch(() => { if (!cancelled) setEntries([]); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [sessionId]);
+  }, [revision, sessionId]);
 
   useEffect(() => {
     const onReveal = (event: Event) => {
@@ -89,6 +90,7 @@ export const DiffPanel = forwardRef<DiffPanelCommands, { sessionId?: string; rev
     scrollToDiff(target.change.path);
   }, [entries, revealPath]);
 
+  if (scope !== "session") return <GitDiffPanel scope={scope} revision={revision ?? 0} onCountsChange={onCountsChange} />;
   if (loading) return <div className="dsh-wb-empty"><strong>{t("reading")}</strong></div>;
   if (entries.length === 0) return <div className="dsh-wb-empty"><strong>{t("reviewEmpty")}</strong></div>;
   const toggleCollapsed = (path: string) => setCollapsed((current) => {

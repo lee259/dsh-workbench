@@ -4,12 +4,13 @@ import { resolve } from "node:path";
 import { reviewCountsFor, toFilePayload } from "./file-preview.js";
 import { sendJson } from "./http.js";
 import { createPathIdentity } from "./path-identity.js";
-import { ACTIVITY_API_PATH, CONTENT_SEARCH_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH, MAX_IMAGE_PREVIEW_BYTES, normalizePath, REVIEW_API_PATH, WORKSPACE_API_PATH, type FileOpenMode } from "../shared/types.js";
+import { ACTIVITY_API_PATH, CONTENT_SEARCH_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH, GIT_DIFF_API_PATH, MAX_IMAGE_PREVIEW_BYTES, normalizePath, REVIEW_API_PATH, WORKSPACE_API_PATH, type FileOpenMode } from "../shared/types.js";
 import { createChangePump } from "./change-pump.js";
 import { createWorkspace, type Workspace } from "./workspace.js";
 import { startWorkspaceWatch, type WorkspaceWatchHandle } from "./workspace-watch.js";
 import { WriteHistory, type SessionEvent } from "./write-history.js";
 import { ActivityStore } from "./activity.js";
+import { gitDiffFiles, type GitDiffScope } from "./git-diff.js";
 
 type WebServer = {
   register(route: {
@@ -222,6 +223,17 @@ export function apply(ctx: HostContext): void {
       } catch {
         sendJson(res, 404, { error: "file_not_found" });
       }
+    },
+  });
+
+  ctx.webServer.register({
+    kind: "exact",
+    path: GIT_DIFF_API_PATH,
+    handler: async (req, res) => {
+      const scope = new URL(req.url ?? "/", "http://dsh.local").searchParams.get("scope");
+      if (scope !== "uncommitted" && scope !== "unstaged" && scope !== "staged") return sendJson(res, 400, { error: "missing_path" });
+      try { sendJson(res, 200, { files: await gitDiffFiles(root, scope as GitDiffScope) }); }
+      catch { sendJson(res, 200, { files: [] }); }
     },
   });
 

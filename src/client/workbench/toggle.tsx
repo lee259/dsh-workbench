@@ -36,7 +36,7 @@ export function WorkbenchToggle() {
     window.addEventListener("dsh-wb-session-change", onSessionChange);
     window.addEventListener("dsh-wb-workspace-change", load);
     void load();
-    const stopWatch = followWorkspaceEvents(load);
+    const stopWatch = followWorkspaceEvents(load, undefined, load);
     return () => {
       active = false;
       window.removeEventListener("dsh-wb-session-change", onSessionChange);

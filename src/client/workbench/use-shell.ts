@@ -14,6 +14,7 @@ import { fetchReview } from "../review/review-data.js";
 import { lastWorkbenchSession, sessionIdFromEvent, workbenchShouldReset } from "../workspace-identity.js";
 import { useWorkbenchServices } from "./runtime.js";
 import { useWorkbenchTabs } from "./use-workbench-tabs.js";
+import type { ReviewScope } from "../review/git-diff-panel.js";
 
 function savedSidebarWidth(): number {
   try { return readSidebarWidth(window.localStorage); } catch { return DEFAULT_SIDEBAR_WIDTH; }
@@ -41,6 +42,8 @@ export function useWorkbenchShell() {
     const [diffMode, setDiffMode] = useState(false);
     const [reviewTabOpen, setReviewTabOpen] = useState(false);
     const [reviewChanges, setReviewChanges] = useState<ReviewChange[]>([]);
+    const [reviewRevision, setReviewRevision] = useState(0);
+    const [reviewScope, setReviewScope] = useState<ReviewScope>("session");
     const [reviewRevealPath, setReviewRevealPath] = useState("");
     const [treeVisible, setTreeVisible] = useState(savedTreeVisible);
     const [treeWidth, setTreeWidth] = useState(savedTreeWidth);
@@ -158,7 +161,7 @@ export function useWorkbenchShell() {
           if (!cancelled && requestId === sessionModeRequestRef.current) setReviewChanges([]);
         });
       return () => { cancelled = true; };
-    }, [sessionId]);
+    }, [sessionId, reviewRevision]);
 
     const setTreeOpen = (next: boolean) => {
       setTreeVisible(next);
@@ -179,7 +182,9 @@ export function useWorkbenchShell() {
         let target = reviewChanges.find((change) => normalizePath(change.path) === path);
         if (!target && sessionId) {
           try {
-            target = (await fetchReview(sessionId)).changes?.find((change) => normalizePath(change.path) === path);
+            const payload = await fetchReview(sessionId);
+            setReviewChanges(payload.changes ?? []);
+            target = payload.changes?.find((change) => normalizePath(change.path) === path);
           } catch {
             target = undefined;
           }
@@ -247,9 +252,11 @@ export function useWorkbenchShell() {
     }, [state.visible, state.active, state.open, searchOpen, store, treeVisible]);
 
     useEffect(() => followWorkspaceEvents(() => {
+      setReviewRevision((revision) => revision + 1);
       store.noteDiskChange();
       if (store.getSnapshot().active) void store.reload();
     }, undefined, ({ path }) => {
+      setReviewRevision((revision) => revision + 1);
       window.dispatchEvent(new CustomEvent("dsh-wb-review-request", { detail: path }));
     }), [store]);
 
@@ -292,5 +299,5 @@ export function useWorkbenchShell() {
     const handleTreeFileOpen = useCallback((path: string, mode: FileOpenMode, kind: TabOpenKind) => {
       openTreeFile(path, mode, undefined, kind);
     }, [openTreeFile]);
-    return { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, setSearchMode, diffMode, setDiffMode, reviewTabOpen, openReviewTab, closeReviewTab, reviewRevealPath, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab: createFileTab, activateEmptyFileTab, closeEmptyFileTab, bindEmptyFilePath, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey };
+    return { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, setSearchMode, diffMode, setDiffMode, reviewTabOpen, openReviewTab, closeReviewTab, reviewChanges, reviewRevealPath, reviewRevision, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab: createFileTab, activateEmptyFileTab, closeEmptyFileTab, bindEmptyFilePath, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey };
 }

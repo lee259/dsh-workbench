@@ -117,9 +117,11 @@ export function ReviewPanel({ store, sessionId }: { store: FileStore; sessionId?
   useEffect(() => {
     void load(sessionId || undefined);
   }, [load, sessionId]);
-  useEffect(() => followWorkspaceEvents(() => {
-    void load(sessionId || undefined, true);
-  }), [load, sessionId]);
+  useEffect(() => followWorkspaceEvents(
+    () => { void load(sessionId || undefined, true); },
+    undefined,
+    () => { void load(sessionId || undefined, true); },
+  ), [load, sessionId]);
 
   const changes = data.changes ?? [];
   const totalAdditions = changes.reduce((total, change) => total + change.additions, 0);

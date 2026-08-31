@@ -394,7 +394,7 @@ test("workbench controls expose accurate accessibility state", async () => {
   const separator = findElement(ui.FileDrawer(), (node) => node.props?.role === "separator");
   expect(separator).toBeTruthy();
   expect(separator.props["aria-valuemin"]).toBe(520);
-  expect(separator.props["aria-valuemax"]).toBe(900);
+  expect(separator.props["aria-valuemax"]).toBe(1200);
   expect(separator.props["aria-valuenow"]).toBe(600);
 });
 
