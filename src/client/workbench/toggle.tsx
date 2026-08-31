@@ -1,7 +1,9 @@
 import { Icon } from "../chrome/icons.js";
 import { useWorkbenchServices } from "./runtime.js";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { REVIEW_API_PATH, type ReviewChange } from "../../shared/types.js";
+import type { GitFileDiff } from "../../shared/types.js";
+import { reviewDiffCounts } from "../../shared/review-diff.js";
+import { fetchReview } from "../review/review-data.js";
 import { followWorkspaceEvents } from "../workspace-events.js";
 import { lastWorkbenchSession, sessionIdFromEvent } from "../workspace-identity.js";
 import { WorkbenchTooltip } from "../chrome/tooltip.js";
@@ -10,7 +12,7 @@ export function WorkbenchToggle() {
   const { store, i18n } = useWorkbenchServices();
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   const t = i18n.t;
-  const [changes, setChanges] = useState<ReviewChange[]>([]);
+  const [files, setFiles] = useState<GitFileDiff[]>([]);
   useEffect(() => {
     let active = true;
     let requestId = 0;
@@ -18,15 +20,16 @@ export function WorkbenchToggle() {
     const load = async () => {
       const id = ++requestId;
       if (!sessionId) {
-        if (active) setChanges([]);
+        if (active) setFiles([]);
         return;
       }
       try {
-        const response = await fetch(`${REVIEW_API_PATH}?session=${encodeURIComponent(sessionId)}`);
-        const payload = await response.json() as { changes?: ReviewChange[] };
-        if (active && id === requestId) setChanges(payload.changes ?? []);
+        const payload = await fetchReview(sessionId);
+        if (active && id === requestId) {
+          setFiles(payload.files ?? []);
+        }
       } catch {
-        if (active && id === requestId) setChanges([]);
+        if (active && id === requestId) setFiles([]);
       }
     };
     const onSessionChange = (event: Event) => {
@@ -44,9 +47,8 @@ export function WorkbenchToggle() {
       stopWatch();
     };
   }, []);
-  const additions = changes.reduce((total, change) => total + change.additions, 0);
-  const deletions = changes.reduce((total, change) => total + change.deletions, 0);
-  const hasReview = changes.length > 0;
+  const { additions, deletions } = reviewDiffCounts(files);
+  const hasReview = files.length > 0;
   const label = state.visible ? t("hidePanel") : t("showPanel");
   return (
     <WorkbenchTooltip label={`${label} · ${t("shortcutHint")}`}>
@@ -66,7 +68,7 @@ export function WorkbenchToggle() {
       }}
     >
       <span className="dsh-wb-toggle-label">
-        {hasReview ? t("editedFiles", { count: changes.length }) : t("workbench")}
+        {hasReview ? t("editedFiles", { count: files.length }) : t("workbench")}
         {hasReview && (additions > 0 || deletions > 0) ? (
           <span className="dsh-wb-toggle-counts">
             {additions > 0 ? <b className="is-add">+{additions}</b> : null}

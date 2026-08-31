@@ -1,5 +1,6 @@
 import { WriteHistory } from "../src/host/write-history.js";
-import { completeSessionDiffs, reviewTreePath, scopedReviewChanges } from "../src/client/review/review-scope.js";
+import { reviewTreePath, scopedReviewChanges } from "../src/client/review/review-scope.js";
+import { completeSessionDiffs, reviewDiffCounts } from "../src/shared/review-diff.js";
 import { expect, test } from "vitest";
 
 test("review tree uses the active Git scope instead of session edits", () => {
@@ -23,6 +24,7 @@ test("complete session diff includes the worktree and history-only files", () =>
     { path: "committed.ts", before: "old", content: "new", additions: 1, deletions: 1 },
   ];
   expect(completeSessionDiffs(worktree, history).map((file) => file.path)).toEqual(["current.ts", "committed.ts"]);
+  expect(reviewDiffCounts(completeSessionDiffs(worktree, history))).toEqual({ additions: 2, deletions: 2 });
 });
 
 test("review returns captured write changes with line counts", () => {

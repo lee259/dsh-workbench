@@ -27,10 +27,8 @@ function previewMeta(state: FileState, t: LocaleStore["t"]): string {
 }
 
 export function WorkbenchDrawer() {
-  const { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, diffMode, setDiffMode, reviewTabOpen, openReviewTab, closeReviewTab, reviewChanges, reviewRevealPath, reviewRevision, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab, activateEmptyFileTab, closeEmptyFileTab, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
+  const { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, diffMode, setDiffMode, reviewTabOpen, openReviewTab, closeReviewTab, reviewRevealPath, reviewRevision, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab, activateEmptyFileTab, closeEmptyFileTab, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
   const [gitCounts, setGitCounts] = useState({ additions: 0, deletions: 0 });
-  const sessionCounts = reviewChanges.reduce((counts, change) => ({ additions: counts.additions + change.additions, deletions: counts.deletions + change.deletions }), { additions: 0, deletions: 0 });
-  const reviewCounts = reviewScope === "session" ? sessionCounts : gitCounts;
 
   if (!mounted) return null;
 
@@ -85,7 +83,7 @@ export function WorkbenchDrawer() {
           setPathCopied={setPathCopied}
           reviewScope={reviewScope}
           setReviewScope={setReviewScope}
-          reviewCounts={reviewCounts}
+          reviewCounts={gitCounts}
         />
         <WorkbenchBody
           key={workspaceKey}

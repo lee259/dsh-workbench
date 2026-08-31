@@ -1,10 +1,12 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { resolve } from "node:path";
-import { reviewCountsFor, toFilePayload } from "./file-preview.js";
+import { toFilePayload } from "./file-preview.js";
 import { sendJson } from "./http.js";
 import { createPathIdentity } from "./path-identity.js";
-import { ACTIVITY_API_PATH, CONTENT_SEARCH_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH, GIT_DIFF_API_PATH, MAX_IMAGE_PREVIEW_BYTES, normalizePath, REVIEW_API_PATH, WORKSPACE_API_PATH, type FileOpenMode } from "../shared/types.js";
+import { ACTIVITY_API_PATH, CONTENT_SEARCH_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH, GIT_DIFF_API_PATH, MAX_IMAGE_PREVIEW_BYTES, normalizePath, REVIEW_API_PATH, WORKSPACE_API_PATH, type FileOpenMode, type GitFileDiff } from "../shared/types.js";
+import { completeSessionDiffs, reviewDiffCounts } from "../shared/review-diff.js";
+import { countDiffLines } from "../shared/line-diff.js";
 import { createChangePump } from "./change-pump.js";
 import { createWorkspace, type Workspace } from "./workspace.js";
 import { startWorkspaceWatch, type WorkspaceWatchHandle } from "./workspace-watch.js";
@@ -147,15 +149,24 @@ export function apply(ctx: HostContext): void {
       const sessions = history.reviewSessions(root);
       const selectedSession = sessionId ?? sessions.at(-1) ?? null;
       const changes = [];
+      const sessionFiles: GitFileDiff[] = [];
       for (const change of history.getReview(selectedSession ?? undefined, root)) {
         const disk = await workspace.read(change.path);
         if (!disk.ok) {
           changes.push(change);
+          const revision = history.get(change.path);
+          if (revision?.source === "dsh-write") sessionFiles.push({ path: change.path, before: revision.before, content: revision.content, ...countDiffLines(revision.before, revision.content) });
           continue;
         }
-        changes.push({ ...change, ...reviewCountsFor(disk, history.get(disk.path)) });
+        const payload = toFilePayload(disk, history.get(disk.path), "diff");
+        const counts = countDiffLines(payload.before, payload.content);
+        changes.push({ ...change, ...counts });
+        sessionFiles.push({ path: disk.path, before: payload.before, content: payload.content, ...counts });
       }
-      sendJson(res, 200, { changes, sessions, sessionId: selectedSession });
+      let worktreeFiles: GitFileDiff[] = [];
+      try { worktreeFiles = await gitDiffFiles(root, "uncommitted"); } catch { /* Git is optional */ }
+      const files = completeSessionDiffs(worktreeFiles, sessionFiles);
+      sendJson(res, 200, { changes, files, counts: reviewDiffCounts(files), sessions, sessionId: selectedSession });
     },
   });
 

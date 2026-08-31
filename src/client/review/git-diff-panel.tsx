@@ -5,7 +5,7 @@ import { CodeView } from "../preview/code-view.js";
 import type { FileState } from "../store.js";
 import { useWorkbenchServices } from "../workbench/runtime.js";
 import { fetchGitDiff } from "./git-diff-data.js";
-import { completeSessionDiffs } from "./review-scope.js";
+import { reviewDiffCounts } from "../../shared/review-diff.js";
 
 export type { ReviewScope } from "../../shared/types.js";
 
@@ -25,7 +25,7 @@ function diffElementId(path: string): string {
   return `dsh-wb-diff-${encodeURIComponent(normalizePath(path))}`;
 }
 
-export function GitDiffPanel({ scope, revision, historyFiles = [], onCountsChange }: { scope: Exclude<ReviewScope, "session">; revision: number; historyFiles?: GitFileDiff[]; onCountsChange?(counts: { additions: number; deletions: number }): void }) {
+export function GitDiffPanel({ scope, revision, files: suppliedFiles, onCountsChange }: { scope: Exclude<ReviewScope, "session">; revision: number; files?: GitFileDiff[]; onCountsChange?(counts: { additions: number; deletions: number }): void }) {
   const { i18n } = useWorkbenchServices();
   const [worktreeFiles, setWorktreeFiles] = useState<GitFileDiff[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +35,7 @@ export function GitDiffPanel({ scope, revision, historyFiles = [], onCountsChang
   const panelRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     let cancelled = false;
+    if (suppliedFiles) return () => {};
     setLoading(true);
     setCollapsed(new Set());
     void fetchGitDiff(scope)
@@ -42,8 +43,8 @@ export function GitDiffPanel({ scope, revision, historyFiles = [], onCountsChang
       .catch(() => { if (!cancelled) setWorktreeFiles([]); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [revision, scope]);
-  const files = completeSessionDiffs(worktreeFiles, historyFiles);
+  }, [revision, scope, suppliedFiles]);
+  const files = suppliedFiles ?? worktreeFiles;
   useEffect(() => {
     const onReveal = (event: Event) => {
       const path = event instanceof CustomEvent && typeof event.detail === "string" ? event.detail : "";
@@ -59,12 +60,12 @@ export function GitDiffPanel({ scope, revision, historyFiles = [], onCountsChang
     if (target && panel) panel.scrollTo({ top: target.offsetTop, behavior: "smooth" });
   }, [files, revealPath]);
   useEffect(() => {
-    const counts = files.reduce((total, file) => ({ additions: total.additions + file.additions, deletions: total.deletions + file.deletions }), { additions: 0, deletions: 0 });
+    const counts = reviewDiffCounts(files);
     if (counts.additions === lastCounts.current.additions && counts.deletions === lastCounts.current.deletions) return;
     lastCounts.current = counts;
     onCountsChange?.(counts);
   }, [files, onCountsChange]);
-  if (loading) return <div className="dsh-wb-empty"><strong>{i18n.t("reading")}</strong></div>;
+  if (!suppliedFiles && loading) return <div className="dsh-wb-empty"><strong>{i18n.t("reading")}</strong></div>;
   if (files.length === 0) return <div className="dsh-wb-empty"><strong>{i18n.t("noChanges")}</strong></div>;
   const toggleCollapsed = (path: string) => setCollapsed((current) => {
     const next = new Set(current);

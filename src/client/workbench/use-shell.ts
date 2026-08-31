@@ -15,6 +15,7 @@ import { lastWorkbenchSession, sessionIdFromEvent, workbenchShouldReset } from "
 import { useWorkbenchServices } from "./runtime.js";
 import { useWorkbenchTabs } from "./use-workbench-tabs.js";
 import type { ReviewScope } from "../review/git-diff-panel.js";
+import { createReviewRevealPump } from "./review-reveal-pump.js";
 
 function savedSidebarWidth(): number {
   try { return readSidebarWidth(window.localStorage); } catch { return DEFAULT_SIDEBAR_WIDTH; }
@@ -59,6 +60,7 @@ export function useWorkbenchShell() {
     const rootRef = useRef("");
     const sessionRef = useRef("");
     const reviewRequestRef = useRef(0);
+    const reviewRevealPumpRef = useRef(createReviewRevealPump());
     const workspaceKeyRef = useRef(workspaceKey);
     const searchRestoreRef = useRef<HTMLElement | null>(null);
     const sessionModeRequestRef = useRef(0);
@@ -190,15 +192,18 @@ export function useWorkbenchShell() {
           }
         }
         if (requestId !== reviewRequestRef.current) return;
-        if (target) setReviewRevealPath(target.path);
-        setTreeOpen(true);
-        setReviewTabOpen(true);
-        setDiffMode(true);
-        if (!state.visible) store.show();
+        const shouldFocusReview = !state.visible || !diffMode;
+        if (target && shouldFocusReview) setReviewRevealPath(target.path);
+        if (shouldFocusReview) {
+          setTreeOpen(true);
+          setReviewTabOpen(true);
+          setDiffMode(true);
+          if (!state.visible) store.show();
+        }
       };
       window.addEventListener("dsh-wb-review-request", onReviewRequest);
       return () => window.removeEventListener("dsh-wb-review-request", onReviewRequest);
-    }, [reviewChanges, sessionId, state.visible, store]);
+    }, [diffMode, reviewChanges, sessionId, state.visible, store]);
 
     useEffect(() => {
       const onFileRequest = (event: Event) => {
@@ -257,8 +262,12 @@ export function useWorkbenchShell() {
       if (store.getSnapshot().active) void store.reload();
     }, undefined, ({ path }) => {
       setReviewRevision((revision) => revision + 1);
-      window.dispatchEvent(new CustomEvent("dsh-wb-review-request", { detail: path }));
+      reviewRevealPumpRef.current.schedule(path, (latestPath) => {
+        window.dispatchEvent(new CustomEvent("dsh-wb-review-request", { detail: latestPath }));
+      });
     }), [store]);
+
+    useEffect(() => () => reviewRevealPumpRef.current.cancel(), []);
 
     useEffect(() => {
       if (state.visible) { setMounted(true); setClosing(false); return; }

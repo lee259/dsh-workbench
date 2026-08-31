@@ -1,7 +1,9 @@
-import { REVIEW_API_PATH, type ReviewChange } from "../../shared/types.js";
+import { REVIEW_API_PATH, type GitFileDiff, type ReviewChange } from "../../shared/types.js";
 
 export type ReviewResponse = {
   changes?: ReviewChange[];
+  files?: GitFileDiff[];
+  counts?: { additions: number; deletions: number };
   sessionId?: string | null;
 };
 

@@ -199,7 +199,7 @@ export function WorkspaceTreePanel({
       }
       let cancelled = false;
       const changes = reviewScope === "session"
-        ? fetchReview(sessionId).then((payload) => scopedReviewChanges(reviewScope, payload.changes ?? [], []))
+        ? fetchReview(sessionId).then((payload) => payload.files ?? [])
         : fetchGitDiff(reviewScope).then((files) => scopedReviewChanges(reviewScope, [], files));
       void changes
         .then((next) => {
