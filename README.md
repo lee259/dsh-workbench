@@ -11,9 +11,10 @@ Codex-style workspace and Git review for [DeepSeek Harness](https://deepseek-har
 
 ## Highlights
 
-- **Review with the right baseline** — switch between session edits, uncommitted, unstaged, and staged changes; file lists and `+/−` counts stay in sync.
+- **Review with the right baseline** — switch between session edits, uncommitted, unstaged, and staged changes; the diff and file tree share one file and `+/−` source.
 - **Read and diff beside the conversation** — open files from agent tool calls, the workspace tree, or search without losing your place.
-- **Follow agent work** — new edits refresh the review and reveal the affected file without repeatedly jumping through a long list.
+- **Stay in your current tab** — new edits update only the affected review file; a direct conversation-file click opens and reveals its diff.
+- **Close the conversation loop** — edit workspace files safely, copy paths, and reference a selected diff range in the active Harness draft.
 
 ![DSH Workbench in DeepSeek Harness Web](./assets/dsh-workbench-demo.png)
 
@@ -25,11 +26,11 @@ write/edit → captured DSH diff
 ## Why it is useful
 
 - Keep the conversation and the file you are inspecting visible together.
-- See real DSH write/edit changes, with the captured before/after content.
-- Read files as source. Diffs come from captured DSH writes, not a Git `HEAD`.
+- See real DSH write/edit changes, with captured before/after content; compare Git changes as uncommitted, unstaged, or staged when needed.
+- Edit a workspace file with an optimistic external-change check before saving.
 - Open several files, switch tabs, copy paths, and resize the panel. A tree or Quick Open click previews; double-click pins. Conversation writes open a kept tab.
 - Shortcuts: `⌥⌘B` toggle, `⌘⇧E` hide or show the file pane, `⌘P` open file, tree search to locate without opening, `⌘F` / `⌘L` find or jump, `⌘W` close, `⌘1`–`⌘9` switch tabs. Drag or right-click to insert a path.
-- Review lists captured writes with `+/−`.
+- Review scopes list session edits or Git changes with matching `+/−`; the toolbar also shows Git branch/status and session tool activity.
 - UI follows the DSH language setting.
 
 ## Install
@@ -107,11 +108,13 @@ Inspect, navigate, and review what the agent touched. Diffs stay on captured DSH
 - Workspace file tree with breadcrumbs, keyboard navigation, and path insert
 - Syntax highlighting, folding, and live refresh when the workspace changes on disk
 - Image previews and rendered Markdown, including relative images
-- Change review: captured DSH writes by session, with `+/−` counts
+- Change review: session edits plus uncommitted, unstaged, and staged Git scopes, with shared `+/−` counts
 - Short operation summaries for each captured write
-- Follow the agent: open and reveal the latest DSH-written file
+- Incremental review updates that preserve the active tab and keep large review panels responsive
 - Workspace content search (`⌘/Ctrl+⇧+F`) with line-focused results
 - Reference files, folders, and selected preview lines in the composer
+- Editable workspace previews with external-change protection
+- Git branch/status and session tool-activity metadata in the review toolbar
 
 ### Next
 
@@ -119,21 +122,17 @@ The target is a Codex-like development experience inside DeepSeek Harness: reuse
 workspace interactions where they help, while keeping DSH-native write capture and
 session review as the workbench's center of gravity.
 
-1. Add a real editor mode with draft state, save, conflict detection, and a clear return
-   path to the agent conversation.
-2. Add the surrounding development loop in small slices: terminal, Git worktree/status,
-   and background task or sub-agent visibility.
-3. Tighten the conversation loop: open/reveal targets, review-to-conversation feedback,
-   and session-scoped workspace state.
+1. Add terminal and background-task surfaces in small, DSH-native slices.
+2. Tighten review-to-conversation feedback, including inline guidance on diffs.
+3. Continue refining session-scoped workspace state and review performance.
 
 The existing DSH event capture, `meta.diffs`, session review, operation summaries, and
-agent-follow behavior remain the differentiating foundation.
+incremental review updates remain the differentiating foundation.
 
 ### Near-term sequence
 
-- Editable preview with save and external-change conflict handling
-- Git worktree association and status, without inventing a Git `HEAD` diff
 - Terminal and background task surfaces
+- Inline review comments and richer review-to-conversation feedback
 
 ### Exploring
 
