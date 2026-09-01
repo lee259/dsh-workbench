@@ -17,7 +17,8 @@ type WorkbenchContext = {
 
 export type ConversationReferences = {
   bind(ctx: WorkbenchContext): void;
-  addPath(path: string, directory?: boolean): boolean;
+  addPath(path: string, directory?: boolean, sessionId?: string): boolean;
+  appendText(text: string, sessionId?: string): boolean;
 };
 
 /**
@@ -28,26 +29,31 @@ export type ConversationReferences = {
 export function createConversationReferences(): ConversationReferences {
   let ctx: WorkbenchContext | undefined;
 
+  const appendText = (text: string, targetSessionId = ""): boolean => {
+    if (!ctx || !text.trim()) return false;
+    try {
+      const sessionId = targetSessionId || currentSessionId(ctx.sessions?.list?.getSnapshot()) || lastWorkbenchSession();
+      const scope = sessionId ? ctx.sessions?.scope?.(sessionId) : undefined;
+      const conversation = ctx.get("conversation") as Conversation | undefined;
+      if (!scope || !conversation) return false;
+      const input = conversation.input.for(scope);
+      const draft = input.state.getSnapshot().draft;
+      input.setDraft(draft.trim() ? `${draft} ${text}` : text);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   return {
     bind(next) {
       ctx = next;
     },
-    addPath(path, directory = false) {
+    addPath(path, directory = false, sessionId) {
       const trimmed = path.trim();
       const value = `${trimmed}${directory && !trimmed.endsWith("/") ? "/" : ""}`;
-      if (!ctx || !value) return false;
-      try {
-        const sessionId = currentSessionId(ctx.sessions?.list?.getSnapshot()) || lastWorkbenchSession();
-        const scope = sessionId ? ctx.sessions?.scope?.(sessionId) : undefined;
-        const conversation = ctx.get("conversation") as Conversation | undefined;
-        if (!scope || !conversation) return false;
-        const input = conversation.input.for(scope);
-        const draft = input.state.getSnapshot().draft;
-        input.setDraft(draft.trim() ? `${draft} @${value}` : `@${value}`);
-        return true;
-      } catch {
-        return false;
-      }
+      return appendText(`@${value}`, sessionId);
     },
+    appendText,
   };
 }

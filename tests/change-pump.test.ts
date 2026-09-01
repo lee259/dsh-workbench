@@ -30,3 +30,17 @@ test("change pump debounces notifies and ignores skipped paths", () => {
   timers[0]();
   expect(seen).toEqual(["change"]);
 });
+
+test("change pump keeps the changed paths in one debounced update", () => {
+  const timers = [];
+  const pump = createChangePump({
+    schedule(fn) { timers.push(fn); return timers.length; },
+    cancel() { timers.pop(); },
+  });
+  const seen: string[][] = [];
+  pump.subscribe((paths) => seen.push(paths));
+  pump.notify("src/a.ts");
+  pump.notify("src/b.ts");
+  timers[0]();
+  expect(seen).toEqual([["src/a.ts", "src/b.ts"]]);
+});

@@ -4,6 +4,9 @@
   --dsh-wb-button-fill: transparent;
   --dsh-wb-button-hover-fill: var(--dsw-alias-interactive-bg-hover-solid);
   --dsh-wb-field-fill: var(--dsw-alias-interactive-bg-hover-solid);
+  --dsh-wb-floating-surface-fill: var(--dsw-alias-bg-layer-2);
+  --dsh-wb-floating-surface-hover-fill: var(--dsw-alias-interactive-bg-hover-solid);
+  --dsh-wb-floating-surface-hover-border: var(--dsw-alias-button-ghost-active-border);
   --dsh-wb-button-active-fill: var(--dsw-alias-button-ghost-active-fill);
   --dsh-wb-button-active-border: var(--dsw-alias-button-ghost-active-border);
   --dsh-wb-button-label: var(--dsw-alias-label-secondary);

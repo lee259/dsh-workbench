@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.12.0 - 2026-09-01
+
+### Features
+
+- Add in-diff selected-code references that insert the chosen file range into the active Harness conversation.
+- Allow safe workspace-file editing from the workbench, with an optimistic disk-content check before saving.
+- Show session tool activity state and Git branch/status metadata in the review toolbar.
+
+### Fixes
+
+- Update only the changed review file after writes or workspace events, keeping unaffected diff editors mounted and responsive in large reviews.
+- Keep review updates scoped to the active tab; direct conversation-file clicks still open and reveal the requested diff.
+- Keep the session-review count aligned with the workbench toggle, make review-file reveal use the scroll container's coordinates, and prevent scope switching from unmounting the workbench.
+
 ## 0.11.4 - 2026-08-31
 
 ### Features

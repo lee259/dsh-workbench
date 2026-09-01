@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { countDiffLines } from "../shared/line-diff.js";
-import type { GitFileDiff } from "../shared/types.js";
+import type { GitFileDiff, GitStatus } from "../shared/types.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -58,4 +58,35 @@ export async function gitDiffFiles(root: string, scope: GitDiffScope): Promise<G
     return { path, before: null, content, ...countDiffLines(null, content) };
   }));
   return [...files, ...additions];
+}
+
+export async function gitDiffFile(root: string, scope: GitDiffScope, path: string): Promise<GitFileDiff | null> {
+  const diffArgs = scope === "staged"
+    ? ["diff", "--cached", "--name-only", "-z", "--", path]
+    : scope === "uncommitted"
+      ? ["diff", "HEAD", "--name-only", "-z", "--", path]
+      : ["diff", "--name-only", "-z", "--", path];
+  const [tracked] = await gitPaths(root, diffArgs);
+  if (tracked) {
+    const baseline = scope === "unstaged" ? ":" : "HEAD";
+    const [before, content] = await Promise.all([
+      gitFile(root, baseline, tracked),
+      scope === "staged" ? gitFile(root, ":", tracked).then((file) => file ?? "") : diskFile(root, tracked),
+    ]);
+    return { path: tracked, before, content, ...countDiffLines(before, content) };
+  }
+  if (scope === "staged") return null;
+  const [untracked] = await gitPaths(root, ["ls-files", "--others", "--exclude-standard", "-z", "--", path]);
+  if (!untracked) return null;
+  const content = await diskFile(root, untracked);
+  return { path: untracked, before: null, content, ...countDiffLines(null, content) };
+}
+
+export async function gitStatus(root: string): Promise<GitStatus> {
+  const [head = "", ...entries] = (await runGit(root, ["status", "--porcelain=v1", "-b"])).split("\n").filter(Boolean);
+  const branch = head.startsWith("## ") ? head.slice(3).split("...")[0] || "HEAD" : "HEAD";
+  return entries.reduce<GitStatus>((status, entry) => {
+    if (entry.startsWith("??")) return { ...status, untracked: status.untracked + 1 };
+    return { ...status, staged: status.staged + (entry[0] !== " " ? 1 : 0), unstaged: status.unstaged + (entry[1] !== " " ? 1 : 0) };
+  }, { branch, staged: 0, unstaged: 0, untracked: 0 });
 }

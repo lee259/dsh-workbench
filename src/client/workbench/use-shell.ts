@@ -15,7 +15,8 @@ import { lastWorkbenchSession, sessionIdFromEvent, workbenchShouldReset } from "
 import { useWorkbenchServices } from "./runtime.js";
 import { useWorkbenchTabs } from "./use-workbench-tabs.js";
 import type { ReviewScope } from "../review/git-diff-panel.js";
-import { createReviewRevealPump } from "./review-reveal-pump.js";
+import { reviewRefreshAction } from "./review-refresh.js";
+import { reviewRequest } from "./review-request.js";
 
 function savedSidebarWidth(): number {
   try { return readSidebarWidth(window.localStorage); } catch { return DEFAULT_SIDEBAR_WIDTH; }
@@ -44,8 +45,10 @@ export function useWorkbenchShell() {
     const [reviewTabOpen, setReviewTabOpen] = useState(false);
     const [reviewChanges, setReviewChanges] = useState<ReviewChange[]>([]);
     const [reviewRevision, setReviewRevision] = useState(0);
+    const [reviewUpdates, setReviewUpdates] = useState<Record<string, number>>({});
     const [reviewScope, setReviewScope] = useState<ReviewScope>("session");
     const [reviewRevealPath, setReviewRevealPath] = useState("");
+    const [reviewRevealVersion, setReviewRevealVersion] = useState(0);
     const [treeVisible, setTreeVisible] = useState(savedTreeVisible);
     const [treeWidth, setTreeWidth] = useState(savedTreeWidth);
     const [revealPath, setRevealPath] = useState("");
@@ -60,10 +63,11 @@ export function useWorkbenchShell() {
     const rootRef = useRef("");
     const sessionRef = useRef("");
     const reviewRequestRef = useRef(0);
-    const reviewRevealPumpRef = useRef(createReviewRevealPump());
     const workspaceKeyRef = useRef(workspaceKey);
     const searchRestoreRef = useRef<HTMLElement | null>(null);
     const sessionModeRequestRef = useRef(0);
+    const reviewSessionRef = useRef("");
+    const reviewUpdateVersionRef = useRef(0);
     const tabs = useWorkbenchTabs({
       activateFile: (path) => { void store.activate(path); },
       closeFile: (path, keepPanelOpen) => store.close(path, keepPanelOpen),
@@ -101,6 +105,7 @@ export function useWorkbenchShell() {
       setReviewTabOpen(false);
       setReviewChanges([]);
       setReviewRevealPath("");
+      setReviewUpdates({});
       tabs.reset();
       setRevealPath("");
       setSearchOpen(false);
@@ -119,6 +124,7 @@ export function useWorkbenchShell() {
       if (sessionId !== sessionRef.current) {
         sessionRef.current = sessionId;
         setSessionId(sessionId);
+        setReviewUpdates({});
       }
     }, [resetChrome]);
 
@@ -146,6 +152,8 @@ export function useWorkbenchShell() {
 
     useEffect(() => {
       if (!sessionId) return undefined;
+      const sessionChanged = sessionId !== reviewSessionRef.current;
+      reviewSessionRef.current = sessionId;
       const requestId = ++sessionModeRequestRef.current;
       let cancelled = false;
       void fetchReview(sessionId)
@@ -153,14 +161,21 @@ export function useWorkbenchShell() {
           if (cancelled || requestId !== sessionModeRequestRef.current) return;
           const hasDiff = (payload.changes?.length ?? 0) > 0;
           setReviewChanges(payload.changes ?? []);
-          setReviewTabOpen(hasDiff);
-          setDiffMode(hasDiff);
-          if (hasDiff) setTreeOpen(true);
+          const action = reviewRefreshAction(sessionChanged, hasDiff);
+          if (action) {
+            setReviewTabOpen(action.openReview);
+            setDiffMode(action.showDiff);
+            if (action.openTree) setTreeOpen(true);
+          }
         })
         .catch(() => {
-          if (!cancelled && requestId === sessionModeRequestRef.current) setDiffMode(false);
-          if (!cancelled && requestId === sessionModeRequestRef.current) setReviewTabOpen(false);
-          if (!cancelled && requestId === sessionModeRequestRef.current) setReviewChanges([]);
+          if (cancelled || requestId !== sessionModeRequestRef.current) return;
+          setReviewChanges([]);
+          const action = reviewRefreshAction(sessionChanged, false);
+          if (action) {
+            setDiffMode(action.showDiff);
+            setReviewTabOpen(action.openReview);
+          }
         });
       return () => { cancelled = true; };
     }, [sessionId, reviewRevision]);
@@ -179,21 +194,17 @@ export function useWorkbenchShell() {
     useEffect(() => {
       const onReviewRequest = async (event: Event) => {
         const requestId = ++reviewRequestRef.current;
-        const rawPath = event instanceof CustomEvent && typeof event.detail === "string" ? event.detail : "";
+        const request = reviewRequest(event instanceof CustomEvent ? event.detail : undefined);
+        const rawPath = request.path;
         const path = workspacePath(rawPath, rootRef.current);
-        let target = reviewChanges.find((change) => normalizePath(change.path) === path);
-        if (!target && sessionId) {
-          try {
-            const payload = await fetchReview(sessionId);
-            setReviewChanges(payload.changes ?? []);
-            target = payload.changes?.find((change) => normalizePath(change.path) === path);
-          } catch {
-            target = undefined;
-          }
-        }
         if (requestId !== reviewRequestRef.current) return;
+        if (!request.focus) return;
         const shouldFocusReview = !state.visible || !diffMode;
-        if (target && shouldFocusReview) setReviewRevealPath(target.path);
+        setReviewScope("session");
+        if (path) {
+          setReviewRevealPath(path);
+          setReviewRevealVersion((version) => version + 1);
+        }
         if (shouldFocusReview) {
           setTreeOpen(true);
           setReviewTabOpen(true);
@@ -203,7 +214,7 @@ export function useWorkbenchShell() {
       };
       window.addEventListener("dsh-wb-review-request", onReviewRequest);
       return () => window.removeEventListener("dsh-wb-review-request", onReviewRequest);
-    }, [diffMode, reviewChanges, sessionId, state.visible, store]);
+    }, [diffMode, state.visible, store]);
 
     useEffect(() => {
       const onFileRequest = (event: Event) => {
@@ -224,10 +235,6 @@ export function useWorkbenchShell() {
       const path = activeEmptyFileTab ? emptyFilePaths[activeEmptyFileTab] : "";
       if (path && state.active !== path) void store.activate(path);
     }, [activeEmptyFileTab, emptyFilePaths, state.active, store]);
-
-    useEffect(() => {
-      if (diffMode && reviewRevealPath) diffCommands.current?.reveal(reviewRevealPath);
-    }, [diffMode, reviewRevealPath]);
 
     useEffect(() => {
       const onKey = (event: KeyboardEvent) => {
@@ -256,18 +263,24 @@ export function useWorkbenchShell() {
       return () => window.removeEventListener("keydown", onKey);
     }, [state.visible, state.active, state.open, searchOpen, store, treeVisible]);
 
-    useEffect(() => followWorkspaceEvents(() => {
-      setReviewRevision((revision) => revision + 1);
+    useEffect(() => followWorkspaceEvents(({ paths }) => {
+      if (paths.length > 0) {
+        setReviewUpdates((current) => {
+          const next = { ...current };
+          for (const path of paths) next[workspacePath(path, rootRef.current)] = ++reviewUpdateVersionRef.current;
+          return next;
+        });
+      } else {
+        setReviewRevision((revision) => revision + 1);
+      }
       store.noteDiskChange();
       if (store.getSnapshot().active) void store.reload();
     }, undefined, ({ path }) => {
-      setReviewRevision((revision) => revision + 1);
-      reviewRevealPumpRef.current.schedule(path, (latestPath) => {
-        window.dispatchEvent(new CustomEvent("dsh-wb-review-request", { detail: latestPath }));
-      });
+      const updatePath = workspacePath(path, rootRef.current);
+      setReviewUpdates((current) => ({ ...current, [updatePath]: ++reviewUpdateVersionRef.current }));
+    }, () => {
+      window.dispatchEvent(new Event("dsh-wb-activity-change"));
     }), [store]);
-
-    useEffect(() => () => reviewRevealPumpRef.current.cancel(), []);
 
     useEffect(() => {
       if (state.visible) { setMounted(true); setClosing(false); return; }
@@ -308,5 +321,5 @@ export function useWorkbenchShell() {
     const handleTreeFileOpen = useCallback((path: string, mode: FileOpenMode, kind: TabOpenKind) => {
       openTreeFile(path, mode, undefined, kind);
     }, [openTreeFile]);
-    return { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, setSearchMode, diffMode, setDiffMode, reviewTabOpen, openReviewTab, closeReviewTab, reviewChanges, reviewRevealPath, reviewRevision, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab: createFileTab, activateEmptyFileTab, closeEmptyFileTab, bindEmptyFilePath, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey };
+    return { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, setSearchMode, diffMode, setDiffMode, reviewTabOpen, openReviewTab, closeReviewTab, reviewChanges, reviewRevealPath, reviewRevealVersion, reviewRevision, reviewUpdates, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab: createFileTab, activateEmptyFileTab, closeEmptyFileTab, bindEmptyFilePath, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey };
 }

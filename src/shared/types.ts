@@ -5,6 +5,7 @@ export const CONTENT_SEARCH_API_PATH = "/api/dsh-workbench/search";
 export const ACTIVITY_API_PATH = "/api/dsh-workbench/activity";
 export const REVIEW_API_PATH = "/api/dsh-workbench/review";
 export const GIT_DIFF_API_PATH = "/api/dsh-workbench/git-diff";
+export const GIT_STATUS_API_PATH = "/api/dsh-workbench/git-status";
 export const WORKSPACE_API_PATH = "/api/dsh-workbench/workspace";
 export const EVENTS_API_PATH = "/api/dsh-workbench/events";
 export const MAX_PREVIEW_BYTES = 800_000;
@@ -13,7 +14,8 @@ export const MAX_IMAGE_PREVIEW_BYTES = 12_000_000;
 export type WorkspaceErrorCode =
   | "missing_path"
   | "not_previewable"
-  | "file_not_found";
+  | "file_not_found"
+  | "file_changed";
 export const FILE_TOOLS = ["read", "write", "edit"] as const;
 
 export type FileToolName = (typeof FILE_TOOLS)[number];
@@ -71,6 +73,7 @@ export type GitFileDiff = {
   additions: number;
   deletions: number;
 };
+export type GitStatus = { branch: string; unstaged: number; staged: number; untracked: number };
 
 export type ReviewScope = "session" | "uncommitted" | "unstaged" | "staged";
 

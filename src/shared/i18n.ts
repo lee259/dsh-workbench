@@ -53,6 +53,14 @@ export type MessageKey =
   | "treeEmpty"
   | "revealInTree"
   | "referencePathAction"
+  | "referenceSelectionAction"
+  | "editFile"
+  | "saveFile"
+  | "cancelEdit"
+  | "file_changed"
+  | "tasksRunning"
+  | "taskFailed"
+  | "taskDone"
   | "insertPathAction"
   | "workspaceTree"
   | "openFile"
@@ -138,6 +146,14 @@ const zh: Record<MessageKey, string> = {
   treeEmpty: "工作区是空的",
   revealInTree: "在树中显示",
   referencePathAction: "引用到对话",
+  referenceSelectionAction: "引用选中内容",
+  editFile: "编辑",
+  saveFile: "保存",
+  cancelEdit: "取消",
+  file_changed: "文件已在外部修改，请重新打开后再编辑",
+  tasksRunning: "运行中 {count}",
+  taskFailed: "任务失败",
+  taskDone: "任务完成",
   insertPathAction: "插入路径到输入框",
   workspaceTree: "工作区文件树",
   openFile: "打开文件",
@@ -224,6 +240,14 @@ const en: Record<MessageKey, string> = {
   treeEmpty: "Workspace is empty",
   revealInTree: "Reveal in tree",
   referencePathAction: "Reference in conversation",
+  referenceSelectionAction: "Reference selection",
+  editFile: "Edit",
+  saveFile: "Save",
+  cancelEdit: "Cancel",
+  file_changed: "The file changed outside the workbench. Reopen it before editing.",
+  tasksRunning: "Running {count}",
+  taskFailed: "Task failed",
+  taskDone: "Task complete",
   insertPathAction: "Insert path into input",
   workspaceTree: "Workspace files",
   openFile: "Open file",

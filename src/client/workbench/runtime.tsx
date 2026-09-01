@@ -5,7 +5,10 @@ import type { FileStore } from "../store.js";
 export type WorkbenchRuntimeServices = {
   readonly store: FileStore;
   readonly i18n: LocaleStore;
-  readonly references?: { addPath(path: string, directory?: boolean): boolean };
+  readonly references?: {
+    addPath(path: string, directory?: boolean, sessionId?: string): boolean;
+    appendText(text: string, sessionId?: string): boolean;
+  };
   readonly absolutePath?: (path: string) => string;
 };
 let runtimeContext: ReturnType<typeof createContext<WorkbenchRuntimeServices | null>> | null = null;

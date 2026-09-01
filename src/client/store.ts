@@ -54,6 +54,17 @@ export async function fetchWorkspaceFile(path: string, mode: FileOpenMode = "aut
   return payload;
 }
 
+export async function saveWorkspaceFile(path: string, content: string, expected: string): Promise<FilePayload> {
+  const response = await fetch(FILE_API_PATH, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ path, content, expected }),
+  });
+  const payload = await response.json() as FilePayload & { error?: string };
+  if (!response.ok) throw new Error(payload.error || "read_failed");
+  return { ...payload, before: null, source: "workspace", revision: 0 };
+}
+
 export async function fetchWorkspaceFiles(query = ""): Promise<WorkspaceFile[]> {
   const response = await fetch(`${FILES_API_PATH}?q=${encodeURIComponent(query)}`);
   const payload = await response.json() as { files?: WorkspaceFile[]; error?: string };

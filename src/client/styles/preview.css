@@ -133,6 +133,88 @@
   background: var(--dsw-specific-sidebar-fill);
 }
 
+.dsh-wb-selection-reference {
+  position: fixed;
+  z-index: 60;
+  transform: translate(-50%, calc(-100% - 8px));
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: 6px;
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsh-wb-floating-surface-fill, var(--dsw-alias-bg-layer-2));
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  animation: dsh-wb-selection-reference-in 140ms ease-out both;
+}
+
+.dsh-wb-selection-reference:hover {
+  border-color: var(--dsh-wb-floating-surface-hover-border, var(--dsw-alias-button-ghost-active-border));
+  background: var(--dsh-wb-floating-surface-hover-fill, var(--dsw-alias-interactive-bg-hover-solid));
+}
+
+.dsh-wb-selection-reference:focus-visible {
+  outline: 2px solid var(--dsh-wb-focus-ring, var(--dsw-alias-state-business-primary));
+  outline-offset: -2px;
+}
+
+@keyframes dsh-wb-selection-reference-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 4px)) scale(.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 8px)) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dsh-wb-selection-reference {
+    animation: none;
+  }
+}
+
+.dsh-wb-git-status {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dsh-wb-git-status b {
+  font-weight: 500;
+}
+
+.dsh-wb-activity-status {
+  flex: 0 0 auto;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 4px;
+  color: var(--dsw-alias-label-tertiary);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+}
+
+.dsh-wb-activity-status:hover {
+  background: var(--dsh-wb-nav-item-hover-fill);
+}
+
 .dsh-wb-markdown-toggle {
   border: 1px solid var(--dsw-alias-border-l1);
   border-radius: 5px;

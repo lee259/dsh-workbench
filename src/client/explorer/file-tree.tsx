@@ -23,8 +23,9 @@ import { FileTypeIcon, Icon, TreeChangeIcon, TreeChevron } from "../chrome/icons
 import { startResizeDrag } from "../chrome/resize-drag.js";
 import type { TabOpenKind } from "../chrome/tab-model.js";
 import { WorkbenchTooltip } from "../chrome/tooltip.js";
-import { fetchReview } from "../review/review-data.js";
+import { fetchReview, fetchReviewFile } from "../review/review-data.js";
 import { fetchGitDiff } from "../review/git-diff-data.js";
+import { mergeReviewFile } from "../review/review-files.js";
 import { reviewTreePath, scopedReviewChanges, type ScopedReviewChange } from "../review/review-scope.js";
 import { highlightSegments, moveSearchFocus, treeSearchHits } from "./search-model.js";
 import { fetchWorkspaceTree } from "../store.js";
@@ -89,6 +90,7 @@ export function WorkspaceTreePanel({
     openMode = "view",
     sessionId,
     reviewRevision,
+    reviewUpdates,
     reviewScope = "session",
     commandsRef,
     onFileOpen,
@@ -99,6 +101,7 @@ export function WorkspaceTreePanel({
     openMode?: FileOpenMode;
     sessionId?: string;
     reviewRevision?: number;
+    reviewUpdates?: Readonly<Record<string, number>>;
     reviewScope?: ReviewScope;
     commandsRef?: { current: TreeCommands | null };
     onFileOpen?(path: string, mode: FileOpenMode, kind: TabOpenKind): void;
@@ -116,6 +119,7 @@ export function WorkspaceTreePanel({
     const [locatePath, setLocatePath] = useState("");
     const [pendingReveal, setPendingReveal] = useState("");
     const [reviewChanges, setReviewChanges] = useState<ScopedReviewChange[]>([]);
+    const pendingReviewUpdates = useRef<Record<string, number>>({});
     const lastReveal = useRef(0);
     const [contextMenu, setContextMenu] = useState<{ path: string; x: number; y: number } | null>(null);
     const listRef = useRef<HTMLDivElement | null>(null);
@@ -213,6 +217,20 @@ export function WorkspaceTreePanel({
         });
       return () => { cancelled = true; };
     }, [openMode, reviewRevision, reviewScope, sessionId]);
+
+    useEffect(() => {
+      if (openMode !== "diff" || reviewScope !== "session" || !reviewUpdates) return;
+      for (const [path, version] of Object.entries(reviewUpdates)) {
+        if (pendingReviewUpdates.current[path] === version) continue;
+        pendingReviewUpdates.current[path] = version;
+        void fetchReviewFile(sessionId, path)
+          .then((file) => {
+            if (pendingReviewUpdates.current[path] !== version) return;
+            setReviewChanges((current) => mergeReviewFile(current, file, path));
+          })
+          .catch(() => {});
+      }
+    }, [openMode, reviewScope, reviewUpdates, sessionId]);
 
     useEffect(() => {
       if (openMode !== "diff" || reviewChanges.length === 0) return;
@@ -523,7 +541,7 @@ export function WorkspaceTreePanel({
           onSelect={(id: string) => {
             if (id === "open") menuIsDirectory ? locate(menuPath) : openFromTree(menuPath, "keep");
             if (id === "reference") {
-              references?.addPath(menuPath, menuIsDirectory);
+              references?.addPath(menuPath, menuIsDirectory, sessionId);
               closeContextMenu();
             }
             if (id === "copy") {

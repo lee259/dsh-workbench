@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { afterEach, expect, test } from "vitest";
-import { gitDiffFiles } from "../src/host/git-diff.js";
+import { gitDiffFile, gitDiffFiles, gitStatus } from "../src/host/git-diff.js";
 
 const execFileAsync = promisify(execFile);
 const roots: string[] = [];
@@ -49,4 +49,23 @@ test("Git diff scopes keep the matching Git baseline", async () => {
   expect(all).toEqual(expect.arrayContaining([
     expect.objectContaining({ path: "tracked.ts", before: "export const value = 1;\n", content: "export const value = 3;\n", additions: 1, deletions: 1 }),
   ]));
+});
+
+test("Git status separates staged, unstaged, and untracked files", async () => {
+  const root = await fixture();
+  await writeFile(join(root, "tracked.ts"), "export const value = 2;\n");
+  await run(root, "add", "tracked.ts");
+  await writeFile(join(root, "tracked.ts"), "export const value = 3;\n");
+  await writeFile(join(root, "new.ts"), "new\n");
+  expect(await gitStatus(root)).toMatchObject({ staged: 1, unstaged: 1, untracked: 1 });
+});
+
+test("Git can resolve one changed file without enumerating the full worktree", async () => {
+  const root = await fixture();
+  await writeFile(join(root, "tracked.ts"), "export const value = 2;\n");
+  await writeFile(join(root, "new.ts"), "export const added = true;\n");
+
+  await expect(gitDiffFile(root, "uncommitted", "tracked.ts")).resolves.toMatchObject({ path: "tracked.ts", additions: 1, deletions: 1 });
+  await expect(gitDiffFile(root, "uncommitted", "new.ts")).resolves.toMatchObject({ path: "new.ts", additions: 1, deletions: 0 });
+  await expect(gitDiffFile(root, "uncommitted", "missing.ts")).resolves.toBeNull();
 });

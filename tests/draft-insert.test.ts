@@ -41,3 +41,20 @@ test("workspace events forward captured write paths", () => {
   stop();
   expect(seen).toEqual(["src/a.ts"]);
 });
+
+test("workspace events forward activity updates without a workspace reload", () => {
+  const listeners = new Map<string, (event?: { data?: string }) => void>();
+  const log: string[] = [];
+  const stop = followWorkspaceEvents(
+    () => log.push("change"),
+    () => ({
+      addEventListener(type, listener) { listeners.set(type, listener); },
+      close() {},
+    }),
+    () => log.push("write"),
+    () => log.push("activity"),
+  );
+  listeners.get("activity")?.();
+  stop();
+  expect(log).toEqual(["activity"]);
+});

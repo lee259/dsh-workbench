@@ -27,7 +27,7 @@ function previewMeta(state: FileState, t: LocaleStore["t"]): string {
 }
 
 export function WorkbenchDrawer() {
-  const { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, diffMode, setDiffMode, reviewTabOpen, openReviewTab, closeReviewTab, reviewRevealPath, reviewRevision, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab, activateEmptyFileTab, closeEmptyFileTab, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
+  const { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, diffMode, setDiffMode, reviewTabOpen, openReviewTab, closeReviewTab, reviewRevealPath, reviewRevealVersion, reviewRevision, reviewUpdates, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab, activateEmptyFileTab, closeEmptyFileTab, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
   const [gitCounts, setGitCounts] = useState({ additions: 0, deletions: 0 });
 
   if (!mounted) return null;
@@ -84,13 +84,16 @@ export function WorkbenchDrawer() {
           reviewScope={reviewScope}
           setReviewScope={setReviewScope}
           reviewCounts={gitCounts}
+          sessionId={sessionId}
         />
         <WorkbenchBody
           key={workspaceKey}
           state={state}
           sessionId={sessionId}
           reviewRevealPath={reviewRevealPath}
+          reviewRevealVersion={reviewRevealVersion}
           reviewRevision={reviewRevision}
+          reviewUpdates={reviewUpdates}
           reviewScope={reviewScope}
           onGitCountsChange={setGitCounts}
           diffCommands={diffCommands}

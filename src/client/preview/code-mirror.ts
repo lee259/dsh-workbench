@@ -22,6 +22,13 @@ import { search, searchKeymap } from "@codemirror/search";
 import { EditorState, type Extension } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers } from "@codemirror/view";
 
+export type CodeSelection = {
+  from: number;
+  to: number;
+  left: number;
+  top: number;
+};
+
 const workbenchTheme = EditorView.theme({
   "&": {
     height: "100%",
@@ -97,6 +104,9 @@ function languageExtension(language: string | null): Extension[] {
 export function createEditorExtensions(options: {
   language: string | null;
   original: string | null;
+  onSelectionChange?(selection: CodeSelection | null): void;
+  onDocumentChange?(content: string): void;
+  editable?: boolean;
 }): Extension[] {
   const extensions: Extension[] = [
     lineNumbers(),
@@ -104,11 +114,36 @@ export function createEditorExtensions(options: {
     search({ top: true }),
     keymap.of([...foldKeymap, ...searchKeymap]),
     syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-    EditorView.editable.of(false),
-    EditorState.readOnly.of(true),
+    EditorView.editable.of(options.editable === true),
+    EditorState.readOnly.of(options.editable !== true),
     workbenchTheme,
     ...languageExtension(options.language),
   ];
+  if (options.onSelectionChange) {
+    extensions.push(EditorView.updateListener.of((update) => {
+      if (update.selectionSet) {
+        const range = update.state.selection.main;
+        if (range.empty) {
+          options.onSelectionChange?.(null);
+          return;
+        }
+        const coords = update.view.coordsAtPos(range.to);
+        options.onSelectionChange?.(coords ? {
+          from: range.from,
+          to: range.to,
+          left: Math.min(Math.max(coords.left + ((coords.right - coords.left) / 2), 80), window.innerWidth - 80),
+          top: coords.top,
+        } : null);
+        return;
+      }
+      if (update.geometryChanged || update.viewportChanged) options.onSelectionChange?.(null);
+    }));
+  }
+  if (options.onDocumentChange) {
+    extensions.push(EditorView.updateListener.of((update) => {
+      if (update.docChanged) options.onDocumentChange?.(update.state.doc.toString());
+    }));
+  }
   if (options.original != null) {
     extensions.push(unifiedMergeView({
       original: options.original,

@@ -13,6 +13,11 @@ function memoryFs(files) {
       if (!file) throw new Error("missing");
       return file.content;
     },
+    async writeFile(absolute, content) {
+      const file = files[absolute];
+      if (!file) throw new Error("missing");
+      file.content = content;
+    },
     async readDir(absolute) {
       const prefix = absolute.endsWith("/") ? absolute : `${absolute}/`;
       const names = new Map();
@@ -73,6 +78,23 @@ test("reads a workspace file", async () => {
   expect(result.ok).toBe(true);
   expect(result.path).toBe("src/a.ts");
   expect(result.content).toBe("ok");
+});
+
+test("saves a workspace file when its baseline still matches", async () => {
+  const files = { "/repo/src/a.ts": { isFile: true, content: "before" } };
+  const workspace = createWorkspace({ root: "/repo", fs: memoryFs(files) });
+  const result = await workspace.write("src/a.ts", "after", "before");
+  expect(result).toMatchObject({ ok: true, path: "src/a.ts", content: "after" });
+  expect(files["/repo/src/a.ts"].content).toBe("after");
+});
+
+test("refuses to overwrite a workspace file changed outside the editor", async () => {
+  const workspace = createWorkspace({
+    root: "/repo",
+    fs: memoryFs({ "/repo/src/a.ts": { isFile: true, content: "external" } }),
+  });
+  const result = await workspace.write("src/a.ts", "draft", "before");
+  expect(result).toMatchObject({ ok: false, status: 409, error: "file_changed" });
 });
 
 test("allows normal-sized images above the text preview limit", async () => {

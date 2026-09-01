@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { toFilePayload } from "./file-preview.js";
 import { sendJson } from "./http.js";
 import { createPathIdentity } from "./path-identity.js";
-import { ACTIVITY_API_PATH, CONTENT_SEARCH_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH, GIT_DIFF_API_PATH, MAX_IMAGE_PREVIEW_BYTES, normalizePath, REVIEW_API_PATH, WORKSPACE_API_PATH, type FileOpenMode, type GitFileDiff } from "../shared/types.js";
+import { ACTIVITY_API_PATH, CONTENT_SEARCH_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH, GIT_DIFF_API_PATH, GIT_STATUS_API_PATH, MAX_IMAGE_PREVIEW_BYTES, normalizePath, REVIEW_API_PATH, WORKSPACE_API_PATH, type FileOpenMode, type GitFileDiff } from "../shared/types.js";
 import { completeSessionDiffs, reviewDiffCounts } from "../shared/review-diff.js";
 import { countDiffLines } from "../shared/line-diff.js";
 import { createChangePump } from "./change-pump.js";
@@ -12,7 +12,7 @@ import { createWorkspace, type Workspace } from "./workspace.js";
 import { startWorkspaceWatch, type WorkspaceWatchHandle } from "./workspace-watch.js";
 import { WriteHistory, type SessionEvent } from "./write-history.js";
 import { ActivityStore } from "./activity.js";
-import { gitDiffFiles, type GitDiffScope } from "./git-diff.js";
+import { gitDiffFile, gitDiffFiles, gitStatus, type GitDiffScope } from "./git-diff.js";
 
 type WebServer = {
   register(route: {
@@ -72,6 +72,9 @@ export function apply(ctx: HostContext): void {
     const data = JSON.stringify({ path });
     for (const client of eventClients) client.write(`event: write\ndata: ${data}\n\n`);
   };
+  const broadcastActivity = () => {
+    for (const client of eventClients) client.write("event: activity\ndata: {}\n\n");
+  };
   const startWatch = () => {
     watchHandle?.close();
     watchHandle = startWorkspaceWatch(root, (filename) => {
@@ -117,6 +120,19 @@ export function apply(ctx: HostContext): void {
     kind: "exact",
     path: FILE_API_PATH,
     handler: async (req, res) => {
+      if (req.method === "POST") {
+        try {
+          const body = await readJson(req) as { path?: unknown; content?: unknown; expected?: unknown };
+          if (typeof body.path !== "string" || typeof body.content !== "string" || typeof body.expected !== "string") return sendJson(res, 400, { error: "missing_path" });
+          const saved = await workspace.write(body.path, body.content, body.expected);
+          if (!saved.ok) return sendJson(res, saved.status, { error: saved.error });
+          pump.notify(saved.path);
+          return sendJson(res, 200, saved);
+        } catch {
+          return sendJson(res, 400, { error: "missing_path" });
+        }
+      }
+      if (req.method && req.method !== "GET") return sendJson(res, 405, { error: "missing_path" });
       const requested = new URL(req.url ?? "/", "http://dsh.local").searchParams.get("path") ?? "";
       const modeParam = new URL(req.url ?? "/", "http://dsh.local").searchParams.get("mode");
       const mode: FileOpenMode = modeParam === "view" || modeParam === "diff" ? modeParam : "auto";
@@ -145,9 +161,28 @@ export function apply(ctx: HostContext): void {
     kind: "exact",
     path: REVIEW_API_PATH,
     handler: async (req, res) => {
-      const sessionId = new URL(req.url ?? "/", "http://dsh.local").searchParams.get("session") ?? undefined;
+      const query = new URL(req.url ?? "/", "http://dsh.local").searchParams;
+      const sessionId = query.get("session") ?? undefined;
+      const requestedPath = query.get("path");
       const sessions = history.reviewSessions(root);
       const selectedSession = sessionId ?? sessions.at(-1) ?? null;
+      if (requestedPath) {
+        const path = normalizePath(requestedPath);
+        let file: GitFileDiff | null = null;
+        try { file = await gitDiffFile(root, "uncommitted", path); } catch { /* Git is optional */ }
+        if (!file) {
+          const change = history.getReview(selectedSession ?? undefined, root).find((item) => normalizePath(item.path) === path);
+          if (change) {
+            const disk = await workspace.read(change.path);
+            if (disk.ok) {
+              const payload = toFilePayload(disk, history.get(disk.path), "diff");
+              file = { path: disk.path, before: payload.before, content: payload.content, ...countDiffLines(payload.before, payload.content) };
+            }
+          }
+        }
+        sendJson(res, 200, { file, sessionId: selectedSession });
+        return;
+      }
       const changes = [];
       const sessionFiles: GitFileDiff[] = [];
       for (const change of history.getReview(selectedSession ?? undefined, root)) {
@@ -202,8 +237,8 @@ export function apply(ctx: HostContext): void {
       res.write(":\n\n");
       eventClients.add(res);
       ensureWatch();
-      const stop = pump.subscribe(() => {
-        res.write("event: change\ndata: {}\n\n");
+      const stop = pump.subscribe((changedPaths) => {
+        res.write(`event: change\ndata: ${JSON.stringify({ paths: changedPaths })}\n\n`);
       });
       req.on("close", () => {
         eventClients.delete(res);
@@ -239,6 +274,15 @@ export function apply(ctx: HostContext): void {
 
   ctx.webServer.register({
     kind: "exact",
+    path: GIT_STATUS_API_PATH,
+    handler: async (_req, res) => {
+      try { sendJson(res, 200, await gitStatus(root)); }
+      catch { sendJson(res, 200, { branch: "", staged: 0, unstaged: 0, untracked: 0 }); }
+    },
+  });
+
+  ctx.webServer.register({
+    kind: "exact",
     path: GIT_DIFF_API_PATH,
     handler: async (req, res) => {
       const scope = new URL(req.url ?? "/", "http://dsh.local").searchParams.get("scope");
@@ -265,6 +309,6 @@ export function apply(ctx: HostContext): void {
     rememberRoot(session);
     const revision = history.record(event, String(session.id));
     if (revision?.source === "dsh-write") broadcastWrite(revision.path);
-    activity.record(event, String(session.id));
+    if (activity.record(event, String(session.id))) broadcastActivity();
   });
 }

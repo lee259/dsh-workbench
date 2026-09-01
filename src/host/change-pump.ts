@@ -28,18 +28,22 @@ export function createChangePump(options: {
   const schedule = options.schedule ?? ((fn, ms) => setTimeout(fn, ms));
   const cancel = options.cancel ?? ((id) => clearTimeout(id as ReturnType<typeof setTimeout>));
   let timer: unknown;
-  const listeners = new Set<() => void>();
+  const listeners = new Set<(paths: string[]) => void>();
+  const paths = new Set<string>();
 
   return {
     notify(filename?: string | null) {
       if (shouldIgnoreWatchPath(filename)) return;
+      if (filename) paths.add(filename.replace(/\\/g, "/"));
       if (timer != null) cancel(timer);
       timer = schedule(() => {
         timer = undefined;
-        for (const listener of listeners) listener();
+        const changed = [...paths];
+        paths.clear();
+        for (const listener of listeners) listener(changed);
       }, delay);
     },
-    subscribe(listener: () => void) {
+    subscribe(listener: (paths: string[]) => void) {
       listeners.add(listener);
       return () => {
         listeners.delete(listener);

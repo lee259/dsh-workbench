@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { reviewCountsFor } from "../src/host/file-preview.js";
 import { apply, inject, name } from "../src/index.js";
-import { ACTIVITY_API_PATH, CONTENT_SEARCH_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH, GIT_DIFF_API_PATH, REVIEW_API_PATH, WORKSPACE_API_PATH } from "../src/shared/types.js";
+import { ACTIVITY_API_PATH, CONTENT_SEARCH_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH, GIT_DIFF_API_PATH, GIT_STATUS_API_PATH, REVIEW_API_PATH, WORKSPACE_API_PATH } from "../src/shared/types.js";
 import { expect, test } from "vitest";
 
 function jsonRequest(url, body, method = "GET") {
@@ -52,7 +52,7 @@ test("apply registers the file route and records session events", async () => {
       listeners.push({ event, handler });
     },
   });
-  expect(routes.map((route) => route.path)).toEqual([FILES_API_PATH, FILE_API_PATH, CONTENT_SEARCH_API_PATH, ACTIVITY_API_PATH, REVIEW_API_PATH, WORKSPACE_API_PATH, EVENTS_API_PATH, FILE_ASSET_API_PATH, GIT_DIFF_API_PATH]);
+  expect(routes.map((route) => route.path)).toEqual([FILES_API_PATH, FILE_API_PATH, CONTENT_SEARCH_API_PATH, ACTIVITY_API_PATH, REVIEW_API_PATH, WORKSPACE_API_PATH, EVENTS_API_PATH, FILE_ASSET_API_PATH, GIT_STATUS_API_PATH, GIT_DIFF_API_PATH]);
   expect(listeners.map((listener) => listener.event)).toEqual(["session/created", "session/event"]);
 });
 
@@ -130,6 +130,33 @@ test("activity route returns normalized session activity", async () => {
     createdAt: body.records[0].createdAt,
     finishedAt: body.records[0].finishedAt,
   });
+});
+
+test("activity events notify open clients without invalidating the workspace", () => {
+  const routes = [];
+  const listeners = [];
+  apply({
+    webServer: {
+      register(route) {
+        routes.push(route);
+        return () => {};
+      },
+    },
+    on(event, handler) {
+      listeners.push({ event, handler });
+    },
+  });
+  const output = [];
+  routes.find((route) => route.path === EVENTS_API_PATH).handler(
+    { on() {} },
+    { setHeader() {}, write(chunk) { output.push(chunk); } },
+  );
+  listeners.find((listener) => listener.event === "session/event").handler(
+    { id: "s1" },
+    { type: "tool/call", data: { callId: "c1", name: "bash" } },
+  );
+  expect(output).toContain("event: activity\ndata: {}\n\n");
+  expect(output).not.toContain("event: change\ndata: {}\n\n");
 });
 
 test("review route defaults to the session that wrote last", async () => {

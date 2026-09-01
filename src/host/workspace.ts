@@ -1,11 +1,11 @@
-import { readdir, readFile, stat } from "node:fs/promises";
+import { readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { createPathIdentity, type PathIdentity } from "./path-identity.js";
 import { MAX_IMAGE_PREVIEW_BYTES, MAX_PREVIEW_BYTES, type ContentSearchHit, type WorkspaceErrorCode, type WorkspaceFile, type WorkspaceTree } from "../shared/types.js";
 
 export type WorkspaceError = {
   ok: false;
-  status: 400 | 404 | 413;
+  status: 400 | 404 | 409 | 413;
   error: WorkspaceErrorCode;
 };
 
@@ -25,6 +25,7 @@ export type DiskReader = {
   stat(absolute: string): Promise<FileStat>;
   readFile(absolute: string): Promise<string>;
   readDir(absolute: string): Promise<readonly { name: string; isFile: boolean; isDirectory: boolean }[]>;
+  writeFile?(absolute: string, content: string): Promise<void>;
 };
 
 const nodeReader: DiskReader = {
@@ -39,11 +40,15 @@ const nodeReader: DiskReader = {
     const entries = await readdir(absolute, { withFileTypes: true });
     return entries.map((entry) => ({ name: entry.name, isFile: entry.isFile(), isDirectory: entry.isDirectory() }));
   },
+  writeFile(absolute, content) {
+    return writeFile(absolute, content, "utf8");
+  },
 };
 
 export type Workspace = {
   resolve(requested: string): { ok: true; absolute: string; relative: string } | WorkspaceError;
   read(requested: string): Promise<DiskFile | WorkspaceError>;
+  write(requested: string, content: string, expected: string): Promise<DiskFile | WorkspaceError>;
   list(query?: string, limit?: number): Promise<WorkspaceFile[]>;
   tree(limit?: number): Promise<WorkspaceTree>;
   searchContent(query: string, limit?: number): Promise<ContentSearchHit[]>;
@@ -98,6 +103,20 @@ export function createWorkspace(options: {
         }
         const content = await reader.readFile(located.absolute);
         return { ok: true, path: located.relative, content, size: info.size };
+      } catch {
+        return { ok: false, status: 404, error: "file_not_found" };
+      }
+    },
+    async write(requested, content, expected) {
+      const located = resolvePath(requested);
+      if (!located.ok) return located;
+      if (!reader.writeFile) return { ok: false, status: 404, error: "file_not_found" };
+      try {
+        const info = await reader.stat(located.absolute);
+        if (!info.isFile || info.size > maxBytes) return { ok: false, status: 413, error: "not_previewable" };
+        if (await reader.readFile(located.absolute) !== expected) return { ok: false, status: 409, error: "file_changed" } as WorkspaceError;
+        await reader.writeFile(located.absolute, content);
+        return { ok: true, path: located.relative, content, size: Buffer.byteLength(content) };
       } catch {
         return { ok: false, status: 404, error: "file_not_found" };
       }

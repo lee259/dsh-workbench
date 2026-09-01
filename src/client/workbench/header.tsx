@@ -1,11 +1,67 @@
 import type { FileState } from "../store.js";
 import { FileTypeIcon, Icon, NewTabIcon, TreeChevron } from "../chrome/icons.js";
 import { visibleBreadcrumbTargets } from "../explorer/tree-model.js";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { HoverCard, Menu, writeClipboard } from "@deepseek-ai/dsh-client-ui-primitives";
 import { useWorkbenchServices } from "./runtime.js";
 import { WorkbenchTooltip } from "../chrome/tooltip.js";
 import type { ReviewScope } from "../../shared/types.js";
+import type { GitStatus } from "../../shared/types.js";
+import { fetchGitStatus } from "../review/git-diff-data.js";
+import { fetchActivities } from "../review/activity-data.js";
+
+function GitStatusMeta() {
+  const [status, setStatus] = useState<GitStatus | null>(null);
+  useEffect(() => {
+    const refresh = () => { void fetchGitStatus().then(setStatus).catch(() => setStatus(null)); };
+    refresh();
+    window.addEventListener("dsh-wb-workspace-change", refresh);
+    return () => window.removeEventListener("dsh-wb-workspace-change", refresh);
+  }, []);
+  if (!status?.branch) return null;
+  return <span className="dsh-wb-git-status" title={status.branch}><span>{status.branch}</span>{status.unstaged ? <b>•{status.unstaged}</b> : null}{status.staged ? <b>+{status.staged}</b> : null}{status.untracked ? <b>?{status.untracked}</b> : null}</span>;
+}
+
+function ActivityMeta({ sessionId, t, onOpen }: { sessionId: string; t(key: "tasksRunning" | "taskFailed" | "taskDone", values?: { count: number }): string; onOpen(path: string): void }) {
+  const [records, setRecords] = useState<import("../../shared/types.js").ActivityRecord[]>([]);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const refresh = () => { void fetchActivities().then(setRecords).catch(() => setRecords([])); };
+    refresh();
+    window.addEventListener("dsh-wb-activity-change", refresh);
+    return () => window.removeEventListener("dsh-wb-activity-change", refresh);
+  }, []);
+  const own = records.filter((record) => record.sessionId === sessionId);
+  const running = own.filter((record) => record.status === "running");
+  const latest = running.at(-1) ?? own.at(-1);
+  if (!latest) return null;
+  const recent = own.slice(-8).reverse();
+  return <Menu
+    open={open}
+    onClose={() => setOpen(false)}
+    items={recent.map((record) => ({
+      id: record.id,
+      label: record.path ? `${record.name} · ${record.path}` : record.name,
+    }))}
+    onSelect={(id: string) => {
+      const record = recent.find((item) => item.id === id);
+      if (record?.path) onOpen(record.path);
+      setOpen(false);
+    }}
+    portal
+    align="end"
+    anchor={(
+      <button
+        className="dsh-wb-activity-status"
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        {running.length ? t("tasksRunning", { count: running.length }) : latest.status === "error" ? t("taskFailed") : t("taskDone")}
+      </button>
+    )}
+  />;
+}
 
 export function WorkbenchHeader({
     state,
@@ -33,6 +89,7 @@ export function WorkbenchHeader({
     reviewScope,
     setReviewScope,
     reviewCounts,
+    sessionId,
   }: {
     state: FileState;
     diffMode: boolean;
@@ -59,6 +116,7 @@ export function WorkbenchHeader({
     reviewScope: ReviewScope;
     setReviewScope(scope: ReviewScope): void;
     reviewCounts: { additions: number; deletions: number };
+    sessionId: string;
   }) {
     const { store, i18n, absolutePath } = useWorkbenchServices();
     const t = i18n.t;
@@ -306,6 +364,8 @@ export function WorkbenchHeader({
                 />
                 {reviewCounts.additions > 0 ? <span className="dsh-wb-review-count is-add">+{reviewCounts.additions}</span> : null}
                 {reviewCounts.deletions > 0 ? <span className="dsh-wb-review-count is-delete">−{reviewCounts.deletions}</span> : null}
+                <GitStatusMeta />
+                <ActivityMeta sessionId={sessionId} t={t} onOpen={(path) => { setDiffMode(false); void store.open(path, "view"); }} />
               </div>
             )}
             {!diffMode ? <span className="dsh-wb-meta">{meta}</span> : null}

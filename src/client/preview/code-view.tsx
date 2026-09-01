@@ -1,40 +1,74 @@
-import { useEffect, useRef, useState } from "react";
-import { createEditorExtensions, mountCodeEditor } from "./code-mirror.js";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createEditorExtensions, mountCodeEditor, type CodeSelection } from "./code-mirror.js";
 import { editorSpec } from "./editor-spec.js";
 import { createPreviewCommands, type PreviewCommands } from "./preview-nav.js";
 import type { FileState } from "../store.js";
+import { saveWorkspaceFile } from "../store.js";
 import { FILE_ASSET_API_PATH } from "../../shared/types.js";
 import { previewKind } from "./preview-kind.js";
 import { renderMarkdown } from "./markdown-preview.js";
+import { buildSelectionReference } from "./selection-reference.js";
 import DOMPurify from "dompurify";
+import { createPortal } from "../react-bridge.js";
 
 import { useWorkbenchServices } from "../workbench/runtime.js";
 
 export function CodeView({
     state,
     commandsRef,
+    sessionId,
   }: {
     state: FileState;
     commandsRef?: { current: PreviewCommands | null };
+    sessionId?: string;
   }) {
-    const { i18n } = useWorkbenchServices();
+    const { i18n, references, store } = useWorkbenchServices();
     const t = i18n.t;
     const hostRef = useRef<HTMLDivElement | null>(null);
     const editorRef = useRef<ReturnType<typeof mountCodeEditor> | null>(null);
     const [markdownSource, setMarkdownSource] = useState(false);
+    const [selection, setSelection] = useState<CodeSelection | null>(null);
+    const [editing, setEditing] = useState(false);
+    const [draft, setDraft] = useState("");
+    const [saveError, setSaveError] = useState("");
     const path = state.payload?.path;
+    const revision = state.payload?.revision;
+    const content = state.payload?.content;
     const [seenPath, setSeenPath] = useState(path);
+    const [seenRevision, setSeenRevision] = useState(revision);
+    const [seenContent, setSeenContent] = useState(content);
     if (path !== seenPath) {
       setSeenPath(path);
       setMarkdownSource(false);
+      setSelection(null);
+      setEditing(false);
+      setSaveError("");
     }
+    if (revision !== seenRevision) {
+      setSeenRevision(revision);
+      setSelection(null);
+    }
+    if (content !== seenContent) {
+      setSeenContent(content);
+      setSelection(null);
+    }
+    if (state.loading && selection) setSelection(null);
+
+    const onSelectionChange = useCallback((next: CodeSelection | null) => setSelection(next), []);
+    const onDocumentChange = useCallback((next: string) => setDraft(next), []);
 
     useEffect(() => {
       const host = hostRef.current;
       const payload = state.payload;
       if (!host || !payload || state.loading || state.error) return undefined;
       const spec = editorSpec(payload);
-      const editor = mountCodeEditor(host, payload.content, createEditorExtensions({ language: spec.language, original: spec.original }));
+      const editor = mountCodeEditor(host, editing ? draft : payload.content, createEditorExtensions({
+        language: spec.language,
+        original: spec.original,
+        onSelectionChange,
+        onDocumentChange,
+        editable: editing,
+      }));
       editorRef.current = editor;
       if (commandsRef) commandsRef.current = createPreviewCommands(editor.view);
       if (state.line) createPreviewCommands(editor.view).revealLine(state.line);
@@ -43,7 +77,7 @@ export function CodeView({
         editorRef.current = null;
         if (commandsRef) commandsRef.current = null;
       };
-    }, [state.payload, state.loading, state.error, markdownSource]);
+    }, [state.payload, state.loading, state.error, markdownSource, editing, onSelectionChange, onDocumentChange]);
 
     useEffect(() => {
       if (!state.line || !editorRef.current) return;
@@ -62,8 +96,21 @@ export function CodeView({
     }
     if (state.error) return <div className="dsh-wb-error">{t(state.error)}</div>;
     if (!state.payload) return null;
-    const kind = previewKind(state.payload.path);
-    const isMarkdown = kind === "markdown" && state.payload.source !== "dsh-write";
+    const payload = state.payload;
+    const kind = previewKind(payload.path);
+    const isMarkdown = kind === "markdown" && payload.source !== "dsh-write";
+    const canEdit = payload.source === "workspace" && kind !== "image";
+    const save = async () => {
+      try {
+        await saveWorkspaceFile(payload.path, draft, payload.content);
+        setEditing(false);
+        setSaveError("");
+        window.dispatchEvent(new Event("dsh-wb-workspace-change"));
+        await store.reload();
+      } catch (error) {
+        setSaveError(error instanceof Error ? error.message : "read_failed");
+      }
+    };
     const toggle = isMarkdown ? (
       <button
         className="dsh-wb-markdown-toggle"
@@ -83,10 +130,13 @@ export function CodeView({
         </div>
       );
     }
-    if (isMarkdown && !markdownSource) {
+    if (isMarkdown && !markdownSource && !editing) {
       return (
         <div className="dsh-wb-preview-shell">
-          <div className="dsh-wb-preview-toolbar">{toggle}</div>
+          <div className="dsh-wb-preview-toolbar">
+            {canEdit ? <button className="dsh-wb-markdown-toggle" type="button" onClick={() => { setDraft(payload.content); setEditing(true); }}>{t("editFile")}</button> : null}
+            {toggle}
+          </div>
           <article
             className="dsh-wb-markdown-preview"
             dangerouslySetInnerHTML={{
@@ -98,10 +148,34 @@ export function CodeView({
         </div>
       );
     }
+    const selectionReference = !editing && selection
+      ? buildSelectionReference(state.payload.path, state.payload.content, selection.from, selection.to)
+      : null;
     return (
       <div className="dsh-wb-preview-shell">
-        {toggle ? <div className="dsh-wb-preview-toolbar">{toggle}</div> : null}
+        {toggle || canEdit ? <div className="dsh-wb-preview-toolbar">
+          {canEdit ? (editing ? <>
+            <button className="dsh-wb-markdown-toggle" type="button" onClick={() => { setEditing(false); setSaveError(""); }}>{t("cancelEdit")}</button>
+            <button className="dsh-wb-markdown-toggle" type="button" onClick={() => void save()}>{t("saveFile")}</button>
+          </> : <button className="dsh-wb-markdown-toggle" type="button" onClick={() => { setDraft(state.payload?.content ?? ""); setEditing(true); }}>{t("editFile")}</button>) : null}
+          {toggle}
+        </div> : null}
         <div className="dsh-wb-cm" ref={hostRef} />
+        {saveError ? <div className="dsh-wb-error">{t(saveError)}</div> : null}
+        {selection && selectionReference && references ? createPortal(
+          <button
+            className="dsh-wb-selection-reference"
+            type="button"
+            style={{ left: selection.left, top: selection.top }}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              if (references.appendText(selectionReference, sessionId)) setSelection(null);
+            }}
+          >
+            {t("referenceSelectionAction")}
+          </button>,
+          document.body,
+        ) : null}
       </div>
     );
 }

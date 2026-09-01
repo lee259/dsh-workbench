@@ -11,6 +11,7 @@ import { useWorkbenchServices } from "./runtime.js";
 type CodeViewProps = {
   state: FileState;
   commandsRef: { current: PreviewCommands | null };
+  sessionId?: string;
 };
 
 type SearchPanelProps = {
@@ -26,6 +27,7 @@ type WorkspaceTreePanelProps = {
   openMode?: FileOpenMode;
   sessionId?: string;
   reviewRevision?: number;
+  reviewUpdates?: Readonly<Record<string, number>>;
   reviewScope?: ReviewScope;
   onFileOpen?(path: string, mode: FileOpenMode, kind: TabOpenKind): void;
 };
@@ -56,7 +58,9 @@ export function WorkbenchBody({
     state,
     sessionId,
     reviewRevealPath,
+    reviewRevealVersion,
     reviewRevision,
+    reviewUpdates,
     reviewScope,
     onGitCountsChange,
     diffCommands,
@@ -85,7 +89,9 @@ export function WorkbenchBody({
     state: FileState;
     sessionId: string;
     reviewRevealPath?: string;
+    reviewRevealVersion: number;
     reviewRevision: number;
+    reviewUpdates: Readonly<Record<string, number>>;
     reviewScope: ReviewScope;
     onGitCountsChange(counts: { additions: number; deletions: number }): void;
     diffCommands: { current: DiffPanelCommands | null };
@@ -134,9 +140,9 @@ export function WorkbenchBody({
               ) : activeEmptyFileTab && state.path !== activeEmptyFilePath ? (
                 <div className="dsh-wb-empty"><strong>{t("reading")}</strong></div>
               ) : diffMode ? (
-                <DiffPanel ref={diffCommands} sessionId={sessionId} revealPath={reviewRevealPath} revision={reviewRevision} scope={reviewScope} onCountsChange={onGitCountsChange} />
+                <DiffPanel ref={diffCommands} sessionId={sessionId} revealPath={reviewRevealPath} revealVersion={reviewRevealVersion} revision={reviewRevision} scope={reviewScope} updates={reviewUpdates} onCountsChange={onGitCountsChange} />
               ) : state.path ? (
-                <CodeView state={state} commandsRef={previewCommands} />
+                <CodeView state={state} commandsRef={previewCommands} sessionId={sessionId} />
               ) : (
                 <div className="dsh-wb-empty">
                   <div className="dsh-wb-empty-icon"><EmptyFileIcon /></div>
@@ -160,6 +166,7 @@ export function WorkbenchBody({
               openMode={diffMode ? "diff" : "view"}
               sessionId={sessionId}
               reviewRevision={reviewRevision}
+              reviewUpdates={reviewUpdates}
               reviewScope={reviewScope}
               onFileOpen={onFileOpen}
             />
