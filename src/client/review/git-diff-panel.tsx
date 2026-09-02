@@ -104,7 +104,6 @@ export function GitDiffPanel({ scope, revision, files: suppliedFiles, sessionId,
     if (target && panel) {
       panel.scrollTo({
         top: scrollTopForDiffTarget(panel.getBoundingClientRect(), target.getBoundingClientRect(), panel.scrollTop),
-        behavior: "smooth",
       });
     }
   }, [files, revealPath, revealVersion, requestedRevealVersion]);
