@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.2 - 2026-09-02
+
+### Performance
+
+- Defer review diff editors outside the viewport and limit concurrent Git diff reads.
+- Avoid empty panes for added and deleted files in split diff view.
+
 ## 0.12.1 - 2026-09-02
 
 ### Features
