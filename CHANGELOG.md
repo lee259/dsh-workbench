@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.12.1 - 2026-09-02
+
+### Features
+
+- Add unified and split review-diff views, with synchronized horizontal scrolling in split view.
+- Let selected diff text add a review note directly to the active Harness conversation.
+
+### Changed
+
+- Use host theme tokens for review-diff additions and deletions in light and dark mode, retaining only line fill and change gutters.
+- Keep review activity focused on running and failed tasks, and simplify the review toolbar controls.
+
 ## 0.12.0 - 2026-09-01
 
 ### Features
