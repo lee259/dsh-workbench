@@ -170,7 +170,7 @@ export function createEditorExtensions(options: {
       if (update.docChanged) options.onDocumentChange?.(update.state.doc.toString());
     }));
   }
-  if (options.original != null && options.diffView !== "split") {
+  if (options.original != null && (options.diffView !== "split" || options.original === "")) {
     extensions.push(unifiedMergeView({
       original: options.original,
       gutter: true,
@@ -185,7 +185,7 @@ export function createEditorExtensions(options: {
 }
 
 export function mountCodeEditor(parent: HTMLElement, doc: string, extensions: Extension[], options?: { language: string | null; original: string | null; diffView?: DiffViewMode }): { view: EditorView; destroy(): void } {
-  if (options?.original != null && options.diffView === "split") {
+  if (options?.original != null && options.original !== "" && options.diffView === "split") {
     const merge = new MergeView({
       a: {
         doc: options.original,

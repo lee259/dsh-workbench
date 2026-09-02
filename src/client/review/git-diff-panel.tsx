@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { normalizePath, type FilePayload, type GitFileDiff, type ReviewScope } from "../../shared/types.js";
 import { FileTypeIcon, Icon, TreeChevron } from "../chrome/icons.js";
 import { CodeView } from "../preview/code-view.js";
@@ -10,6 +10,7 @@ import { fetchGitDiff } from "./git-diff-data.js";
 import { reviewDiffCounts } from "../../shared/review-diff.js";
 import { scrollTopForDiffTarget } from "./diff-reveal.js";
 import type { DiffViewMode } from "../preview/code-mirror.js";
+import { initialDeferredDiffState, nextDeferredDiffState } from "./deferred-diff.js";
 
 export type { ReviewScope } from "../../shared/types.js";
 
@@ -29,18 +30,52 @@ function diffElementId(path: string): string {
   return `dsh-wb-diff-${encodeURIComponent(normalizePath(path))}`;
 }
 
-const DiffFile = memo(function DiffFile({ file, collapsed, copied, sessionId, diffView, t, onToggle, onCopy }: {
+const DiffFile = memo(function DiffFile({ file, collapsed, copied, sessionId, diffView, forceMount, t, onToggle, onCopy }: {
   file: GitFileDiff;
   collapsed: boolean;
   copied: boolean;
   sessionId?: string;
   diffView: DiffViewMode;
+  forceMount: boolean;
   t(key: "expandDiff" | "collapseDiff" | "copyPath" | "pathCopied"): string;
   onToggle(path: string): void;
   onCopy(path: string): void;
 }) {
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const [deferred, setDeferred] = useState(initialDeferredDiffState);
+  const state = useMemo(() => fileState(file), [file]);
+  useEffect(() => {
+    if (collapsed) {
+      setDeferred((current) => nextDeferredDiffState(current, { type: "collapsed" }));
+      return undefined;
+    }
+    if (forceMount || typeof IntersectionObserver === "undefined") {
+      setDeferred((current) => nextDeferredDiffState(current, { type: "visibility", nearViewport: true }));
+      return undefined;
+    }
+    const section = sectionRef.current;
+    if (!section) return undefined;
+    const observer = new IntersectionObserver((entries) => {
+      const nearViewport = entries.some((entry) => entry.isIntersecting);
+      setDeferred((current) => nextDeferredDiffState(current, { type: "visibility", nearViewport }));
+    }, { rootMargin: "700px 0px" });
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, [collapsed, forceMount]);
+  useEffect(() => {
+    if (!deferred.mounted) return undefined;
+    const editor = editorRef.current;
+    if (!editor) return undefined;
+    const measure = () => setDeferred((current) => nextDeferredDiffState(current, { type: "measured", height: Math.ceil(editor.getBoundingClientRect().height) }));
+    measure();
+    if (typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver(measure);
+    observer.observe(editor);
+    return () => observer.disconnect();
+  }, [deferred.mounted]);
   return (
-    <section className={`dsh-wb-diff-file${collapsed ? " is-collapsed" : ""}`} id={diffElementId(file.path)}>
+    <section ref={sectionRef} className={`dsh-wb-diff-file${collapsed ? " is-collapsed" : ""}`} id={diffElementId(file.path)}>
       <header className="dsh-wb-diff-file-head" onClick={() => onToggle(file.path)}>
         <button className="dsh-wb-diff-collapse dsh-wb-button" type="button" aria-label={t(collapsed ? "expandDiff" : "collapseDiff")} aria-expanded={!collapsed} onClick={(event) => { event.stopPropagation(); onToggle(file.path); }}>
           <TreeChevron open={!collapsed} />
@@ -57,7 +92,8 @@ const DiffFile = memo(function DiffFile({ file, collapsed, copied, sessionId, di
           </WorkbenchTooltip>
         </div>
       </header>
-      {!collapsed ? <div className="dsh-wb-diff-file-editor"><CodeView state={fileState(file)} sessionId={sessionId} diffView={diffView} /></div> : null}
+      {!collapsed && deferred.mounted ? <div ref={editorRef} className="dsh-wb-diff-file-editor"><CodeView state={state} sessionId={sessionId} diffView={diffView} /></div> : null}
+      {!collapsed && !deferred.mounted && deferred.height > 0 ? <div className="dsh-wb-diff-file-placeholder" style={{ height: deferred.height }} aria-hidden="true" /> : null}
     </section>
   );
 });
@@ -133,7 +169,7 @@ export function GitDiffPanel({ scope, revision, files: suppliedFiles, sessionId,
   return (
     <div ref={panelRef} className="dsh-wb-diff-panel">
       {files.map((file) => (
-        <DiffFile key={file.path} file={file} collapsed={collapsed.has(file.path)} copied={copiedPath === file.path} sessionId={sessionId} diffView={diffView} t={i18n.t} onToggle={toggleCollapsed} onCopy={copyPath} />
+        <DiffFile key={file.path} file={file} collapsed={collapsed.has(file.path)} copied={copiedPath === file.path} sessionId={sessionId} diffView={diffView} forceMount={normalizePath(file.path) === revealPath} t={i18n.t} onToggle={toggleCollapsed} onCopy={copyPath} />
       ))}
     </div>
   );

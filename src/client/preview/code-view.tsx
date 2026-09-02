@@ -64,14 +64,15 @@ export function CodeView({
       const payload = state.payload;
       if (!host || !payload || state.loading || state.error) return undefined;
       const spec = editorSpec(payload);
+      const resolvedDiffView = spec.original !== null && (spec.original === "" || payload.content === "") ? "unified" : diffView;
       const editor = mountCodeEditor(host, editing ? draft : payload.content, createEditorExtensions({
         language: spec.language,
         original: spec.original,
-        diffView,
+        diffView: resolvedDiffView,
         onSelectionChange,
         onDocumentChange,
         editable: editing,
-      }), { language: spec.language, original: spec.original, diffView });
+      }), { language: spec.language, original: spec.original, diffView: resolvedDiffView });
       editorRef.current = editor;
       if (commandsRef) commandsRef.current = createPreviewCommands(editor.view);
       if (state.line) createPreviewCommands(editor.view).revealLine(state.line);

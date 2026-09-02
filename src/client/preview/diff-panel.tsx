@@ -24,14 +24,14 @@ export const DiffPanel = forwardRef<DiffPanelCommands, { sessionId?: string; rev
   }), []);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
     const request = ++fullRequest.current;
     setLoading(true);
-    void fetchReview(sessionId)
-      .then((response) => { if (!cancelled && request === fullRequest.current) setFiles(response.files ?? []); })
-      .catch(() => { if (!cancelled && request === fullRequest.current) setFiles([]); })
-      .finally(() => { if (!cancelled && request === fullRequest.current) setLoading(false); });
-    return () => { cancelled = true; };
+    void fetchReview(sessionId, controller.signal)
+      .then((response) => { if (!controller.signal.aborted && request === fullRequest.current) setFiles(response.files ?? []); })
+      .catch(() => { if (!controller.signal.aborted && request === fullRequest.current) setFiles([]); })
+      .finally(() => { if (!controller.signal.aborted && request === fullRequest.current) setLoading(false); });
+    return () => controller.abort();
   }, [revision, sessionId]);
 
   useEffect(() => {

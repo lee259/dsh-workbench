@@ -96,6 +96,10 @@
   overflow-y: hidden;
 }
 
+.dsh-wb-diff-file-placeholder {
+  min-height: 0;
+}
+
 .dsh-wb-diff-file-editor .dsh-wb-preview-shell,
 .dsh-wb-diff-file-editor .dsh-wb-cm,
 .dsh-wb-diff-file-editor .dsh-wb-cm .cm-editor {

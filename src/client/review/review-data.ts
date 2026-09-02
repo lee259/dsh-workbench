@@ -8,9 +8,9 @@ export type ReviewResponse = {
   file?: GitFileDiff | null;
 };
 
-export async function fetchReview(sessionId?: string): Promise<ReviewResponse> {
+export async function fetchReview(sessionId?: string, signal?: AbortSignal): Promise<ReviewResponse> {
   const query = sessionId ? `?session=${encodeURIComponent(sessionId)}` : "";
-  const response = await fetch(`${REVIEW_API_PATH}${query}`);
+  const response = await fetch(`${REVIEW_API_PATH}${query}`, { signal });
   if (!response.ok) throw new Error("review request failed");
   return await response.json() as ReviewResponse;
 }

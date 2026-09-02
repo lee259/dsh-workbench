@@ -4,8 +4,10 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { countDiffLines } from "../shared/line-diff.js";
 import type { GitFileDiff, GitStatus } from "../shared/types.js";
+import { mapConcurrent } from "./concurrent.js";
 
 const execFileAsync = promisify(execFile);
+const DIFF_FILE_CONCURRENCY = 8;
 
 export type GitDiffScope = "uncommitted" | "unstaged" | "staged";
 
@@ -43,20 +45,20 @@ export async function gitDiffFiles(root: string, scope: GitDiffScope): Promise<G
       : ["diff", "--name-only", "-z"];
   const tracked = await gitPaths(root, diffArgs);
   const baseline = scope === "unstaged" ? ":" : "HEAD";
-  const files = await Promise.all(tracked.map(async (path) => {
+  const files = await mapConcurrent(tracked, DIFF_FILE_CONCURRENCY, async (path) => {
     const [before, content] = await Promise.all([
       gitFile(root, baseline, path),
       scope === "staged" ? gitFile(root, ":", path).then((file) => file ?? "") : diskFile(root, path),
     ]);
     return { path, before, content, ...countDiffLines(before, content) };
-  }));
+  });
   if (scope === "staged") return files;
   const raw = await runGit(root, ["ls-files", "--others", "--exclude-standard", "-z"]);
   const untracked = raw.split("\0").filter(Boolean);
-  const additions = await Promise.all(untracked.map(async (path) => {
+  const additions = await mapConcurrent(untracked, DIFF_FILE_CONCURRENCY, async (path) => {
     const content = await diskFile(root, path);
     return { path, before: null, content, ...countDiffLines(null, content) };
-  }));
+  });
   return [...files, ...additions];
 }
 
