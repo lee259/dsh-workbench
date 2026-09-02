@@ -9,6 +9,7 @@ import { writeClipboard } from "@deepseek-ai/dsh-client-ui-primitives";
 import { fetchGitDiff } from "./git-diff-data.js";
 import { reviewDiffCounts } from "../../shared/review-diff.js";
 import { scrollTopForDiffTarget } from "./diff-reveal.js";
+import type { DiffViewMode } from "../preview/code-mirror.js";
 
 export type { ReviewScope } from "../../shared/types.js";
 
@@ -28,11 +29,12 @@ function diffElementId(path: string): string {
   return `dsh-wb-diff-${encodeURIComponent(normalizePath(path))}`;
 }
 
-const DiffFile = memo(function DiffFile({ file, collapsed, copied, sessionId, t, onToggle, onCopy }: {
+const DiffFile = memo(function DiffFile({ file, collapsed, copied, sessionId, diffView, t, onToggle, onCopy }: {
   file: GitFileDiff;
   collapsed: boolean;
   copied: boolean;
   sessionId?: string;
+  diffView: DiffViewMode;
   t(key: "expandDiff" | "collapseDiff" | "copyPath" | "pathCopied"): string;
   onToggle(path: string): void;
   onCopy(path: string): void;
@@ -55,12 +57,12 @@ const DiffFile = memo(function DiffFile({ file, collapsed, copied, sessionId, t,
           </WorkbenchTooltip>
         </div>
       </header>
-      {!collapsed ? <div className="dsh-wb-diff-file-editor"><CodeView state={fileState(file)} sessionId={sessionId} /></div> : null}
+      {!collapsed ? <div className="dsh-wb-diff-file-editor"><CodeView state={fileState(file)} sessionId={sessionId} diffView={diffView} /></div> : null}
     </section>
   );
 });
 
-export function GitDiffPanel({ scope, revision, files: suppliedFiles, sessionId, revealPath: requestedRevealPath, revealVersion: requestedRevealVersion, onCountsChange }: { scope: Exclude<ReviewScope, "session">; revision: number; files?: GitFileDiff[]; sessionId?: string; revealPath?: string; revealVersion?: number; onCountsChange?(counts: { additions: number; deletions: number }): void }) {
+export function GitDiffPanel({ scope, revision, files: suppliedFiles, sessionId, revealPath: requestedRevealPath, revealVersion: requestedRevealVersion, diffView = "unified", onCountsChange }: { scope: Exclude<ReviewScope, "session">; revision: number; files?: GitFileDiff[]; sessionId?: string; revealPath?: string; revealVersion?: number; diffView?: DiffViewMode; onCountsChange?(counts: { additions: number; deletions: number }): void }) {
   const { i18n } = useWorkbenchServices();
   const [worktreeFiles, setWorktreeFiles] = useState<GitFileDiff[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,7 +133,7 @@ export function GitDiffPanel({ scope, revision, files: suppliedFiles, sessionId,
   return (
     <div ref={panelRef} className="dsh-wb-diff-panel">
       {files.map((file) => (
-        <DiffFile key={file.path} file={file} collapsed={collapsed.has(file.path)} copied={copiedPath === file.path} sessionId={sessionId} t={i18n.t} onToggle={toggleCollapsed} onCopy={copyPath} />
+        <DiffFile key={file.path} file={file} collapsed={collapsed.has(file.path)} copied={copiedPath === file.path} sessionId={sessionId} diffView={diffView} t={i18n.t} onToggle={toggleCollapsed} onCopy={copyPath} />
       ))}
     </div>
   );

@@ -1,5 +1,6 @@
 import type { FileState } from "../store.js";
 import { FileTypeIcon, Icon, NewTabIcon, TreeChevron } from "../chrome/icons.js";
+import type { DiffViewMode } from "../preview/code-mirror.js";
 import { visibleBreadcrumbTargets } from "../explorer/tree-model.js";
 import { Fragment, useEffect, useState } from "react";
 import { HoverCard, Menu, writeClipboard } from "@deepseek-ai/dsh-client-ui-primitives";
@@ -33,9 +34,9 @@ function ActivityMeta({ sessionId, t, onOpen }: { sessionId: string; t(key: "tas
   }, []);
   const own = records.filter((record) => record.sessionId === sessionId);
   const running = own.filter((record) => record.status === "running");
-  const latest = running.at(-1) ?? own.at(-1);
+  const latest = running.at(-1) ?? own.filter((record) => record.status === "error").at(-1);
   if (!latest) return null;
-  const recent = own.slice(-8).reverse();
+  const recent = own.filter((record) => record.status === "running" || record.status === "error").slice(-4).reverse();
   return <Menu
     open={open}
     onClose={() => setOpen(false)}
@@ -67,6 +68,8 @@ export function WorkbenchHeader({
     state,
     diffMode,
     setDiffMode,
+    diffView,
+    setDiffView,
     reviewTabOpen,
     openReviewTab,
     closeReviewTab,
@@ -94,6 +97,8 @@ export function WorkbenchHeader({
     state: FileState;
     diffMode: boolean;
     setDiffMode(next: boolean): void;
+    diffView: DiffViewMode;
+    setDiffView(next: DiffViewMode): void;
     reviewTabOpen: boolean;
     openReviewTab(): void;
     closeReviewTab(): void;
@@ -370,6 +375,19 @@ export function WorkbenchHeader({
             )}
             {!diffMode ? <span className="dsh-wb-meta">{meta}</span> : null}
             <div className="dsh-wb-path-actions" aria-label={t("viewOptions")}>
+              {diffMode ? (
+                <WorkbenchTooltip label={t(diffView === "unified" ? "splitDiff" : "unifiedDiff")}>
+                <button
+                  className="dsh-wb-button dsh-wb-icon-button"
+                  type="button"
+                  aria-label={t(diffView === "unified" ? "splitDiff" : "unifiedDiff")}
+                  aria-pressed={diffView === "split"}
+                  onClick={() => setDiffView(diffView === "unified" ? "split" : "unified")}
+                >
+                  <Icon name={diffView === "unified" ? "split" : "unified"} />
+                </button>
+                </WorkbenchTooltip>
+              ) : null}
               <WorkbenchTooltip label={t(treeVisible ? "hideTree" : "showTree")}>
               <button
                 className="dsh-wb-button dsh-wb-icon-button"
@@ -378,7 +396,7 @@ export function WorkbenchHeader({
                 aria-pressed={treeVisible}
                 onClick={() => setTreeOpen(!treeVisible)}
               >
-                <Icon name={treeVisible ? "panel-open" : "panel-closed"} />
+                <Icon name="folder" />
               </button>
               </WorkbenchTooltip>
               {state.path ? <WorkbenchTooltip label={t(pathCopied ? "pathCopied" : "copyPath")}>

@@ -15,5 +15,8 @@
   --dsh-wb-nav-item-active-fill: var(--dsw-specific-sidebar-nav-item-active);
   --dsh-wb-focus-ring: var(--dsw-alias-state-business-primary);
   --dsh-wb-resize-fill: var(--dsw-alias-state-business-tertiary);
+  --dsh-wb-diff-add-fill: color-mix(in srgb, var(--dsw-alias-state-success-primary) 14%, transparent);
+  --dsh-wb-diff-delete-fill: color-mix(in srgb, var(--dsw-alias-state-error-primary) 14%, transparent);
+  --dsh-wb-diff-neutral-fill: color-mix(in srgb, var(--dsw-alias-label-tertiary) 8%, transparent);
   --dsh-wb-motion-fast: 120ms ease-out;
 }

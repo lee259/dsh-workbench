@@ -33,17 +33,12 @@
   background: var(--dsw-alias-markdown-code-block);
 }
 
-.dsh-wb-diff-file {
-  border-bottom: 1px solid var(--dsw-alias-border-l2);
-}
-
 .dsh-wb-diff-file-head {
   display: flex;
   min-height: 35px;
   align-items: center;
   gap: 6px;
   padding: 0 12px;
-  border-bottom: 1px solid var(--dsw-alias-border-l2);
   color: var(--dsw-alias-label-primary);
   background: var(--dsw-alias-bg-layer-1);
   cursor: pointer;
@@ -105,6 +100,15 @@
 .dsh-wb-diff-file-editor .dsh-wb-cm,
 .dsh-wb-diff-file-editor .dsh-wb-cm .cm-editor {
   height: auto;
+}
+
+.dsh-wb-diff-file-editor .dsh-wb-cm .cm-mergeView,
+.dsh-wb-diff-file-editor .dsh-wb-cm .cm-mergeViewEditors {
+  height: auto;
+}
+
+.dsh-wb-diff-file-editor .dsh-wb-cm .cm-mergeViewEditor + .cm-mergeViewEditor {
+  border-left: 1px solid var(--dsw-alias-border-l2);
 }
 
 .dsh-wb-diff-file-editor .dsh-wb-cm .cm-scroller {
@@ -290,6 +294,36 @@
 
 .dsh-wb-cm .cm-editor {
   height: 100%;
+}
+
+.dsh-wb-cm .cm-deletedChunk,
+.dsh-wb-cm .cm-merge-a .cm-changedLine {
+  background: var(--dsh-wb-diff-delete-fill);
+}
+
+.dsh-wb-cm .cm-inlineChangedLine,
+.dsh-wb-cm .cm-merge-b .cm-changedLine {
+  background: var(--dsh-wb-diff-add-fill);
+}
+
+.dsh-wb-cm .cm-changedText,
+.dsh-wb-cm .cm-deletedChunk .cm-deletedText,
+.dsh-wb-cm .cm-deletedText {
+  background: transparent !important;
+}
+
+.dsh-wb-cm .cm-changeGutter {
+  width: 4px;
+  padding-left: 0;
+}
+
+.dsh-wb-cm .cm-merge-a .cm-changedLineGutter,
+.dsh-wb-cm .cm-deletedLineGutter {
+  background: var(--dsw-alias-state-error-primary);
+}
+
+.dsh-wb-cm .cm-merge-b .cm-changedLineGutter {
+  background: var(--dsw-alias-state-success-primary);
 }
 
 .dsh-wb-cm .cm-panels {

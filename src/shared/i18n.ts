@@ -93,7 +93,9 @@ export type MessageKey =
   | "staged"
   | "noChanges"
   | "collapseDiff"
-  | "expandDiff";
+  | "expandDiff"
+  | "unifiedDiff"
+  | "splitDiff";
 
 const zh: Record<MessageKey, string> = {
   loadingTitle: "正在读取文件",
@@ -189,6 +191,8 @@ const zh: Record<MessageKey, string> = {
   noChanges: "没有变更",
   collapseDiff: "折叠 diff",
   expandDiff: "展开 diff",
+  unifiedDiff: "统一差异视图",
+  splitDiff: "拆分差异视图",
 };
 
 const en: Record<MessageKey, string> = {
@@ -285,6 +289,8 @@ const en: Record<MessageKey, string> = {
   noChanges: "No changes",
   collapseDiff: "Collapse diff",
   expandDiff: "Expand diff",
+  unifiedDiff: "Unified diff view",
+  splitDiff: "Split diff view",
 };
 
 const catalogs: Record<Locale, Record<MessageKey, string>> = { zh, en };

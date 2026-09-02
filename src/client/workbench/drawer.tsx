@@ -27,7 +27,7 @@ function previewMeta(state: FileState, t: LocaleStore["t"]): string {
 }
 
 export function WorkbenchDrawer() {
-  const { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, diffMode, setDiffMode, reviewTabOpen, openReviewTab, closeReviewTab, reviewRevealPath, reviewRevealVersion, reviewRevision, reviewUpdates, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab, activateEmptyFileTab, closeEmptyFileTab, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
+  const { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, diffMode, setDiffMode, diffView, setDiffView, reviewTabOpen, openReviewTab, closeReviewTab, reviewRevealPath, reviewRevealVersion, reviewRevision, reviewUpdates, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab, activateEmptyFileTab, closeEmptyFileTab, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
   const [gitCounts, setGitCounts] = useState({ additions: 0, deletions: 0 });
 
   if (!mounted) return null;
@@ -62,6 +62,8 @@ export function WorkbenchDrawer() {
           state={state}
           diffMode={diffMode}
           setDiffMode={setDiffMode}
+          diffView={diffView}
+          setDiffView={setDiffView}
           reviewTabOpen={reviewTabOpen}
           openReviewTab={openReviewTab}
           closeReviewTab={closeReviewTab}
@@ -98,6 +100,7 @@ export function WorkbenchDrawer() {
           onGitCountsChange={setGitCounts}
           diffCommands={diffCommands}
           diffMode={diffMode}
+          diffView={diffView}
           emptyTabOpen={emptyTabOpen}
           activeEmptyFileTab={activeEmptyFileTab}
           activeEmptyFilePath={emptyFilePaths[activeEmptyFileTab] ?? ""}

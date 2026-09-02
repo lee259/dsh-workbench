@@ -6,6 +6,7 @@ import { clampTreeWidth, persistTreeWidth, savedTreeWidth, type TreeCommands } f
 import { readTreeVisible, writeTreeOpen, writeTreeVisible } from "../explorer/tree-model.js";
 import type { PreviewCommands } from "../preview/preview-nav.js";
 import type { DiffPanelCommands } from "../preview/diff-panel.js";
+import type { DiffViewMode } from "../preview/code-mirror.js";
 import type { FileState } from "../store.js";
 import type { TabOpenKind } from "../chrome/tab-model.js";
 import { normalizePath, WORKSPACE_API_PATH, type FileOpenMode, type ReviewChange } from "../../shared/types.js";
@@ -42,6 +43,7 @@ export function useWorkbenchShell() {
     const [searchOpen, setSearchOpenState] = useState(false);
     const [searchMode, setSearchMode] = useState<"files" | "content">("files");
     const [diffMode, setDiffMode] = useState(false);
+    const [diffView, setDiffView] = useState<DiffViewMode>("unified");
     const [reviewTabOpen, setReviewTabOpen] = useState(false);
     const [reviewChanges, setReviewChanges] = useState<ReviewChange[]>([]);
     const [reviewRevision, setReviewRevision] = useState(0);
@@ -102,6 +104,7 @@ export function useWorkbenchShell() {
     const resetChrome = useCallback(() => {
       store.close();
       setDiffMode(false);
+      setDiffView("unified");
       setReviewTabOpen(false);
       setReviewChanges([]);
       setReviewRevealPath("");
@@ -321,5 +324,5 @@ export function useWorkbenchShell() {
     const handleTreeFileOpen = useCallback((path: string, mode: FileOpenMode, kind: TabOpenKind) => {
       openTreeFile(path, mode, undefined, kind);
     }, [openTreeFile]);
-    return { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, setSearchMode, diffMode, setDiffMode, reviewTabOpen, openReviewTab, closeReviewTab, reviewChanges, reviewRevealPath, reviewRevealVersion, reviewRevision, reviewUpdates, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab: createFileTab, activateEmptyFileTab, closeEmptyFileTab, bindEmptyFilePath, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey };
+    return { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, setSearchMode, diffMode, setDiffMode, diffView, setDiffView, reviewTabOpen, openReviewTab, closeReviewTab, reviewChanges, reviewRevealPath, reviewRevealVersion, reviewRevision, reviewUpdates, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab: createFileTab, activateEmptyFileTab, closeEmptyFileTab, bindEmptyFilePath, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey };
 }

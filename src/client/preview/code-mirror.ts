@@ -17,7 +17,7 @@ import { shell } from "@codemirror/legacy-modes/mode/shell";
 import { standardSQL } from "@codemirror/legacy-modes/mode/sql";
 import { toml } from "@codemirror/legacy-modes/mode/toml";
 import { yaml } from "@codemirror/legacy-modes/mode/yaml";
-import { unifiedMergeView } from "@codemirror/merge";
+import { MergeView, unifiedMergeView } from "@codemirror/merge";
 import { search, searchKeymap } from "@codemirror/search";
 import { EditorState, type Extension } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers } from "@codemirror/view";
@@ -28,6 +28,8 @@ export type CodeSelection = {
   left: number;
   top: number;
 };
+
+export type DiffViewMode = "unified" | "split";
 
 const workbenchTheme = EditorView.theme({
   "&": {
@@ -49,6 +51,29 @@ const workbenchTheme = EditorView.theme({
   },
   ".cm-activeLine, .cm-activeLineGutter": {
     backgroundColor: "transparent",
+  },
+});
+
+const diffTheme = EditorView.theme({
+  "&.cm-merge-a .cm-changedLine, .cm-deletedChunk": {
+    backgroundColor: "var(--dsh-wb-diff-delete-fill)",
+  },
+  "&.cm-merge-b .cm-changedLine, .cm-inlineChangedLine": {
+    backgroundColor: "var(--dsh-wb-diff-add-fill)",
+  },
+  ".cm-changeGutter": {
+    width: "4px",
+    paddingLeft: "0",
+  },
+  "&.cm-merge-a .cm-changedLineGutter, .cm-deletedLineGutter": {
+    backgroundColor: "var(--dsw-alias-state-error-primary)",
+  },
+  "&.cm-merge-b .cm-changedLineGutter": {
+    backgroundColor: "var(--dsw-alias-state-success-primary)",
+  },
+  ".cm-collapsedLines": {
+    color: "var(--dsw-alias-label-secondary)",
+    background: "var(--dsh-wb-diff-neutral-fill)",
   },
 });
 
@@ -104,6 +129,7 @@ function languageExtension(language: string | null): Extension[] {
 export function createEditorExtensions(options: {
   language: string | null;
   original: string | null;
+  diffView?: DiffViewMode;
   onSelectionChange?(selection: CodeSelection | null): void;
   onDocumentChange?(content: string): void;
   editable?: boolean;
@@ -144,7 +170,7 @@ export function createEditorExtensions(options: {
       if (update.docChanged) options.onDocumentChange?.(update.state.doc.toString());
     }));
   }
-  if (options.original != null) {
+  if (options.original != null && options.diffView !== "split") {
     extensions.push(unifiedMergeView({
       original: options.original,
       gutter: true,
@@ -152,11 +178,46 @@ export function createEditorExtensions(options: {
       mergeControls: false,
       collapseUnchanged: { margin: 3, minSize: 6 },
     }));
+    extensions.push(diffTheme);
   }
+  if (options.diffView === "split") extensions.push(diffTheme);
   return extensions;
 }
 
-export function mountCodeEditor(parent: HTMLElement, doc: string, extensions: Extension[]): { view: EditorView; destroy(): void } {
+export function mountCodeEditor(parent: HTMLElement, doc: string, extensions: Extension[], options?: { language: string | null; original: string | null; diffView?: DiffViewMode }): { view: EditorView; destroy(): void } {
+  if (options?.original != null && options.diffView === "split") {
+    const merge = new MergeView({
+      a: {
+        doc: options.original,
+        extensions: createEditorExtensions({ language: options.language ?? null, original: null, editable: false, diffView: "split" }),
+      },
+      b: { doc, extensions },
+      parent,
+      gutter: true,
+      highlightChanges: true,
+      revertControls: undefined,
+      collapseUnchanged: { margin: 3, minSize: 6 },
+    });
+    let syncingScroll = false;
+    const syncScroll = (from: HTMLElement, to: HTMLElement) => {
+      if (syncingScroll || to.scrollLeft === from.scrollLeft) return;
+      syncingScroll = true;
+      to.scrollLeft = from.scrollLeft;
+      syncingScroll = false;
+    };
+    const syncLeft = () => syncScroll(merge.a.scrollDOM, merge.b.scrollDOM);
+    const syncRight = () => syncScroll(merge.b.scrollDOM, merge.a.scrollDOM);
+    merge.a.scrollDOM.addEventListener("scroll", syncLeft, { passive: true });
+    merge.b.scrollDOM.addEventListener("scroll", syncRight, { passive: true });
+    return {
+      view: merge.b,
+      destroy: () => {
+        merge.a.scrollDOM.removeEventListener("scroll", syncLeft);
+        merge.b.scrollDOM.removeEventListener("scroll", syncRight);
+        merge.destroy();
+      },
+    };
+  }
   const view = new EditorView({
     parent,
     state: EditorState.create({ doc, extensions }),

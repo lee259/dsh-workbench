@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createEditorExtensions, mountCodeEditor, type CodeSelection } from "./code-mirror.js";
+import { createEditorExtensions, mountCodeEditor, type CodeSelection, type DiffViewMode } from "./code-mirror.js";
 import { editorSpec } from "./editor-spec.js";
 import { createPreviewCommands, type PreviewCommands } from "./preview-nav.js";
 import type { FileState } from "../store.js";
@@ -17,10 +17,12 @@ export function CodeView({
     state,
     commandsRef,
     sessionId,
+    diffView,
   }: {
     state: FileState;
     commandsRef?: { current: PreviewCommands | null };
     sessionId?: string;
+    diffView?: DiffViewMode;
   }) {
     const { i18n, references, store } = useWorkbenchServices();
     const t = i18n.t;
@@ -65,10 +67,11 @@ export function CodeView({
       const editor = mountCodeEditor(host, editing ? draft : payload.content, createEditorExtensions({
         language: spec.language,
         original: spec.original,
+        diffView,
         onSelectionChange,
         onDocumentChange,
         editable: editing,
-      }));
+      }), { language: spec.language, original: spec.original, diffView });
       editorRef.current = editor;
       if (commandsRef) commandsRef.current = createPreviewCommands(editor.view);
       if (state.line) createPreviewCommands(editor.view).revealLine(state.line);
@@ -77,7 +80,7 @@ export function CodeView({
         editorRef.current = null;
         if (commandsRef) commandsRef.current = null;
       };
-    }, [state.payload, state.loading, state.error, markdownSource, editing, onSelectionChange, onDocumentChange]);
+    }, [state.payload, state.loading, state.error, markdownSource, editing, diffView, onSelectionChange, onDocumentChange]);
 
     useEffect(() => {
       if (!state.line || !editorRef.current) return;

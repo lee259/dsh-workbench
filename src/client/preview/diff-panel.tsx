@@ -3,12 +3,13 @@ import { fetchReview, fetchReviewFile } from "../review/review-data.js";
 import { mergeReviewFile } from "../review/review-files.js";
 import { useWorkbenchServices } from "../workbench/runtime.js";
 import { GitDiffPanel, type ReviewScope } from "../review/git-diff-panel.js";
+import type { DiffViewMode } from "./code-mirror.js";
 
 export type DiffPanelCommands = {
   reveal(path: string): void;
 };
 
-export const DiffPanel = forwardRef<DiffPanelCommands, { sessionId?: string; revealPath?: string; revealVersion?: number; revision?: number; scope?: ReviewScope; updates?: Readonly<Record<string, number>>; onCountsChange?(counts: { additions: number; deletions: number }): void }>(function DiffPanel({ sessionId, revealPath: requestedRevealPath, revealVersion, revision, scope = "session", updates, onCountsChange }, ref) {
+export const DiffPanel = forwardRef<DiffPanelCommands, { sessionId?: string; revealPath?: string; revealVersion?: number; revision?: number; scope?: ReviewScope; updates?: Readonly<Record<string, number>>; diffView?: DiffViewMode; onCountsChange?(counts: { additions: number; deletions: number }): void }>(function DiffPanel({ sessionId, revealPath: requestedRevealPath, revealVersion, revision, scope = "session", updates, diffView = "unified", onCountsChange }, ref) {
   const { i18n } = useWorkbenchServices();
   const t = i18n.t;
   const [files, setFiles] = useState<import("../../shared/types.js").GitFileDiff[]>([]);
@@ -48,7 +49,7 @@ export const DiffPanel = forwardRef<DiffPanelCommands, { sessionId?: string; rev
     }
   }, [scope, sessionId, updates]);
 
-  if (scope !== "session") return <GitDiffPanel scope={scope} revision={revision ?? 0} onCountsChange={onCountsChange} />;
+  if (scope !== "session") return <GitDiffPanel scope={scope} revision={revision ?? 0} diffView={diffView} onCountsChange={onCountsChange} />;
   if (loading) return <div className="dsh-wb-empty"><strong>{t("reading")}</strong></div>;
-  return <GitDiffPanel scope="uncommitted" revision={revision ?? 0} files={files} sessionId={sessionId} revealPath={requestedRevealPath} revealVersion={revealVersion} onCountsChange={onCountsChange} />;
+  return <GitDiffPanel scope="uncommitted" revision={revision ?? 0} files={files} sessionId={sessionId} revealPath={requestedRevealPath} revealVersion={revealVersion} diffView={diffView} onCountsChange={onCountsChange} />;
 });

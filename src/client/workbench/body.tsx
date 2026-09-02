@@ -6,6 +6,7 @@ import type { TreeCommands } from "../explorer/file-tree.js";
 import type { FileOpenMode, ReviewScope } from "../../shared/types.js";
 import type { TabOpenKind } from "../chrome/tab-model.js";
 import { DiffPanel, type DiffPanelCommands } from "../preview/diff-panel.js";
+import type { DiffViewMode } from "../preview/code-mirror.js";
 import { useWorkbenchServices } from "./runtime.js";
 
 type CodeViewProps = {
@@ -65,6 +66,7 @@ export function WorkbenchBody({
     onGitCountsChange,
     diffCommands,
     diffMode,
+    diffView,
     emptyTabOpen,
     activeEmptyFileTab,
     activeEmptyFilePath,
@@ -96,6 +98,7 @@ export function WorkbenchBody({
     onGitCountsChange(counts: { additions: number; deletions: number }): void;
     diffCommands: { current: DiffPanelCommands | null };
     diffMode: boolean;
+    diffView: DiffViewMode;
     emptyTabOpen: boolean;
     activeEmptyFileTab: string;
     activeEmptyFilePath: string;
@@ -140,7 +143,7 @@ export function WorkbenchBody({
               ) : activeEmptyFileTab && state.path !== activeEmptyFilePath ? (
                 <div className="dsh-wb-empty"><strong>{t("reading")}</strong></div>
               ) : diffMode ? (
-                <DiffPanel ref={diffCommands} sessionId={sessionId} revealPath={reviewRevealPath} revealVersion={reviewRevealVersion} revision={reviewRevision} scope={reviewScope} updates={reviewUpdates} onCountsChange={onGitCountsChange} />
+                <DiffPanel ref={diffCommands} sessionId={sessionId} revealPath={reviewRevealPath} revealVersion={reviewRevealVersion} revision={reviewRevision} scope={reviewScope} updates={reviewUpdates} diffView={diffView} onCountsChange={onGitCountsChange} />
               ) : state.path ? (
                 <CodeView state={state} commandsRef={previewCommands} sessionId={sessionId} />
               ) : (
