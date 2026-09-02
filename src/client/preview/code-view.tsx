@@ -7,7 +7,7 @@ import { saveWorkspaceFile } from "../store.js";
 import { FILE_ASSET_API_PATH } from "../../shared/types.js";
 import { previewKind } from "./preview-kind.js";
 import { renderMarkdown } from "./markdown-preview.js";
-import { buildSelectionReference } from "./selection-reference.js";
+import { buildReviewNoteReference, buildSelectionReference } from "./selection-reference.js";
 import DOMPurify from "dompurify";
 import { createPortal } from "../react-bridge.js";
 
@@ -151,6 +151,9 @@ export function CodeView({
     const selectionReference = !editing && selection
       ? buildSelectionReference(state.payload.path, state.payload.content, selection.from, selection.to)
       : null;
+    const reviewNoteReference = !editing && selection && payload.source === "dsh-write"
+      ? buildReviewNoteReference(payload.path, payload.content, selection.from, selection.to)
+      : null;
     return (
       <div className="dsh-wb-preview-shell">
         {toggle || canEdit ? <div className="dsh-wb-preview-toolbar">
@@ -163,17 +166,28 @@ export function CodeView({
         <div className="dsh-wb-cm" ref={hostRef} />
         {saveError ? <div className="dsh-wb-error">{t(saveError)}</div> : null}
         {selection && selectionReference && references ? createPortal(
-          <button
-            className="dsh-wb-selection-reference"
-            type="button"
-            style={{ left: selection.left, top: selection.top }}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
-              if (references.appendText(selectionReference, sessionId)) setSelection(null);
-            }}
-          >
-            {t("referenceSelectionAction")}
-          </button>,
+          <div className="dsh-wb-selection-actions" style={{ left: selection.left, top: selection.top }}>
+            <button
+              className="dsh-wb-selection-reference"
+              type="button"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                if (references.appendText(selectionReference, sessionId)) setSelection(null);
+              }}
+            >
+              {t("referenceSelectionAction")}
+            </button>
+            {reviewNoteReference ? <button
+              className="dsh-wb-selection-reference"
+              type="button"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                if (references.appendText(t("reviewNoteTemplate", { reference: reviewNoteReference }), sessionId)) setSelection(null);
+              }}
+            >
+              {t("addReviewNote")}
+            </button> : null}
+          </div>,
           document.body,
         ) : null}
       </div>

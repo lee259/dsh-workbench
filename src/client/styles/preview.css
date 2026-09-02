@@ -133,30 +133,42 @@
   background: var(--dsw-specific-sidebar-fill);
 }
 
-.dsh-wb-selection-reference {
+.dsh-wb-selection-actions {
   position: fixed;
   z-index: 60;
   transform: translate(-50%, calc(-100% - 8px));
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  min-height: 28px;
-  box-sizing: border-box;
-  padding: 0 10px;
+  overflow: hidden;
   border: 1px solid var(--dsw-alias-border-l1);
   border-radius: 6px;
-  color: var(--dsw-alias-label-primary);
   background: var(--dsh-wb-floating-surface-fill, var(--dsw-alias-bg-layer-2));
+  animation: dsh-wb-selection-reference-in 140ms ease-out both;
+}
+
+.dsh-wb-selection-reference {
+  display: inline-flex;
+  align-items: center;
+  height: 27px;
+  box-sizing: border-box;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 0;
+  color: var(--dsw-alias-label-primary);
+  background: transparent;
   cursor: pointer;
   font: inherit;
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
-  animation: dsh-wb-selection-reference-in 140ms ease-out both;
 }
 
 .dsh-wb-selection-reference:hover {
-  border-color: var(--dsh-wb-floating-surface-hover-border, var(--dsw-alias-button-ghost-active-border));
   background: var(--dsh-wb-floating-surface-hover-fill, var(--dsw-alias-interactive-bg-hover-solid));
+}
+
+.dsh-wb-selection-reference + .dsh-wb-selection-reference {
+  border-left: 1px solid var(--dsw-alias-border-l1);
 }
 
 .dsh-wb-selection-reference:focus-visible {
@@ -177,7 +189,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dsh-wb-selection-reference {
+  .dsh-wb-selection-actions {
     animation: none;
   }
 }

@@ -1,4 +1,4 @@
-import { buildSelectionReference, SELECTION_REFERENCE_LIMIT, selectionLineRange } from "../src/client/preview/selection-reference.js";
+import { buildReviewNoteReference, buildSelectionReference, SELECTION_REFERENCE_LIMIT, selectionLineRange } from "../src/client/preview/selection-reference.js";
 import { expect, test } from "vitest";
 
 const source = "first\nsecond\nthird\n";
@@ -30,4 +30,10 @@ test("selection references fence code that contains Markdown fences", () => {
 
 test("selection references ignore an empty range", () => {
   expect(buildSelectionReference("src/example.ts", source, 2, 2)).toBeNull();
+});
+
+test("review note references preserve the selected path and context", () => {
+  expect(buildReviewNoteReference("src/example.ts", source, 6, 18)).toBe(
+    "@src/example.ts:2-3\n```\nsecond\nthird\n```",
+  );
 });

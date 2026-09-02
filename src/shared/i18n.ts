@@ -54,6 +54,8 @@ export type MessageKey =
   | "revealInTree"
   | "referencePathAction"
   | "referenceSelectionAction"
+  | "addReviewNote"
+  | "reviewNoteTemplate"
   | "editFile"
   | "saveFile"
   | "cancelEdit"
@@ -147,6 +149,8 @@ const zh: Record<MessageKey, string> = {
   revealInTree: "在树中显示",
   referencePathAction: "引用到对话",
   referenceSelectionAction: "引用选中内容",
+  addReviewNote: "添加审查意见",
+  reviewNoteTemplate: "请检查并处理以下审查意见：\n\n{reference}\n\n审查意见：",
   editFile: "编辑",
   saveFile: "保存",
   cancelEdit: "取消",
@@ -241,6 +245,8 @@ const en: Record<MessageKey, string> = {
   revealInTree: "Reveal in tree",
   referencePathAction: "Reference in conversation",
   referenceSelectionAction: "Reference selection",
+  addReviewNote: "Add review note",
+  reviewNoteTemplate: "Please inspect and address this review note:\n\n{reference}\n\nReview note:",
   editFile: "Edit",
   saveFile: "Save",
   cancelEdit: "Cancel",

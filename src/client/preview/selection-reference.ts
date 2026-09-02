@@ -45,3 +45,7 @@ export function buildSelectionReference(path: string, source: string, from: numb
   const fence = fenceFor(selected);
   return `${reference}\n${fence}\n${selected}\n${fence}`;
 }
+
+export function buildReviewNoteReference(path: string, source: string, from: number, to: number): string | null {
+  return buildSelectionReference(path, source, from, to);
+}

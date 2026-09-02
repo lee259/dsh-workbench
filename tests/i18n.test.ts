@@ -14,6 +14,10 @@ test("translate fills placeholders from the active catalog", () => {
   expect(translate("en", "workbench")).toBe("Workbench");
   expect(translate("zh", "hideTree")).toBe("隐藏文件栏");
   expect(translate("en", "showTree")).toBe("Show file pane");
+  expect(translate("zh", "addReviewNote")).toBe("添加审查意见");
+  expect(translate("en", "reviewNoteTemplate", { reference: "@src/example.ts:2" })).toBe(
+    "Please inspect and address this review note:\n\n@src/example.ts:2\n\nReview note:",
+  );
 });
 
 test("locale store switches catalogs", () => {
