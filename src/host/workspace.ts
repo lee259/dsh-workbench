@@ -2,6 +2,7 @@ import { readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { createPathIdentity, type PathIdentity } from "./path-identity.js";
 import { MAX_IMAGE_PREVIEW_BYTES, MAX_PREVIEW_BYTES, type ContentSearchHit, type WorkspaceErrorCode, type WorkspaceFile, type WorkspaceTree } from "../shared/types.js";
+import { isImagePreviewPath, isPreviewablePath, isTextPreviewPath } from "../shared/preview-policy.js";
 
 export type WorkspaceError = {
   ok: false;
@@ -96,9 +97,8 @@ export function createWorkspace(options: {
 
       try {
         const info = await reader.stat(located.absolute);
-        const extension = located.relative.toLowerCase().split(".").pop() ?? "";
-        const isImage = ["png", "jpg", "jpeg", "gif", "webp", "svg", "avif", "bmp", "ico"].includes(extension);
-        if (!info.isFile || info.size > (isImage ? imageMaxBytes : maxBytes)) {
+        const isImage = isImagePreviewPath(located.relative);
+        if (!info.isFile || !isPreviewablePath(located.relative) || info.size > (isImage ? imageMaxBytes : maxBytes)) {
           return { ok: false, status: 413, error: "not_previewable" };
         }
         const content = await reader.readFile(located.absolute);
@@ -113,7 +113,7 @@ export function createWorkspace(options: {
       if (!reader.writeFile) return { ok: false, status: 404, error: "file_not_found" };
       try {
         const info = await reader.stat(located.absolute);
-        if (!info.isFile || info.size > maxBytes) return { ok: false, status: 413, error: "not_previewable" };
+        if (!info.isFile || !isTextPreviewPath(located.relative) || info.size > maxBytes) return { ok: false, status: 413, error: "not_previewable" };
         if (await reader.readFile(located.absolute) !== expected) return { ok: false, status: 409, error: "file_changed" } as WorkspaceError;
         await reader.writeFile(located.absolute, content);
         return { ok: true, path: located.relative, content, size: Buffer.byteLength(content) };
@@ -205,6 +205,7 @@ export function createWorkspace(options: {
             continue;
           }
           if (!entry.isFile) continue;
+          if (!isTextPreviewPath(childRelative)) continue;
           let info;
           try { info = await reader.stat(childAbsolute); } catch { continue; }
           if (info.size > maxBytes) continue;

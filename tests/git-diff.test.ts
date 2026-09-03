@@ -69,3 +69,13 @@ test("Git can resolve one changed file without enumerating the full worktree", a
   await expect(gitDiffFile(root, "uncommitted", "new.ts")).resolves.toMatchObject({ path: "new.ts", additions: 1, deletions: 0 });
   await expect(gitDiffFile(root, "uncommitted", "missing.ts")).resolves.toBeNull();
 });
+
+test("Git diffs exclude files outside the text preview allowlist", async () => {
+  const root = await fixture();
+  await writeFile(join(root, "archive.zip"), "binary");
+
+  await expect(gitDiffFiles(root, "uncommitted")).resolves.not.toEqual(expect.arrayContaining([
+    expect.objectContaining({ path: "archive.zip" }),
+  ]));
+  await expect(gitDiffFile(root, "uncommitted", "archive.zip")).resolves.toBeNull();
+});

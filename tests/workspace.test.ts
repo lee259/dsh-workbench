@@ -69,6 +69,15 @@ test("rejects an oversized file", async () => {
   expect(result.status).toBe(413);
 });
 
+test("rejects a file outside the preview allowlist", async () => {
+  const workspace = createWorkspace({
+    root: "/repo",
+    fs: memoryFs({ "/repo/archive.zip": { isFile: true, content: "binary" } }),
+  });
+  const result = await workspace.read("archive.zip");
+  expect(result).toMatchObject({ ok: false, status: 413, error: "not_previewable" });
+});
+
 test("reads a workspace file", async () => {
   const workspace = createWorkspace({
     root: "/repo",

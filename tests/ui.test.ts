@@ -446,6 +446,24 @@ test("file drawer shows the workspace tree by default", () => {
   expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree-rail")).toBe(undefined);
 });
 
+test("an empty workbench opens on its home actions", () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 1,
+  }));
+  store.show();
+  const drawer = createWorkbenchUi(React, store, createLocaleStore("en")).FileDrawer();
+  const actions = findElements(drawer, (node) => node.props?.className === "dsh-wb-empty-tab-option");
+  const rail = findElement(drawer, (node) => node.props?.className?.startsWith("dsh-wb-rail"));
+
+  expect(actions.map(textContent)).toEqual(["Review", "File"]);
+  expect(rail?.props["aria-hidden"]).toBe(true);
+});
+
 test("file actions expose accessible labels", async () => {
   const store = createFileStore(async (path) => ({
     path,

@@ -7,14 +7,14 @@
 
 [中文文档](./README.zh-CN.md) · [Changelog](./CHANGELOG.md) · [Issues](https://github.com/lee259/dsh-workbench/issues) · [npm](https://www.npmjs.com/package/dsh-workbench)
 
-Codex-style workspace and Git review for [DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart) Web. Review a session's edits alongside Git changes without leaving the conversation.
+Codex-style file workspace and Git review for [DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart) Web. Keep the conversation, changed files, and diffs in one place.
 
-## Highlights
+## What it does
 
-- **Review with the right baseline** — switch between session edits, uncommitted, unstaged, and staged changes; the diff and file tree share one file and `+/−` source.
-- **Read and diff beside the conversation** — open files from agent tool calls, the workspace tree, or search without losing your place.
-- **Stay in your current tab** — new edits update only the affected review file; a direct conversation-file click opens and reveals its diff.
-- **Close the conversation loop** — edit workspace files safely, copy paths, and reference a selected diff range in the active Harness draft.
+- Captures DSH `write` / `edit` changes with their original before/after content.
+- Switches between session edits, uncommitted, unstaged, and staged Git changes; the tree and diff share the same `+/−` counts.
+- Opens files from tool calls, the workspace tree, or search alongside the conversation. Conversation file links reveal the corresponding diff.
+- Lets you edit workspace files, copy paths, and insert a selected diff range into the active Harness draft.
 
 ![DSH Workbench in DeepSeek Harness Web](./assets/dsh-workbench-demo.png)
 
@@ -23,15 +23,9 @@ read       → source
 write/edit → captured DSH diff
 ```
 
-## Why it is useful
+## Details
 
-- Keep the conversation and the file you are inspecting visible together.
-- See real DSH write/edit changes, with captured before/after content; compare Git changes as uncommitted, unstaged, or staged when needed.
-- Edit a workspace file with an optimistic external-change check before saving.
-- Open several files, switch tabs, copy paths, and resize the panel. A tree or Quick Open click previews; double-click pins. Conversation writes open a kept tab.
-- Shortcuts: `⌥⌘B` toggle, `⌘⇧E` hide or show the file pane, `⌘P` open file, tree search to locate without opening, `⌘F` / `⌘L` find or jump, `⌘W` close, `⌘1`–`⌘9` switch tabs. Drag or right-click to insert a path.
-- Review scopes list session edits or Git changes with matching `+/−`; the toolbar also shows Git branch/status and session tool activity.
-- UI follows the DSH language setting.
+The panel is persistent and resizable. It has preview and pinned tabs, Quick Open, tree search, in-file find/go-to-line, image and Markdown previews, and workspace editing with external-change protection. UI language follows DSH.
 
 ## Install
 

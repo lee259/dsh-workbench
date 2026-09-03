@@ -122,7 +122,8 @@ export function WorkbenchBody({
   }) {
     const { i18n } = useWorkbenchServices();
     const t = i18n.t;
-    const treeVisibleNow = treeVisible && !emptyTabOpen;
+    const showWorkbenchHome = emptyTabOpen || (!diffMode && !activeEmptyFileTab && !state.path);
+    const treeVisibleNow = treeVisible && !showWorkbenchHome;
     const treeRailRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
@@ -133,7 +134,7 @@ export function WorkbenchBody({
         <div className={`dsh-wb-main${diffMode ? " is-diff" : ""}`}>
           <div className="dsh-wb-code-column">
             <main className="dsh-wb-code">
-              {emptyTabOpen ? (
+              {showWorkbenchHome ? (
                 <EmptyTabChooser
                   onReview={openReviewTab}
                   onFile={newFileTab}

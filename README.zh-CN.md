@@ -7,14 +7,14 @@
 
 [English](./README.md) · [更新日志](./CHANGELOG.zh-CN.md) · [Issues](https://github.com/lee259/dsh-workbench/issues) · [npm](https://www.npmjs.com/package/dsh-workbench)
 
-[DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart) Web 的 Codex 风格工作区与 Git 审查。无需离开对话，即可同时审查会话编辑和 Git 变更。
+[DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart) Web 的 Codex 风格文件工作区与 Git 审查。把对话、改动文件和 diff 放在同一个地方看。
 
-## 核心能力
+## 能做什么
 
-- **按正确基线审查** — 可切换会话编辑、未提交、未暂存与已暂存；diff 与文件树共用同一份文件和 `+/−` 数据源。
-- **在对话旁阅读和对比** — 可从 Agent 工具调用、工作区文件树或搜索打开文件，不丢失当前上下文。
-- **不抢当前 Tab** — 新编辑只增量更新受影响的审查文件；用户从对话主动点击文件时才打开并定位 diff。
-- **闭环到对话** — 可安全编辑工作区文件、复制路径，并把选中的 diff 代码范围引用到当前 Harness 输入框。
+- 捕获 DSH `write` / `edit` 的原始前后内容。
+- 可切换会话编辑、未提交、未暂存与已暂存 Git 变更；文件树和 diff 共用 `+/−` 统计。
+- 从工具调用、工作区文件树或搜索打开文件；对话里的文件链接会展开对应 diff。
+- 可编辑工作区文件、复制路径，并把选中的 diff 范围插入当前 Harness 输入框。
 
 ![DSH Workbench 在 DeepSeek Harness Web 中运行](./assets/dsh-workbench-demo.png)
 
@@ -23,15 +23,9 @@ read       → 源码
 write/edit → 捕获到的 DSH diff
 ```
 
-## 为什么用
+## 细节
 
-- 对话和正在查看的文件同时可见。
-- 展示真实 DSH write/edit 的前后变化；需要时也可按未提交、未暂存或已暂存 Git 变更对比。
-- 可编辑工作区文件；保存前会乐观校验外部磁盘变更。
-- 多文件标签、复制路径、拖拽调宽度。文件树或 Quick Open 单击预览，双击固定。对话里的写入打开固定标签。
-- 快捷键：`⌥⌘B` 开关，`⌘⇧E` 隐藏或显示文件栏，`⌘P` 打开文件，树搜索只定位不打开，`⌘F` / `⌘L` 查找或跳行，`⌘W` 关闭，`⌘1`–`⌘9` 切标签。拖拽或右键可插入路径。
-- 审阅可列出会话编辑或 Git 变更，`+/−` 与文件树保持一致；工具栏还会显示 Git 分支/状态和会话工具活动。
-- 界面跟随 DSH 语言设置。
+右侧面板可常驻、可调整宽度，支持预览和固定标签、Quick Open、文件树搜索、文件内查找/跳行、图片与 Markdown 预览，以及带外部变更保护的工作区编辑；界面跟随 DSH 语言设置。
 
 ## 安装
 

@@ -121,9 +121,23 @@ export function GitDiffPanel({ scope, revision, files: suppliedFiles, sessionId,
   }, [revision, scope, suppliedFiles]);
   const files = suppliedFiles ?? worktreeFiles;
   useEffect(() => {
+    const onCollapseAll = (event: Event) => {
+      const action = event instanceof CustomEvent ? event.detail : "";
+      setCollapsed(action === "collapse" ? new Set(files.map((file) => file.path)) : new Set());
+    };
+    window.addEventListener("dsh-wb-diff-collapse-all", onCollapseAll);
+    return () => window.removeEventListener("dsh-wb-diff-collapse-all", onCollapseAll);
+  }, [files]);
+  useEffect(() => {
     const onReveal = (event: Event) => {
       const path = event instanceof CustomEvent && typeof event.detail === "string" ? event.detail : "";
       if (path) {
+        setCollapsed((current) => {
+          if (!current.has(path)) return current;
+          const next = new Set(current);
+          next.delete(path);
+          return next;
+        });
         setRevealPath(normalizePath(path));
         setRevealVersion((version) => version + 1);
       }

@@ -7,6 +7,7 @@ import { createPathIdentity } from "./path-identity.js";
 import { ACTIVITY_API_PATH, CONTENT_SEARCH_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH, GIT_DIFF_API_PATH, GIT_STATUS_API_PATH, MAX_IMAGE_PREVIEW_BYTES, normalizePath, REVIEW_API_PATH, WORKSPACE_API_PATH, type FileOpenMode, type GitFileDiff } from "../shared/types.js";
 import { completeSessionDiffs, reviewDiffCounts } from "../shared/review-diff.js";
 import { countDiffLines } from "../shared/line-diff.js";
+import { isTextPreviewPath } from "../shared/preview-policy.js";
 import { createChangePump } from "./change-pump.js";
 import { createWorkspace, type Workspace } from "./workspace.js";
 import { startWorkspaceWatch, type WorkspaceWatchHandle } from "./workspace-watch.js";
@@ -185,7 +186,7 @@ export function apply(ctx: HostContext): void {
       }
       const changes = [];
       const sessionFiles: GitFileDiff[] = [];
-      for (const change of history.getReview(selectedSession ?? undefined, root)) {
+      for (const change of history.getReview(selectedSession ?? undefined, root).filter((change) => isTextPreviewPath(change.path))) {
         const disk = await workspace.read(change.path);
         if (!disk.ok) {
           changes.push(change);

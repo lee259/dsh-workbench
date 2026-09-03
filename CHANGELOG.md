@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.13.0 - 2026-09-03
+
+### Features
+
+- Show the empty file-open view by default when opening Workbench with no active file.
+- Add collapse-all and expand-all controls for review diffs; selecting a collapsed file in the tree expands and reveals it.
+- Keep every file in the workspace tree while limiting source previews and Git/session diffs to a safe text and image allowlist. Unsupported files show a clear unavailable-preview hint.
+
+### Changed
+
+- Refresh the README copy and Workbench screenshot.
+
 ## 0.12.2 - 2026-09-02
 
 ### Performance

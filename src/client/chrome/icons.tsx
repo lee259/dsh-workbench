@@ -15,7 +15,7 @@ function renderPrimitive(icon: PrimitiveIcon, className: string, size = 16) {
   return createElement(icon, { className, size });
 }
 
-export type WorkbenchIconName = "search" | "copy" | "check" | "close" | "folder" | "panel" | "panel-open" | "panel-closed" | "commit" | "unified" | "split";
+export type WorkbenchIconName = "search" | "copy" | "check" | "close" | "folder" | "panel" | "panel-open" | "panel-closed" | "commit" | "unified" | "split" | "collapse-all" | "expand-all";
 
 const ICONS: Record<WorkbenchIconName, PrimitiveIcon> = {
   search: IconSearch16,
@@ -29,6 +29,8 @@ const ICONS: Record<WorkbenchIconName, PrimitiveIcon> = {
   commit: IconDiffOutline16,
   unified: IconUnifiedDiff16,
   split: IconSplitDiff16,
+  "collapse-all": IconCollapseAll16,
+  "expand-all": IconExpandAll16,
 };
 
 export function Icon({ name }: { name: WorkbenchIconName }) {
@@ -102,6 +104,18 @@ function IconSplitDiff16({ size = 16, className }: { size?: number; className?: 
   return createElement("svg", { width: size, height: size, className, viewBox: "0 0 16 16", fill: "none", "aria-hidden": true },
     createElement("rect", { x: 2, y: 2.5, width: 12, height: 11, rx: 2, stroke: "currentColor", strokeWidth: 1.5 }),
     createElement("path", { d: "M8 3.5v9M4.5 6h2M9.5 9h2", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round" }),
+  );
+}
+
+function IconCollapseAll16({ size = 16, className }: { size?: number; className?: string }) {
+  return createElement("svg", { width: size, height: size, className, viewBox: "0 0 16 16", fill: "none", "aria-hidden": true },
+    createElement("path", { d: "M2.5 3.5h7M2.5 8h7M2.5 12.5h7M12.5 4.5v7M10.75 10l1.75 1.75L14.25 10", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" }),
+  );
+}
+
+function IconExpandAll16({ size = 16, className }: { size?: number; className?: string }) {
+  return createElement("svg", { width: size, height: size, className, viewBox: "0 0 16 16", fill: "none", "aria-hidden": true },
+    createElement("path", { d: "M2.5 3.5h7M2.5 8h7M2.5 12.5h7M12.5 11.5v-7M10.75 6l1.75-1.75L14.25 6", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" }),
   );
 }
 

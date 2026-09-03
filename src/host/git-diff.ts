@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { countDiffLines } from "../shared/line-diff.js";
+import { isTextPreviewPath } from "../shared/preview-policy.js";
 import type { GitFileDiff, GitStatus } from "../shared/types.js";
 import { mapConcurrent } from "./concurrent.js";
 
@@ -43,7 +44,7 @@ export async function gitDiffFiles(root: string, scope: GitDiffScope): Promise<G
     : scope === "uncommitted"
       ? ["diff", "HEAD", "--name-only", "-z"]
       : ["diff", "--name-only", "-z"];
-  const tracked = await gitPaths(root, diffArgs);
+  const tracked = (await gitPaths(root, diffArgs)).filter(isTextPreviewPath);
   const baseline = scope === "unstaged" ? ":" : "HEAD";
   const files = await mapConcurrent(tracked, DIFF_FILE_CONCURRENCY, async (path) => {
     const [before, content] = await Promise.all([
@@ -54,7 +55,7 @@ export async function gitDiffFiles(root: string, scope: GitDiffScope): Promise<G
   });
   if (scope === "staged") return files;
   const raw = await runGit(root, ["ls-files", "--others", "--exclude-standard", "-z"]);
-  const untracked = raw.split("\0").filter(Boolean);
+  const untracked = raw.split("\0").filter(isTextPreviewPath);
   const additions = await mapConcurrent(untracked, DIFF_FILE_CONCURRENCY, async (path) => {
     const content = await diskFile(root, path);
     return { path, before: null, content, ...countDiffLines(null, content) };
@@ -68,7 +69,7 @@ export async function gitDiffFile(root: string, scope: GitDiffScope, path: strin
     : scope === "uncommitted"
       ? ["diff", "HEAD", "--name-only", "-z", "--", path]
       : ["diff", "--name-only", "-z", "--", path];
-  const [tracked] = await gitPaths(root, diffArgs);
+  const [tracked] = (await gitPaths(root, diffArgs)).filter(isTextPreviewPath);
   if (tracked) {
     const baseline = scope === "unstaged" ? ":" : "HEAD";
     const [before, content] = await Promise.all([
@@ -78,7 +79,7 @@ export async function gitDiffFile(root: string, scope: GitDiffScope, path: strin
     return { path: tracked, before, content, ...countDiffLines(before, content) };
   }
   if (scope === "staged") return null;
-  const [untracked] = await gitPaths(root, ["ls-files", "--others", "--exclude-standard", "-z", "--", path]);
+  const [untracked] = (await gitPaths(root, ["ls-files", "--others", "--exclude-standard", "-z", "--", path])).filter(isTextPreviewPath);
   if (!untracked) return null;
   const content = await diskFile(root, untracked);
   return { path: untracked, before: null, content, ...countDiffLines(null, content) };

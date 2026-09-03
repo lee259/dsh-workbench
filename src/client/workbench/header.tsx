@@ -126,6 +126,8 @@ export function WorkbenchHeader({
     const { store, i18n, absolutePath } = useWorkbenchServices();
     const t = i18n.t;
     const [reviewScopeMenuOpen, setReviewScopeMenuOpen] = useState(false);
+    const [allDiffsCollapsed, setAllDiffsCollapsed] = useState(false);
+    useEffect(() => setAllDiffsCollapsed(false), [reviewScope]);
     const normalFileTabs = state.open.filter((path) => !Object.values(emptyFilePaths).includes(path));
     const hasTabsAfter = (closing: "review" | "empty" | "file" | "normal") => (
       (closing !== "review" && reviewTabOpen)
@@ -375,6 +377,23 @@ export function WorkbenchHeader({
             )}
             {!diffMode ? <span className="dsh-wb-meta">{meta}</span> : null}
             <div className="dsh-wb-path-actions" aria-label={t("viewOptions")}>
+              {diffMode ? (
+                <WorkbenchTooltip label={t(allDiffsCollapsed ? "expandAllDiffs" : "collapseAllDiffs")}>
+                <button
+                  className="dsh-wb-button dsh-wb-icon-button"
+                  type="button"
+                  aria-label={t(allDiffsCollapsed ? "expandAllDiffs" : "collapseAllDiffs")}
+                  aria-pressed={allDiffsCollapsed}
+                  onClick={() => {
+                    const next = !allDiffsCollapsed;
+                    setAllDiffsCollapsed(next);
+                    window.dispatchEvent(new CustomEvent("dsh-wb-diff-collapse-all", { detail: next ? "collapse" : "expand" }));
+                  }}
+                >
+                  <Icon name={allDiffsCollapsed ? "expand-all" : "collapse-all"} />
+                </button>
+                </WorkbenchTooltip>
+              ) : null}
               {diffMode ? (
                 <WorkbenchTooltip label={t(diffView === "unified" ? "splitDiff" : "unifiedDiff")}>
                 <button

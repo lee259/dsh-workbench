@@ -98,6 +98,14 @@ export function CodeView({
         </div>
       );
     }
+    if (state.error === "not_previewable") {
+      return (
+        <div className="dsh-wb-empty dsh-wb-preview-unavailable">
+          <strong>{t("not_previewable")}</strong>
+          <span>{t("notPreviewableHint")}</span>
+        </div>
+      );
+    }
     if (state.error) return <div className="dsh-wb-error">{t(state.error)}</div>;
     if (!state.payload) return null;
     const payload = state.payload;

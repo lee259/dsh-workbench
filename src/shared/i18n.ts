@@ -21,6 +21,7 @@ export type MessageKey =
   | "ariaWorkspace"
   | "missing_path"
   | "not_previewable"
+  | "notPreviewableHint"
   | "file_not_found"
   | "read_failed"
   | "resize"
@@ -94,6 +95,8 @@ export type MessageKey =
   | "noChanges"
   | "collapseDiff"
   | "expandDiff"
+  | "collapseAllDiffs"
+  | "expandAllDiffs"
   | "unifiedDiff"
   | "splitDiff";
 
@@ -118,6 +121,7 @@ const zh: Record<MessageKey, string> = {
   ariaWorkspace: "文件工作区",
   missing_path: "缺少路径",
   not_previewable: "文件无法预览",
+  notPreviewableHint: "该文件类型不在工作台预览白名单中",
   file_not_found: "文件不存在",
   read_failed: "文件读取失败",
   resize: "调整面板宽度",
@@ -191,6 +195,8 @@ const zh: Record<MessageKey, string> = {
   noChanges: "没有变更",
   collapseDiff: "折叠 diff",
   expandDiff: "展开 diff",
+  collapseAllDiffs: "折叠全部 diff",
+  expandAllDiffs: "展开全部 diff",
   unifiedDiff: "统一差异视图",
   splitDiff: "拆分差异视图",
 };
@@ -216,6 +222,7 @@ const en: Record<MessageKey, string> = {
   ariaWorkspace: "File workspace",
   missing_path: "Missing path",
   not_previewable: "File is not previewable",
+  notPreviewableHint: "This file type is not in the workbench preview allowlist",
   file_not_found: "File not found",
   read_failed: "Failed to read file",
   resize: "Resize panel",
@@ -289,6 +296,8 @@ const en: Record<MessageKey, string> = {
   noChanges: "No changes",
   collapseDiff: "Collapse diff",
   expandDiff: "Expand diff",
+  collapseAllDiffs: "Collapse all diffs",
+  expandAllDiffs: "Expand all diffs",
   unifiedDiff: "Unified diff view",
   splitDiff: "Split diff view",
 };
