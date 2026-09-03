@@ -5,6 +5,7 @@ export type PreviewCommands = {
   find(): boolean;
   goToLine(): boolean;
   revealLine(line: number): void;
+  save(): boolean;
 };
 
 export function clampPreviewLine(line: number, lineCount: number): number {
@@ -20,7 +21,7 @@ export function revealEditorLine(view: EditorView, line: number): void {
   });
 }
 
-export function createPreviewCommands(view: EditorView): PreviewCommands {
+export function createPreviewCommands(view: EditorView, save?: () => void): PreviewCommands {
   return {
     find() {
       return openSearchPanel(view);
@@ -31,6 +32,11 @@ export function createPreviewCommands(view: EditorView): PreviewCommands {
     },
     revealLine(line) {
       revealEditorLine(view, line);
+    },
+    save() {
+      if (!save) return false;
+      save();
+      return true;
     },
   };
 }

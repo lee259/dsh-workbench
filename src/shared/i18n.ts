@@ -82,6 +82,14 @@ export type MessageKey =
   | "workbench"
   | "markdownPreview"
   | "markdownSource"
+  | "preview"
+  | "source"
+  | "refreshFile"
+  | "refreshUnsavedConfirm"
+  | "unsavedChanges"
+  | "savingFile"
+  | "fileSaved"
+  | "markdownOutline"
   | "reviewTitle"
   | "reviewError"
   | "reviewEmpty"
@@ -182,6 +190,14 @@ const zh: Record<MessageKey, string> = {
   workbench: "工作台",
   markdownPreview: "预览 Markdown",
   markdownSource: "查看原始 Markdown",
+  preview: "预览",
+  source: "源码",
+  refreshFile: "刷新文件",
+  refreshUnsavedConfirm: "文件有未保存的更改。仍要刷新吗？",
+  unsavedChanges: "未保存的更改",
+  savingFile: "正在保存…",
+  fileSaved: "已保存",
+  markdownOutline: "文档目录",
   reviewTitle: "变更审阅",
   reviewError: "变更加载失败",
   reviewEmpty: "暂无捕获的变更",
@@ -283,6 +299,14 @@ const en: Record<MessageKey, string> = {
   workbench: "Workbench",
   markdownPreview: "Preview Markdown",
   markdownSource: "View raw Markdown",
+  preview: "Preview",
+  source: "Source",
+  refreshFile: "Refresh file",
+  refreshUnsavedConfirm: "This file has unsaved changes. Refresh anyway?",
+  unsavedChanges: "Unsaved changes",
+  savingFile: "Saving…",
+  fileSaved: "Saved",
+  markdownOutline: "Document outline",
   reviewTitle: "Review changes",
   reviewError: "Failed to load changes",
   reviewEmpty: "No captured changes",

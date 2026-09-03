@@ -132,6 +132,23 @@ export function treeMatches(tree: WorkspaceTree, node: TreeNode, query: string):
   return node.kind === "directory" && treeChildren(tree, node.path).some((child) => treeMatches(tree, child, needle));
 }
 
+/** Keep query matches in place, along with the folders needed to reach them. */
+export function filterTree(tree: WorkspaceTree, query: string): WorkspaceTree {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return tree;
+  const matchedDirectories = tree.directories.filter((path) => path.toLowerCase().includes(needle));
+  const isInsideMatchedDirectory = (path: string) => matchedDirectories.some((directory) => path === directory || path.startsWith(`${directory}/`));
+  const files = tree.files.filter((file) => file.path.toLowerCase().includes(needle) || isInsideMatchedDirectory(file.path));
+  const visiblePaths = new Set([
+    ...matchedDirectories,
+    ...files.flatMap((file) => ancestorDirectories(file.path)),
+  ]);
+  const directories = tree.directories.filter((directory) => (
+    visiblePaths.has(directory) || isInsideMatchedDirectory(directory)
+  ));
+  return { directories, files };
+}
+
 export function flattenVisibleRows(tree: WorkspaceTree, open: readonly string[]): TreeRow[] {
   const walk = (parent: string, depth: number): TreeRow[] => treeChildren(tree, parent)
     .flatMap((node) => {

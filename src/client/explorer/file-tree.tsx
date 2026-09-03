@@ -27,7 +27,6 @@ import { fetchReview, fetchReviewFile } from "../review/review-data.js";
 import { fetchGitDiff } from "../review/git-diff-data.js";
 import { mergeReviewFile } from "../review/review-files.js";
 import { reviewTreePath, scopedReviewChanges, type ScopedReviewChange } from "../review/review-scope.js";
-import { highlightSegments, moveSearchFocus, treeSearchHits } from "./search-model.js";
 import { fetchWorkspaceTree } from "../store.js";
 import { useWorkbenchServices } from "../workbench/runtime.js";
 import {
@@ -39,6 +38,7 @@ import {
   consumeTreeEscape,
   directoriesToReveal,
   emptyTree,
+  filterTree,
   flattenVisibleRows,
   mergeOpenDirectories,
   readTreeOpen,
@@ -114,7 +114,6 @@ export function WorkspaceTreePanel({
     const [open, setOpen] = useState<string[]>(savedTreeOpen);
     const [loading, setLoading] = useState(false);
     const [failed, setFailed] = useState(false);
-    const [hitIndex, setHitIndex] = useState(0);
     const [focusedPath, setFocusedPath] = useState(fileState.active);
     const [locatePath, setLocatePath] = useState("");
     const [pendingReveal, setPendingReveal] = useState("");
@@ -167,7 +166,6 @@ export function WorkspaceTreePanel({
       expandTo(path);
       setLocatePath(path);
       setQuery("");
-      setHitIndex(0);
       closeContextMenu();
     };
 
@@ -179,8 +177,9 @@ export function WorkspaceTreePanel({
         directories: tree.directories.filter((directory) => [...changedPaths].some((path) => path.startsWith(`${directory}/`))),
       }
       : tree;
-    const rows = flattenVisibleRows(displayTree, open);
-    const hits = treeSearchHits(displayTree, normalizedQuery);
+    const filteredTree = filterTree(displayTree, normalizedQuery);
+    const visibleOpen = filtering ? mergeOpenDirectories(open, filteredTree.directories) : open;
+    const rows = flattenVisibleRows(filteredTree, visibleOpen);
 
     const openFromTree = (path: string, kind: "preview" | "keep" = "preview") => {
       const change = reviewByPath.get(normalizePath(path));
@@ -286,7 +285,6 @@ export function WorkspaceTreePanel({
           }
           if (layer === "query") {
             setQuery("");
-            setHitIndex(0);
             return true;
           }
           return false;
@@ -332,7 +330,7 @@ export function WorkspaceTreePanel({
 
     const onTreeKeyDown = (event: KeyboardEvent, path = focusedPath || fileState.active || rows[0]?.path) => {
       if (!path) return;
-      const action = treeKeyAction(event.key, rows, path, open);
+      const action = treeKeyAction(event.key, rows, path, visibleOpen);
       if (!action) return;
       event.preventDefault();
       const row = rows.find((item) => item.path === action.path);
@@ -341,7 +339,7 @@ export function WorkspaceTreePanel({
 
     const renderNodes = () => rows.map((item) => {
       const internal = item.kind === "directory";
-      const isOpen = open.includes(item.path);
+      const isOpen = visibleOpen.includes(item.path);
       const selected = openMode === "diff" ? item.path === focusedPath : item.path === fileState.active;
       const focused = item.path === focusedPath;
       const change = reviewByPath.get(normalizePath(item.path));
@@ -389,31 +387,6 @@ export function WorkspaceTreePanel({
       );
     });
 
-    const renderHits = () => hits.map((hit, index) => (
-      <button
-        key={hit.path}
-        id={`dsh-wb-tree-hit-${index}`}
-        type="button"
-        role="option"
-        aria-selected={index === hitIndex}
-        className={`dsh-wb-tree-hit${index === hitIndex ? " is-active" : ""}`}
-        onMouseEnter={() => setHitIndex(index)}
-        onClick={() => locate(hit.path)}
-      >
-        <FileTypeIcon path={hit.name} directory={tree.directories.includes(hit.path)} />
-        <span className="dsh-wb-search-result-copy">
-          <span className="dsh-wb-search-result-name">
-            {highlightSegments(hit.name, normalizedQuery).map((segment, segmentIndex) => (
-              segment.match
-                ? <mark key={segmentIndex} className="dsh-wb-search-mark">{segment.text}</mark>
-                : <span key={segmentIndex}>{segment.text}</span>
-            ))}
-          </span>
-          {hit.parent ? <span className="dsh-wb-search-result-parent">{hit.parent}</span> : null}
-        </span>
-      </button>
-    ));
-
     const menuPath = contextMenu?.path ?? "";
     const menuIsDirectory = tree.directories.includes(menuPath);
 
@@ -448,11 +421,10 @@ export function WorkspaceTreePanel({
                 ref={searchRef}
                 value={query}
                 aria-label={t("treeFilter")}
-                aria-controls={filtering ? "dsh-wb-tree-hits" : undefined}
+                aria-controls="dsh-wb-tree-list"
                 placeholder={t("treeFilterPlaceholder")}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => {
                   setQuery(event.target.value);
-                  setHitIndex(0);
                 }}
                 onKeyDown={(event: KeyboardEvent) => {
                   if (event.key === "Escape" && normalizedQuery) {
@@ -463,16 +435,7 @@ export function WorkspaceTreePanel({
                   }
                   if (event.key === "ArrowDown") {
                     event.preventDefault();
-                    if (filtering && hits[0]) {
-                      setHitIndex(0);
-                      listRef.current?.querySelector<HTMLElement>(".dsh-wb-tree-hit")?.focus();
-                      return;
-                    }
                     if (rows[0]) focusRow(rows[0].path);
-                  }
-                  if (event.key === "Enter" && filtering && hits[hitIndex]) {
-                    event.preventDefault();
-                    locate(hits[hitIndex].path);
                   }
                 }}
               />
@@ -485,46 +448,21 @@ export function WorkspaceTreePanel({
               ) : null}
             </div>
           </div>
-          {filtering ? (
-            <div
-              id="dsh-wb-tree-hits"
-              className="dsh-wb-tree-hits"
-              role="listbox"
-              aria-label={t("treeFilter")}
-              ref={listRef}
-              onKeyDown={(event: KeyboardEvent) => {
-                if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-                  event.preventDefault();
-                  setHitIndex((current) => moveSearchFocus(hits.length, current, event.key === "ArrowDown" ? 1 : -1));
-                  return;
-                }
-                if (event.key === "Enter" && hits[hitIndex]) {
-                  event.preventDefault();
-                  locate(hits[hitIndex].path);
-                }
-              }}
-            >
-              <div className="dsh-wb-search-state">
-                {hits.length === 0 ? t("treeNoMatches") : t("treeMatchCount", { count: hits.length })}
-              </div>
-              {renderHits()}
-            </div>
-          ) : (
-            <div
-              className="dsh-wb-tree-list"
-              role="tree"
-              tabIndex={rows.length === 0 ? 0 : -1}
-              aria-activedescendant={focusedPath ? `dsh-wb-tree-row-${focusedPath}` : undefined}
-              ref={listRef}
-              onKeyDown={(event: KeyboardEvent) => {
-                if (event.target === event.currentTarget) onTreeKeyDown(event);
-              }}
-            >
-              {failed ? <div className="dsh-wb-search-state">{t("searchError")}</div> : null}
-              {!failed && rows.length === 0 && !loading ? <div className="dsh-wb-search-state">{t("treeEmpty")}</div> : null}
-              {renderNodes()}
-            </div>
-          )}
+          <div
+            id="dsh-wb-tree-list"
+            className="dsh-wb-tree-list"
+            role="tree"
+            tabIndex={rows.length === 0 ? 0 : -1}
+            aria-activedescendant={focusedPath ? `dsh-wb-tree-row-${focusedPath}` : undefined}
+            ref={listRef}
+            onKeyDown={(event: KeyboardEvent) => {
+              if (event.target === event.currentTarget) onTreeKeyDown(event);
+            }}
+          >
+            {failed ? <div className="dsh-wb-search-state">{t("searchError")}</div> : null}
+            {!failed && rows.length === 0 && !loading ? <div className="dsh-wb-search-state">{filtering ? t("treeNoMatches") : t("treeEmpty")}</div> : null}
+            {renderNodes()}
+          </div>
         </aside>
         <Menu
           open={contextMenu !== null}

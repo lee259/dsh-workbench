@@ -7,6 +7,7 @@ import {
   directoriesToReveal,
   foldersAreExpanded,
   consumeTreeEscape,
+  filterTree,
   flattenVisibleRows,
   mergeOpenDirectories,
   moveTreeFocus,
@@ -65,6 +66,17 @@ test("visible tree rows flatten open directories and keep files collapsed", () =
   expect(closed.map((row) => row.path)).toEqual(["src", "README.md"]);
   const opened = flattenVisibleRows(tree, ["src", "src/client"], "");
   expect(opened.map((row) => row.path)).toEqual(["src", "src/client", "src/client/ui.tsx", "src/index.ts", "README.md"]);
+});
+
+test("tree filtering keeps matching paths in the tree with their ancestors", () => {
+  expect(filterTree(tree, "ui")).toEqual({
+    directories: ["src", "src/client"],
+    files: [{ path: "src/client/ui.tsx", size: 1 }],
+  });
+  expect(filterTree(tree, "client")).toEqual({
+    directories: ["src", "src/client"],
+    files: [{ path: "src/client/ui.tsx", size: 1 }],
+  });
 });
 
 test("tree keyboard moves, toggles, and opens from the focused row", () => {

@@ -132,13 +132,25 @@ export function createEditorExtensions(options: {
   diffView?: DiffViewMode;
   onSelectionChange?(selection: CodeSelection | null): void;
   onDocumentChange?(content: string): void;
+  onSave?(): void;
   editable?: boolean;
 }): Extension[] {
   const extensions: Extension[] = [
     lineNumbers(),
     foldGutter(),
     search({ top: true }),
-    keymap.of([...foldKeymap, ...searchKeymap]),
+    keymap.of([
+      ...(options.onSave ? [{
+        key: "Mod-s",
+        preventDefault: true,
+        run: () => {
+          options.onSave?.();
+          return true;
+        },
+      }] : []),
+      ...foldKeymap,
+      ...searchKeymap,
+    ]),
     syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
     EditorView.editable.of(options.editable === true),
     EditorState.readOnly.of(options.editable !== true),

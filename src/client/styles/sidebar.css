@@ -16,7 +16,7 @@
   overflow: hidden;
   color: var(--dsw-alias-label-primary);
   background: var(--dsw-alias-bg-layer-1);
-  border-left: 1px solid var(--dsw-alias-border-l1);
+  border-left: 1px solid var(--dsw-alias-border-l2);
   box-shadow: var(--dsw-shadow-lv2);
   /* DSH Tooltip renders its fixed bubble beside the trigger, rather than
      portalling it to body. A transform here would make the panel its fixed

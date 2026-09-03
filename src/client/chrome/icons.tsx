@@ -15,7 +15,7 @@ function renderPrimitive(icon: PrimitiveIcon, className: string, size = 16) {
   return createElement(icon, { className, size });
 }
 
-export type WorkbenchIconName = "search" | "copy" | "check" | "close" | "folder" | "panel" | "panel-open" | "panel-closed" | "commit" | "unified" | "split" | "collapse-all" | "expand-all";
+export type WorkbenchIconName = "search" | "copy" | "check" | "close" | "folder" | "panel" | "panel-open" | "panel-closed" | "commit" | "unified" | "split" | "collapse-all" | "expand-all" | "edit" | "refresh" | "outline";
 
 const ICONS: Record<WorkbenchIconName, PrimitiveIcon> = {
   search: IconSearch16,
@@ -31,6 +31,9 @@ const ICONS: Record<WorkbenchIconName, PrimitiveIcon> = {
   split: IconSplitDiff16,
   "collapse-all": IconCollapseAll16,
   "expand-all": IconExpandAll16,
+  edit: IconEdit16,
+  refresh: IconRefresh16,
+  outline: IconOutline16,
 };
 
 export function Icon({ name }: { name: WorkbenchIconName }) {
@@ -116,6 +119,26 @@ function IconCollapseAll16({ size = 16, className }: { size?: number; className?
 function IconExpandAll16({ size = 16, className }: { size?: number; className?: string }) {
   return createElement("svg", { width: size, height: size, className, viewBox: "0 0 16 16", fill: "none", "aria-hidden": true },
     createElement("path", { d: "M2.5 3.5h7M2.5 8h7M2.5 12.5h7M12.5 11.5v-7M10.75 6l1.75-1.75L14.25 6", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" }),
+  );
+}
+
+function IconEdit16({ size = 16, className }: { size?: number; className?: string }) {
+  return createElement("svg", { width: size, height: size, className, viewBox: "0 0 16 16", fill: "none", "aria-hidden": true },
+    createElement("path", { d: "m3 11.9.55-2.2 6.7-6.7a1.5 1.5 0 0 1 2.12 2.12l-6.7 6.7L3 11.9Z", stroke: "currentColor", strokeWidth: 1.5, strokeLinejoin: "round" }),
+    createElement("path", { d: "m9.5 3.75 2.75 2.75M3 13h10", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round" }),
+  );
+}
+
+function IconRefresh16({ size = 16, className }: { size?: number; className?: string }) {
+  return createElement("svg", { width: size, height: size, className, viewBox: "0 0 16 16", fill: "none", "aria-hidden": true },
+    createElement("path", { d: "M13 7A5 5 0 1 0 14 10.1M13 3.5V7H9.5", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" }),
+  );
+}
+
+function IconOutline16({ size = 16, className }: { size?: number; className?: string }) {
+  return createElement("svg", { width: size, height: size, className, viewBox: "0 0 16 16", fill: "none", "aria-hidden": true },
+    createElement("path", { d: "M3 4h10M3 8h7M3 12h5", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round" }),
+    createElement("circle", { cx: 12, cy: 8, r: 1, fill: "currentColor" }),
   );
 }
 
