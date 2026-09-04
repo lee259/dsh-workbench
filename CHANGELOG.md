@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.14.0 - 2026-09-04
+
+### Features
+
+- Refine workspace-file and Markdown previews with save feedback, protected refresh, source/preview switching, and a Markdown outline.
+
+### Changed
+
+- Make the file-tree search filter rows directly, and align the tree and preview interaction treatment.
+
+### Compatibility
+
+- Replay existing Harness session logs through the v0.1.2 RC `snapshotEvents()` API while retaining the legacy event-array fallback.
+- Require compatible v0.1.2 RC Harness client packages.
+
 ## 0.13.0 - 2026-09-03
 
 ### Features
