@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.1 - 2026-09-04
+
+### Fixes
+
+- Restore broad Harness peer ranges so existing profiles do not mix incompatible client packages while the session replay adapter handles both legacy and RC APIs.
+
 ## 0.14.0 - 2026-09-04
 
 ### Features
@@ -13,7 +19,6 @@
 ### Compatibility
 
 - Replay existing Harness session logs through the v0.1.2 RC `snapshotEvents()` API while retaining the legacy event-array fallback.
-- Require compatible v0.1.2 RC Harness client packages.
 
 ## 0.13.0 - 2026-09-03
 
