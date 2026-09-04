@@ -65,8 +65,7 @@ test("rejects an oversized file", async () => {
     fs: memoryFs({ "/repo/big.ts": { isFile: true, content: "12345" } }),
   });
   const result = await workspace.read("big.ts");
-  expect(result.ok).toBe(false);
-  expect(result.status).toBe(413);
+  expect(result).toMatchObject({ ok: false, status: 413, error: "file_too_large" });
 });
 
 test("rejects a file outside the preview allowlist", async () => {

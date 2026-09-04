@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { toFilePayload } from "./file-preview.js";
 import { sendJson } from "./http.js";
 import { createPathIdentity } from "./path-identity.js";
-import { ACTIVITY_API_PATH, CONTENT_SEARCH_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH, GIT_DIFF_API_PATH, GIT_STATUS_API_PATH, MAX_IMAGE_PREVIEW_BYTES, normalizePath, REVIEW_API_PATH, WORKSPACE_API_PATH, type FileOpenMode, type GitFileDiff } from "../shared/types.js";
+import { ACTIVITY_API_PATH, CONTENT_SEARCH_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH, GIT_DIFF_API_PATH, GIT_STATUS_API_PATH, MAX_IMAGE_PREVIEW_BYTES, normalizePath, REVIEW_API_PATH, SYSTEM_OPEN_API_PATH, WORKSPACE_API_PATH, type FileOpenMode, type GitFileDiff } from "../shared/types.js";
 import { completeSessionDiffs, reviewDiffCounts } from "../shared/review-diff.js";
 import { countDiffLines } from "../shared/line-diff.js";
 import { isTextPreviewPath } from "../shared/preview-policy.js";
@@ -14,6 +14,7 @@ import { startWorkspaceWatch, type WorkspaceWatchHandle } from "./workspace-watc
 import { WriteHistory, type SessionEvent } from "./write-history.js";
 import { ActivityStore } from "./activity.js";
 import { gitDiffFile, gitDiffFiles, gitStatus, type GitDiffScope } from "./git-diff.js";
+import { openInSystem } from "./system-open.js";
 
 type WebServer = {
   register(route: {
@@ -165,6 +166,24 @@ export function apply(ctx: HostContext): void {
 
   ctx.webServer.register({
     kind: "exact",
+    path: SYSTEM_OPEN_API_PATH,
+    handler: async (req, res) => {
+      if (req.method !== "POST") return sendJson(res, 405, { error: "missing_path" });
+      try {
+        const body = await readJson(req) as { path?: unknown };
+        if (typeof body.path !== "string") return sendJson(res, 400, { error: "missing_path" });
+        const located = workspace.resolve(body.path);
+        if (!located.ok) return sendJson(res, located.status, { error: located.error });
+        await openInSystem(located.absolute);
+        sendJson(res, 200, {});
+      } catch {
+        sendJson(res, 500, { error: "read_failed" });
+      }
+    },
+  });
+
+  ctx.webServer.register({
+    kind: "exact",
     path: REVIEW_API_PATH,
     handler: async (req, res) => {
       const query = new URL(req.url ?? "/", "http://dsh.local").searchParams;
@@ -262,7 +281,8 @@ export function apply(ctx: HostContext): void {
       if (!located.ok) return sendJson(res, located.status, { error: located.error });
       try {
         const info = await stat(located.absolute);
-        if (!info.isFile() || info.size > MAX_IMAGE_PREVIEW_BYTES) return sendJson(res, 413, { error: "not_previewable" });
+        if (!info.isFile()) return sendJson(res, 413, { error: "not_previewable" });
+        if (info.size > MAX_IMAGE_PREVIEW_BYTES) return sendJson(res, 413, { error: "file_too_large" });
         const content = await readFile(located.absolute);
         const extension = located.relative.toLowerCase().split(".").pop() ?? "";
         const types: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", avif: "image/avif", bmp: "image/bmp", ico: "image/x-icon" };

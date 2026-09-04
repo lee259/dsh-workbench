@@ -117,7 +117,6 @@ export function CodeView({ state, commandsRef, sessionId, diffView }: {
     if (isMarkdown) setMarkdownSource(false);
     void store.reload();
   };
-
   useEffect(() => {
     const host = hostRef.current;
     if (!host || !payload || state.loading || state.error) return undefined;
@@ -156,9 +155,9 @@ export function CodeView({ state, commandsRef, sessionId, diffView }: {
 
   if (state.loading) return <div className="dsh-wb-empty"><div><strong>{t("loadingTitle")}</strong><span>{t("loadingHint")}</span></div></div>;
   if (state.error === "not_previewable") return <div className="dsh-wb-empty dsh-wb-preview-unavailable"><strong>{t("not_previewable")}</strong><span>{t("notPreviewableHint")}</span></div>;
+  if (state.error === "file_too_large") return <div className="dsh-wb-empty dsh-wb-preview-unavailable"><strong>{t("file_too_large")}</strong><span>{t("fileTooLargeHint")}</span></div>;
   if (state.error) return <div className="dsh-wb-error">{t(state.error)}</div>;
   if (!payload) return null;
-  if (kind === "image" && payload.source !== "dsh-write") return <div className="dsh-wb-image-preview"><img src={`${FILE_ASSET_API_PATH}?path=${encodeURIComponent(payload.path)}&revision=${payload.revision}`} alt={payload.path} /></div>;
 
   const outline = isMarkdown ? markdownOutline(editing ? draft : payload.content) : [];
   const previewContent = editing ? draft : payload.content;
@@ -181,6 +180,11 @@ export function CodeView({ state, commandsRef, sessionId, diffView }: {
       </div>
     </div>
   ) : null;
+
+  if (kind === "image" && payload.source !== "dsh-write") return <div className="dsh-wb-preview-shell">
+    {toolbar}
+    <div className="dsh-wb-image-preview"><img src={`${FILE_ASSET_API_PATH}?path=${encodeURIComponent(payload.path)}&revision=${payload.revision}`} alt={payload.path} /></div>
+  </div>;
 
   if (isMarkdown && !markdownSource) {
     return <div className="dsh-wb-preview-shell">

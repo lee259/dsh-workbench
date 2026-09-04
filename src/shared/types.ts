@@ -1,5 +1,6 @@
 export const FILE_API_PATH = "/api/dsh-workbench/file";
 export const FILE_ASSET_API_PATH = "/api/dsh-workbench/asset";
+export const SYSTEM_OPEN_API_PATH = "/api/dsh-workbench/system-open";
 export const FILES_API_PATH = "/api/dsh-workbench/files";
 export const CONTENT_SEARCH_API_PATH = "/api/dsh-workbench/search";
 export const ACTIVITY_API_PATH = "/api/dsh-workbench/activity";
@@ -14,6 +15,7 @@ export const MAX_IMAGE_PREVIEW_BYTES = 12_000_000;
 export type WorkspaceErrorCode =
   | "missing_path"
   | "not_previewable"
+  | "file_too_large"
   | "file_not_found"
   | "file_changed";
 export const FILE_TOOLS = ["read", "write", "edit"] as const;

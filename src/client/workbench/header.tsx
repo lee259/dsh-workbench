@@ -10,6 +10,7 @@ import type { ReviewScope } from "../../shared/types.js";
 import type { GitStatus } from "../../shared/types.js";
 import { fetchGitStatus } from "../review/git-diff-data.js";
 import { fetchActivities } from "../review/activity-data.js";
+import { openInSystem } from "../preview/system-open.js";
 
 function GitStatusMeta() {
   const [status, setStatus] = useState<GitStatus | null>(null);
@@ -434,6 +435,7 @@ export function WorkbenchHeader({
                 <Icon name={pathCopied ? "check" : "copy"} />
               </button>
               </WorkbenchTooltip> : null}
+              {state.path && !diffMode ? <button className="dsh-wb-button dsh-wb-path-open" type="button" onClick={() => { void openInSystem(state.path).catch(() => {}); }}>{t("openWithDefault")}</button> : null}
             </div>
           </nav>
         ) : null}

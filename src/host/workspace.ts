@@ -98,9 +98,10 @@ export function createWorkspace(options: {
       try {
         const info = await reader.stat(located.absolute);
         const isImage = isImagePreviewPath(located.relative);
-        if (!info.isFile || !isPreviewablePath(located.relative) || info.size > (isImage ? imageMaxBytes : maxBytes)) {
+        if (!info.isFile || !isPreviewablePath(located.relative)) {
           return { ok: false, status: 413, error: "not_previewable" };
         }
+        if (info.size > (isImage ? imageMaxBytes : maxBytes)) return { ok: false, status: 413, error: "file_too_large" };
         const content = await reader.readFile(located.absolute);
         return { ok: true, path: located.relative, content, size: info.size };
       } catch {
@@ -113,7 +114,8 @@ export function createWorkspace(options: {
       if (!reader.writeFile) return { ok: false, status: 404, error: "file_not_found" };
       try {
         const info = await reader.stat(located.absolute);
-        if (!info.isFile || !isTextPreviewPath(located.relative) || info.size > maxBytes) return { ok: false, status: 413, error: "not_previewable" };
+        if (!info.isFile || !isTextPreviewPath(located.relative)) return { ok: false, status: 413, error: "not_previewable" };
+        if (info.size > maxBytes) return { ok: false, status: 413, error: "file_too_large" };
         if (await reader.readFile(located.absolute) !== expected) return { ok: false, status: 409, error: "file_changed" } as WorkspaceError;
         await reader.writeFile(located.absolute, content);
         return { ok: true, path: located.relative, content, size: Buffer.byteLength(content) };

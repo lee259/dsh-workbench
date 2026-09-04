@@ -42,6 +42,13 @@
   margin-left: auto;
 }
 
+.dsh-wb-path-open {
+  height: 26px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: 11px;
+}
+
 .dsh-wb-tab {
   display: flex;
   flex: 0 0 auto;

@@ -29,6 +29,7 @@ import { mergeReviewFile } from "../review/review-files.js";
 import { reviewTreePath, scopedReviewChanges, type ScopedReviewChange } from "../review/review-scope.js";
 import { fetchWorkspaceTree } from "../store.js";
 import { useWorkbenchServices } from "../workbench/runtime.js";
+import { openInSystem } from "../preview/system-open.js";
 import {
   DEFAULT_TREE_WIDTH,
   MAX_TREE_WIDTH,
@@ -473,11 +474,13 @@ export function WorkspaceTreePanel({
               label: t(menuIsDirectory ? "revealInTree" : "openFileAction"),
               icon: menuIsDirectory ? <IconFolderOpen16 size={14} /> : <IconCodeOutline16 size={14} />,
             },
+            ...(menuIsDirectory ? [] : [{ id: "open-system", label: t("openWithDefault"), icon: <IconCodeOutline16 size={14} /> }]),
             { id: "reference", label: t("referencePathAction"), icon: <IconLinkOutline16 size={14} /> },
             { id: "copy", label: t("copyPathAction"), icon: <IconCopyOutline16 size={14} /> },
           ]}
           onSelect={(id: string) => {
             if (id === "open") menuIsDirectory ? locate(menuPath) : openFromTree(menuPath, "keep");
+            if (id === "open-system") void openInSystem(menuPath).catch(() => {});
             if (id === "reference") {
               references?.addPath(menuPath, menuIsDirectory, sessionId);
               closeContextMenu();

@@ -22,8 +22,12 @@ export type MessageKey =
   | "missing_path"
   | "not_previewable"
   | "notPreviewableHint"
+  | "file_too_large"
+  | "fileTooLargeHint"
   | "file_not_found"
   | "read_failed"
+  | "openWithDefault"
+  | "openFailed"
   | "resize"
   | "showPanel"
   | "hidePanel"
@@ -130,8 +134,12 @@ const zh: Record<MessageKey, string> = {
   missing_path: "缺少路径",
   not_previewable: "文件无法预览",
   notPreviewableHint: "该文件类型不在工作台预览白名单中",
+  file_too_large: "文件超过预览大小限制",
+  fileTooLargeHint: "文本文件最大 800 KB，图片最大 12 MB",
   file_not_found: "文件不存在",
   read_failed: "文件读取失败",
+  openWithDefault: "使用默认应用打开",
+  openFailed: "无法使用所选应用打开文件",
   resize: "调整面板宽度",
   showPanel: "显示侧边栏",
   hidePanel: "隐藏侧边栏",
@@ -239,8 +247,12 @@ const en: Record<MessageKey, string> = {
   missing_path: "Missing path",
   not_previewable: "File is not previewable",
   notPreviewableHint: "This file type is not in the workbench preview allowlist",
+  file_too_large: "File exceeds preview size limit",
+  fileTooLargeHint: "Text files are limited to 800 KB; images to 12 MB",
   file_not_found: "File not found",
   read_failed: "Failed to read file",
+  openWithDefault: "Open with default app",
+  openFailed: "Could not open the file with the selected app",
   resize: "Resize panel",
   showPanel: "Show sidebar",
   hidePanel: "Hide sidebar",

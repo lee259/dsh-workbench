@@ -16,6 +16,8 @@ test("translate fills placeholders from the active catalog", () => {
   expect(translate("en", "showTree")).toBe("Show file pane");
   expect(translate("zh", "addReviewNote")).toBe("添加审查意见");
   expect(translate("zh", "notPreviewableHint")).toBe("该文件类型不在工作台预览白名单中");
+  expect(translate("zh", "fileTooLargeHint")).toBe("文本文件最大 800 KB，图片最大 12 MB");
+  expect(translate("en", "file_too_large")).toBe("File exceeds preview size limit");
   expect(translate("en", "collapseAllDiffs")).toBe("Collapse all diffs");
   expect(translate("en", "reviewNoteTemplate", { reference: "@src/example.ts:2" })).toBe(
     "Please inspect and address this review note:\n\n@src/example.ts:2\n\nReview note:",
