@@ -27,6 +27,7 @@ type SessionLike = {
   id: string;
   cwd?: string;
   header?: { cwd?: string };
+  snapshotEvents?(): readonly SessionEvent[];
   events?: readonly SessionEvent[];
 };
 
@@ -47,6 +48,10 @@ export const inject = ["sessions", "webServer"];
 function sessionRootOf(session: SessionLike): string | null {
   const value = session.header?.cwd ?? session.cwd;
   return typeof value === "string" && value.trim() ? resolve(value.trim()) : null;
+}
+
+function replayEventsOf(session: SessionLike): readonly SessionEvent[] {
+  return session.snapshotEvents?.() ?? session.events ?? [];
 }
 
 async function readJson(req: IncomingMessage): Promise<unknown> {
@@ -300,8 +305,9 @@ export function apply(ctx: HostContext): void {
 
   const hydrate = (session: SessionLike) => {
     rememberRoot(session);
-    if (session.events) history.replay(session.events, String(session.id));
-    if (session.events) activity.replay(session.events, String(session.id));
+    const events = replayEventsOf(session);
+    history.replay(events, String(session.id));
+    activity.replay(events, String(session.id));
   };
 
   for (const session of ctx.sessions?.list() ?? []) hydrate(session);

@@ -213,7 +213,7 @@ test("apply replays existing session events into file previews", async () => {
     sessions: {
       list: () => [{
         id: "s1",
-        events: [
+        snapshotEvents: () => [
           {
             type: "tool/call",
             data: {
@@ -246,6 +246,47 @@ test("apply replays existing session events into file previews", async () => {
   );
   expect(body.source).toBe("dsh-write");
   expect(body.content).toBe("REPLAYED");
+});
+
+test("apply falls back to legacy session events when no snapshot API is available", async () => {
+  const routes = [];
+  apply({
+    sessions: {
+      list: () => [{
+        id: "s1",
+        events: [
+          {
+            type: "tool/call",
+            data: {
+              callId: "c1",
+              name: "write",
+              arguments: JSON.stringify({ file_path: "package.json", content: "LEGACY" }),
+            },
+          },
+          { type: "tool/result", data: { message: { callId: "c1" } } },
+        ],
+      }],
+    },
+    webServer: {
+      register(route) {
+        routes.push(route);
+        return () => {};
+      },
+    },
+    on() {},
+  });
+  let body;
+  await routes[1].handler(
+    { url: `${FILE_API_PATH}?path=package.json` },
+    {
+      setHeader() {},
+      end(data) {
+        body = JSON.parse(data);
+      },
+    },
+  );
+  expect(body.source).toBe("dsh-write");
+  expect(body.content).toBe("LEGACY");
 });
 
 test("workspace POST retargets the file root", async () => {
