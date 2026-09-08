@@ -1,4 +1,5 @@
 # DSH Workbench
+[![DSH Insights health](https://dsh-insights.com/badge/lee259/dsh-workbench.svg)](https://dsh-insights.com/p/lee259/dsh-workbench/)
 
 [![npm version](https://img.shields.io/npm/v/dsh-workbench?color=cb3837&logo=npm)](https://www.npmjs.com/package/dsh-workbench)
 [![Awesome DSH Plugin](https://awesome-dsh-plugin.com/badge.svg)](https://awesome-dsh-plugin.com)
