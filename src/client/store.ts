@@ -39,6 +39,7 @@ export type FileStore = {
   open(path: string, mode?: FileOpenMode, line?: number, reveal?: boolean, kind?: TabOpenKind): Promise<void>;
   activate(path: string, mode?: FileOpenMode, line?: number): Promise<void>;
   pin(path: string): void;
+  reorder(open: readonly string[]): void;
   close(path?: string, keepPanelOpen?: boolean): boolean;
   reload(): Promise<void>;
   show(): void;
@@ -267,6 +268,13 @@ export function createFileStore(load: FileLoader = fetchWorkspaceFile, confirmDi
       const key = normalizePath(path);
       if (state.preview !== key) return;
       set({ ...state, preview: "" });
+    },
+    reorder(open) {
+      if (open.length !== state.open.length || new Set(open).size !== open.length) return;
+      const current = new Set(state.open);
+      if (open.some((path) => !current.has(path))) return;
+      if (open.every((path, index) => path === state.open[index])) return;
+      set({ ...state, open: [...open] });
     },
     activate(path, mode, line) {
       const key = normalizePath(path);

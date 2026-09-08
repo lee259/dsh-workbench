@@ -224,6 +224,17 @@ test("open keeps a set and activates the latest path", async () => {
   expect(state.payload?.content).toBe("b.ts");
 });
 
+test("reorder changes tab order without changing the active file", async () => {
+  const store = createFileStore(async (path) => ({ path, content: path, source: "workspace", before: null, revision: 1 }));
+  await store.open("a.ts");
+  await store.open("b.ts");
+  await store.open("c.ts");
+  await store.activate("b.ts");
+  store.reorder(["c.ts", "a.ts", "b.ts"]);
+  expect(store.getSnapshot().open).toEqual(["c.ts", "a.ts", "b.ts"]);
+  expect(store.getSnapshot().active).toBe("b.ts");
+});
+
 test("activate reloads a path already in the open set", async () => {
   const store = createFileStore(async (path) => ({
     path,

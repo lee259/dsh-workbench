@@ -2,8 +2,8 @@ import type { FileState } from "../store.js";
 import { FileTypeIcon, Icon, NewTabIcon, TreeChevron } from "../chrome/icons.js";
 import type { DiffViewMode } from "../preview/code-mirror.js";
 import { visibleBreadcrumbTargets } from "../explorer/tree-model.js";
-import { Fragment, useEffect, useRef, useState } from "react";
-import { HoverCard, Menu, writeClipboard } from "@deepseek-ai/dsh-client-ui-primitives";
+import { Fragment, useEffect, useRef, useState, type DragEvent } from "react";
+import { Menu, writeClipboard } from "@deepseek-ai/dsh-client-ui-primitives";
 import { useWorkbenchServices } from "./runtime.js";
 import { WorkbenchTooltip } from "../chrome/tooltip.js";
 import type { ReviewScope } from "../../shared/types.js";
@@ -117,8 +117,20 @@ export function WorkbenchHeader({
     const { store, i18n, absolutePath } = useWorkbenchServices();
     const t = i18n.t;
     const [reviewScopeMenuOpen, setReviewScopeMenuOpen] = useState(false);
-    const tabRefs = useRef(new Map<string, HTMLButtonElement>());
+    const [draggingPath, setDraggingPath] = useState<string | null>(null);
+    const [dragOverPath, setDragOverPath] = useState<string | null>(null);
+    const tabRefs = useRef(new Map<string, HTMLElement>());
     const normalFileTabs = state.open.filter((path) => !Object.values(emptyFilePaths).includes(path));
+    const tabKeys = [
+      ...(reviewTabOpen ? ["review"] : []),
+      ...normalFileTabs.map((path) => `file:${path}`),
+      ...(emptyTabOpen ? ["empty"] : []),
+      ...emptyFileTabs.map((id) => `draft:${id}`),
+    ];
+    const [tabOrder, setTabOrder] = useState<string[]>(tabKeys);
+    useEffect(() => {
+      setTabOrder((previous) => [...previous.filter((key) => tabKeys.includes(key)), ...tabKeys.filter((key) => !previous.includes(key))]);
+    }, [tabKeys.join("|")]);
     const hasTabsAfter = (closing: "review" | "empty" | "file" | "normal") => (
       (closing !== "review" && reviewTabOpen)
       || (closing !== "empty" && emptyTabOpen)
@@ -138,12 +150,96 @@ export function WorkbenchHeader({
       setDiffMode(false);
       activateEmptyFileTab(id);
     };
+    const closeNormalFile = (path: string) => {
+      const isActive = !diffMode && !emptyTabOpen && !activeEmptyFileTab && path === state.active;
+      if (!store.close(path, hasTabsAfter("normal"))) return;
+      if (!isActive || normalFileTabs.length > 1) return;
+      if (reviewTabOpen) openReviewTab();
+      else if (emptyTabOpen) setEmptyTabOpen(true);
+      else if (emptyFileTabs[0]) activateFileTab(emptyFileTabs[0]);
+    };
+    const reorderNormalTabs = (from: string, to: string) => {
+      if (from === to) return;
+      const normal = [...normalFileTabs];
+      const fromIndex = normal.indexOf(from);
+      const toIndex = normal.indexOf(to);
+      if (fromIndex < 0 || toIndex < 0) return;
+      normal.splice(fromIndex, 1);
+      normal.splice(toIndex, 0, from);
+      let index = 0;
+      store.reorder(state.open.map((path) => normal.includes(path) ? normal[index++] : path));
+    };
+    const tabOrderIndex = (key: string) => {
+      const index = tabOrder.indexOf(key);
+      return index === -1 ? tabKeys.indexOf(key) : index;
+    };
+    const tabDragProps = (key: string) => ({
+      style: { order: tabOrderIndex(key) },
+      draggable: true,
+      onDragStart: (event: DragEvent<HTMLDivElement>) => {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/dsh-workbench-tab", key);
+        setDraggingPath(key);
+      },
+      onDragOver: (event: DragEvent<HTMLDivElement>) => {
+        if (draggingPath === null || draggingPath === key) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        setDragOverPath(key);
+      },
+      onDragLeave: () => { if (dragOverPath === key) setDragOverPath(null); },
+      onDrop: (event: DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const from = event.dataTransfer.getData("text/dsh-workbench-tab");
+        if (from !== key && tabKeys.includes(from)) {
+          setTabOrder((previous) => {
+            const next = [...previous];
+            const fromIndex = next.indexOf(from);
+            const toIndex = next.indexOf(key);
+            if (fromIndex >= 0 && toIndex >= 0) {
+              next.splice(fromIndex, 1);
+              next.splice(toIndex, 0, from);
+            }
+            return next;
+          });
+          if (from.startsWith("file:") && key.startsWith("file:")) reorderNormalTabs(from.slice(5), key.slice(5));
+        }
+        setDraggingPath(null);
+        setDragOverPath(null);
+      },
+      onDragEnd: () => { setDraggingPath(null); setDragOverPath(null); },
+    });
+    const appendDraggedTab = (event: DragEvent<HTMLDivElement>) => {
+      if (event.target !== event.currentTarget || draggingPath === null) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      setDragOverPath("__end__");
+    };
+    const dropDraggedTabAtEnd = (event: DragEvent<HTMLDivElement>) => {
+      if (event.target !== event.currentTarget) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const from = event.dataTransfer.getData("text/dsh-workbench-tab");
+      if (from && tabKeys.includes(from)) {
+        setTabOrder((previous) => [...previous.filter((key) => key !== from), from]);
+        if (from.startsWith("file:")) {
+          const moved = from.slice(5);
+          const normal = normalFileTabs.filter((path) => path !== moved);
+          normal.push(moved);
+          let index = 0;
+          store.reorder(state.open.map((path) => normal.includes(path) ? normal[index++] : path));
+        }
+      }
+      setDraggingPath(null);
+      setDragOverPath(null);
+    };
     let activeTabKey = "";
     if (diffMode && reviewTabOpen) activeTabKey = "review";
     else if (emptyTabOpen) activeTabKey = "empty";
     else if (activeEmptyFileTab) activeTabKey = `draft:${activeEmptyFileTab}`;
     else if (state.active) activeTabKey = `file:${state.active}`;
-    const tabRef = (key: string) => (element: HTMLButtonElement | null) => {
+    const tabRef = (key: string) => (element: HTMLElement | null) => {
       if (element) tabRefs.current.set(key, element);
       else tabRefs.current.delete(key);
     };
@@ -153,14 +249,19 @@ export function WorkbenchHeader({
     return (
       <>
         <nav className="dsh-wb-tabs" aria-label={t("openFiles")}>
-          <div className="dsh-wb-tabstrip">
+          <div
+            className={`dsh-wb-tabstrip${dragOverPath === "__end__" ? " is-drag-end" : ""}`}
+            onDragOver={appendDraggedTab}
+            onDragLeave={() => { if (dragOverPath === "__end__") setDragOverPath(null); }}
+            onDrop={dropDraggedTabAtEnd}
+          >
             {reviewTabOpen ? (
-              <div className={`dsh-wb-tab is-review${diffMode ? " is-active" : ""}`} role="presentation">
+              <div {...tabDragProps("review")} className={`dsh-wb-tab is-review${activeTabKey === "review" ? " is-active" : ""}${draggingPath === "review" ? " is-dragging" : ""}${dragOverPath === "review" ? " is-drag-over" : ""}`} role="presentation">
                 <Icon name="commit" />
                 <button
                   className="dsh-wb-tab-name"
                   type="button"
-                  aria-current={diffMode ? "page" : undefined}
+                  aria-current={activeTabKey === "review" ? "page" : undefined}
                   ref={tabRef("review")}
                   onClick={openReviewTab}
                 >
@@ -186,46 +287,37 @@ export function WorkbenchHeader({
             ) : null}
             {normalFileTabs.map((path) => {
               const kind = state.views[path] ?? "view";
-              const fullPath = absolutePath?.(path) ?? path;
+              const isActive = activeTabKey === `file:${path}`;
               return (
                 <div
-                  className={`dsh-wb-tab is-${kind}${!diffMode && !emptyTabOpen && !activeEmptyFileTab && path === state.active ? " is-active" : ""}${path === state.preview ? " is-preview" : ""}`}
                   key={path}
+                  className={`dsh-wb-tab is-${kind}${isActive ? " is-active" : ""}${path === state.preview ? " is-preview" : ""}${draggingPath === `file:${path}` ? " is-dragging" : ""}${dragOverPath === `file:${path}` ? " is-drag-over" : ""}`}
+                  {...tabDragProps(`file:${path}`)}
                   role="presentation"
                 >
                   <FileTypeIcon path={path} />
-                  <HoverCard
-                    anchor={(
-                      <button
-                        className="dsh-wb-tab-name"
-                        type="button"
-                        aria-current={!diffMode && !emptyTabOpen && !activeEmptyFileTab && path === state.active ? "page" : undefined}
-                        ref={tabRef(`file:${path}`)}
-                        onClick={() => activateNormalFile(path)}
-                        onDoubleClick={() => store.pin(path)}
-                      >
-                        {path.split("/").pop() || path}
-                      </button>
-                    )}
-                    content={<span className="dsh-wb-path-hovercard">{fullPath}</span>}
-                    copyText={fullPath}
-                    copyLabel={t("copyPath")}
-                    copiedLabel={t("pathCopied")}
-                  />
+                  <button
+                    className="dsh-wb-tab-name"
+                    type="button"
+                    aria-current={isActive ? "page" : undefined}
+                    ref={tabRef(`file:${path}`)}
+                    onClick={() => activateNormalFile(path)}
+                    onDoubleClick={() => store.pin(path)}
+                    onAuxClick={(event) => {
+                      if (event.button !== 1) return;
+                      event.preventDefault();
+                      closeNormalFile(path);
+                    }}
+                  >
+                    {path.split("/").pop() || path}
+                  </button>
                   {store.editorSession(path).baseline !== null && store.editorSession(path).content !== store.editorSession(path).baseline ? <span className="dsh-wb-dirty-dot" aria-label={t("unsavedChanges")} /> : null}
                   <WorkbenchTooltip label={t("closeFile")}>
                   <button
                     className="dsh-wb-tab-close"
                     type="button"
                     aria-label={`${t("closeFile")}: ${path}`}
-                    onClick={() => {
-                      const isActive = !diffMode && !emptyTabOpen && !activeEmptyFileTab && path === state.active;
-                      if (!store.close(path, hasTabsAfter("normal"))) return;
-                      if (!isActive || normalFileTabs.length > 1) return;
-                      if (reviewTabOpen) openReviewTab();
-                      else if (emptyTabOpen) setEmptyTabOpen(true);
-                      else if (emptyFileTabs[0]) activateFileTab(emptyFileTabs[0]);
-                    }}
+                    onClick={() => closeNormalFile(path)}
                   >
                     ×
                   </button>
@@ -234,11 +326,11 @@ export function WorkbenchHeader({
               );
             })}
             {emptyTabOpen ? (
-              <div className="dsh-wb-tab is-empty is-active" role="presentation">
+              <div {...tabDragProps("empty")} className={`dsh-wb-tab is-empty${activeTabKey === "empty" ? " is-active" : ""}${draggingPath === "empty" ? " is-dragging" : ""}${dragOverPath === "empty" ? " is-drag-over" : ""}`} role="presentation">
                 <button
                   className="dsh-wb-tab-name"
                   type="button"
-                  aria-current="page"
+                  aria-current={activeTabKey === "empty" ? "page" : undefined}
                   ref={tabRef("empty")}
                   onClick={() => setEmptyTabOpen(true)}
                 >
@@ -263,12 +355,12 @@ export function WorkbenchHeader({
               </div>
             ) : null}
             {emptyFileTabs.map((id) => (
-              <div className={`dsh-wb-tab is-file${activeEmptyFileTab === id ? " is-active" : ""}`} key={id} role="presentation">
+              <div {...tabDragProps(`draft:${id}`)} className={`dsh-wb-tab is-file${activeTabKey === `draft:${id}` ? " is-active" : ""}${draggingPath === `draft:${id}` ? " is-dragging" : ""}${dragOverPath === `draft:${id}` ? " is-drag-over" : ""}`} key={id} role="presentation">
                 <FileTypeIcon path="" />
                 <button
                   className="dsh-wb-tab-name"
                   type="button"
-                  aria-current={activeEmptyFileTab === id ? "page" : undefined}
+                  aria-current={activeTabKey === `draft:${id}` ? "page" : undefined}
                   ref={tabRef(`draft:${id}`)}
                   onClick={() => { setEmptyTabOpen(false); setDiffMode(false); activateEmptyFileTab(id); }}
                 >
@@ -293,18 +385,18 @@ export function WorkbenchHeader({
                 </WorkbenchTooltip>
               </div>
             ))}
-          </div>
-          <div className="dsh-wb-tab-type-picker">
-            <WorkbenchTooltip label={t("openFile")}>
-            <button
-              type="button"
-              className="dsh-wb-tabbar-add"
-              aria-label={t("openFile")}
-              onClick={newFileTab}
-            >
-              <NewTabIcon />
-            </button>
-            </WorkbenchTooltip>
+            <div className="dsh-wb-tab-type-picker" style={{ order: 9999 }}>
+              <WorkbenchTooltip label={t("openFile")}>
+              <button
+                type="button"
+                className="dsh-wb-tabbar-add"
+                aria-label={t("openFile")}
+                onClick={newFileTab}
+              >
+                <NewTabIcon />
+              </button>
+              </WorkbenchTooltip>
+            </div>
           </div>
           <div className="dsh-wb-tab-actions">
             <WorkbenchTooltip label={t("hidePanel")}>

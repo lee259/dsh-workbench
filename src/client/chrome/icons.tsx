@@ -68,7 +68,7 @@ export function EmptyFileIcon() {
 }
 
 export function NewTabIcon() {
-  return renderPrimitive(IconPlusOutline16, "dsh-wb-tab-icon", 16);
+  return renderPrimitive(IconPlusOutline16, "dsh-wb-tab-icon", 14);
 }
 
 export function TreeChangeIcon({ kind }: { kind: "add" | "delete" | "both" }) {
