@@ -127,10 +127,21 @@ export function WorkbenchHeader({
       ...(emptyTabOpen ? ["empty"] : []),
       ...emptyFileTabs.map((id) => `draft:${id}`),
     ];
-    const [tabOrder, setTabOrder] = useState<string[]>(tabKeys);
+    const tabOrderStorageKey = `dsh-wb-tab-order:${sessionId}`;
+    const [tabOrder, setTabOrder] = useState<string[]>(() => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(tabOrderStorageKey) ?? "null");
+        return Array.isArray(saved) && saved.every((key): key is string => typeof key === "string") ? saved : tabKeys;
+      } catch {
+        return tabKeys;
+      }
+    });
     useEffect(() => {
       setTabOrder((previous) => [...previous.filter((key) => tabKeys.includes(key)), ...tabKeys.filter((key) => !previous.includes(key))]);
     }, [tabKeys.join("|")]);
+    useEffect(() => {
+      try { localStorage.setItem(tabOrderStorageKey, JSON.stringify(tabOrder)); } catch { /* storage may be unavailable */ }
+    }, [tabOrderStorageKey, tabOrder]);
     const hasTabsAfter = (closing: "review" | "empty" | "file" | "normal") => (
       (closing !== "review" && reviewTabOpen)
       || (closing !== "empty" && emptyTabOpen)
