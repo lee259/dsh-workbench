@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.15.2 - 2026-09-08
+
+### Features
+
+- Add drag-and-drop ordering for review, file, new-file, and draft tabs, including dropping at the end of the tab strip.
+- Persist tab order per session when the workbench panel is reopened.
+
+### Changed
+
+- Refine Codex-style tab sizing, spacing, rounded corners, close-button treatment, and the smaller new-tab icon.
+- Add the DSH Insights health badge to the README badge row.
+
 ## 0.15.1 - 2026-09-07
 
 ### Fixes
