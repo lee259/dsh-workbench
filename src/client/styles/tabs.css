@@ -82,7 +82,16 @@
 }
 
 .dsh-wb-tabstrip.is-drag-end {
-  box-shadow: inset -2px 0 var(--dsh-wb-focus-ring);
+  box-shadow: none;
+}
+
+.dsh-wb-tabstrip.is-drag-end::after {
+  content: "";
+  flex: 0 0 2px;
+  height: 24px;
+  margin: 0 2px;
+  border-radius: 2px;
+  background: var(--dsh-wb-focus-ring);
 }
 
 .dsh-wb-tab.is-active {
