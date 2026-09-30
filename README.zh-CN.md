@@ -7,7 +7,7 @@
 
 [English](./README.md) · [更新日志](./CHANGELOG.zh-CN.md) · [Issues](https://github.com/lee259/dsh-workbench/issues) · [npm](https://www.npmjs.com/package/dsh-workbench)
 
-[DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart) Web 内的 Codex 风格审查。直接审查 Harness 每轮记录的文件变更和原生 Diff，不接 GitHub。
+[DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart) Web 内的 Codex 风格审查。直接审查 Harness 每轮记录的文件变更和原生 Diff。
 
 ## 能做什么
 
@@ -99,7 +99,7 @@ DSH_VERSION=0.2.0-rc.2 pnpm test:mount
 
 ## Roadmap
 
-在 DeepSeek Harness 内审查 agent 每轮改动。变更列表与 hunk Diff 使用 DSH 原生 `workspaceChanges` API；不依赖 GitHub PR。
+在 DeepSeek Harness 内审查 agent 每轮改动。变更列表与 hunk Diff 使用 DSH 原生 `workspaceChanges` API。
 
 ### 已完成
 

@@ -6,7 +6,7 @@
 
 [中文文档](./README.zh-CN.md) · [Changelog](./CHANGELOG.md) · [Issues](https://github.com/lee259/dsh-workbench/issues) · [npm](https://www.npmjs.com/package/dsh-workbench)
 
-Codex-style Review inside [DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart) Web. Review Harness turn changes and native diffs without connecting to GitHub.
+Codex-style Review inside [DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart) Web. Review Harness turn changes and native diffs.
 
 ## What it does
 
@@ -99,7 +99,7 @@ can prevent a fresh CLI install until that dependency is published.
 
 ## Roadmap
 
-Review the agent's changes inside DeepSeek Harness. The change list and hunk diffs use DSH's native `workspaceChanges` API; no GitHub PR integration is involved.
+Review the agent's changes inside DeepSeek Harness. The change list and hunk diffs use DSH's native `workspaceChanges` API.
 
 ### Done
 
