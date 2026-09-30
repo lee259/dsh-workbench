@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.16.0 - 2026-09-30
+
+### Features
+
+- Integrate Codex-style review into DeepSeek Harness's native right sidebar, using Harness turn changes and native hunk diffs.
+- Keep the changed-file list, diff navigation, and conversation workflow together in the DSH review panel.
+
+### Fixes
+
+- Keep diff file headers above line-number gutters, and pin hunk headers and collapsed-context controls during horizontal scrolling.
+- Preserve session-scoped file state and workspace access across native file tabs.
+
 ## 0.15.2 - 2026-09-08
 
 ### Features

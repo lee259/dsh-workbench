@@ -34,7 +34,7 @@ function jsonSink() {
 
 test("host plugin exports the Cordis contract", () => {
   expect(name).toBe("dsh-workbench");
-  expect(inject).toEqual(["sessions", "webServer"]);
+  expect(inject).toEqual(["sessions", "webServer", "workspaceChanges"]);
   expect(typeof apply).toBe("function");
 });
 
