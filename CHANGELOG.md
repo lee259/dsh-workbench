@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.16.1 - 2026-09-30
+
+### Fixes
+
+- Restore syntax highlighting in Harness-native review diffs for supported source languages.
+
 ## 0.16.0 - 2026-09-30
 
 ### Features

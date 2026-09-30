@@ -458,6 +458,73 @@
   white-space: pre;
 }
 
+.dsh-wb-code-review-token-comment {
+  color: var(--dsh-wb-code-comment-label);
+  font-style: italic;
+}
+
+.dsh-wb-code-review-token-keyword {
+  color: var(--dsh-wb-code-keyword-label);
+}
+
+.dsh-wb-code-review-token-string {
+  color: var(--dsh-wb-code-string-label);
+}
+
+.dsh-wb-code-review-token-literal {
+  color: var(--dsh-wb-code-literal-label);
+}
+
+.dsh-wb-code-review-token-type {
+  color: var(--dsh-wb-code-type-label);
+}
+
+.dsh-wb-code-review-token-property {
+  color: var(--dsh-wb-code-property-label);
+}
+
+.dsh-wb-code-review-token-function {
+  color: var(--dsh-wb-code-function-label);
+}
+
+.dsh-wb-code-review-token-variable {
+  color: var(--dsh-wb-code-variable-label);
+}
+
+.dsh-wb-code-review-token-operator {
+  color: var(--dsh-wb-code-operator-label);
+}
+
+.dsh-wb-code-review-token-tag {
+  color: var(--dsh-wb-code-tag-label);
+}
+
+.dsh-wb-code-review-token-attribute {
+  color: var(--dsh-wb-code-attribute-label);
+}
+
+.dsh-wb-code-review-token-emphasis {
+  font-style: italic;
+}
+
+.dsh-wb-code-review-token-strong {
+  font-weight: 600;
+}
+
+.dsh-wb-code-review-token-link {
+  color: var(--dsh-wb-code-function-label);
+  text-decoration: underline;
+}
+
+.dsh-wb-code-review-token-meta {
+  color: var(--dsh-wb-code-meta-label);
+}
+
+.dsh-wb-code-review-token-invalid {
+  color: var(--dsh-wb-code-invalid-label);
+  font-weight: 600;
+}
+
 .dsh-wb-code-review-context-toggle {
   position: sticky;
   left: 0;

@@ -6,7 +6,7 @@ import { json } from "@codemirror/lang-json";
 import { markdown } from "@codemirror/lang-markdown";
 import { python } from "@codemirror/lang-python";
 import { xml } from "@codemirror/lang-xml";
-import { HighlightStyle, StreamLanguage, foldGutter, foldKeymap, syntaxHighlighting } from "@codemirror/language";
+import { HighlightStyle, StreamLanguage, ensureSyntaxTree, foldGutter, foldKeymap, syntaxHighlighting, syntaxTree } from "@codemirror/language";
 import { c, cpp, csharp, dart, java, kotlin, scala } from "@codemirror/legacy-modes/mode/clike";
 import { diff } from "@codemirror/legacy-modes/mode/diff";
 import { dockerFile } from "@codemirror/legacy-modes/mode/dockerfile";
@@ -27,7 +27,7 @@ import { MergeView, unifiedMergeView } from "@codemirror/merge";
 import { search, searchKeymap } from "@codemirror/search";
 import { EditorState, StateEffect, type Extension } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers } from "@codemirror/view";
-import { tags } from "@lezer/highlight";
+import { highlightTree, tagHighlighter, tags } from "@lezer/highlight";
 
 export type CodeSelection = {
   from: number;
@@ -92,6 +92,37 @@ const workbenchHighlightStyle = HighlightStyle.define([
   { tag: tags.meta, color: "var(--dsh-wb-code-meta-label)" },
   { tag: tags.invalid, color: "var(--dsh-wb-code-invalid-label)", fontStyle: "bold" },
 ]);
+
+const reviewDiffHighlighter = tagHighlighter([
+  { tag: tags.comment, class: "dsh-wb-code-review-token-comment" },
+  { tag: [tags.keyword, tags.controlKeyword, tags.definitionKeyword, tags.operatorKeyword], class: "dsh-wb-code-review-token-keyword" },
+  { tag: [tags.string, tags.special(tags.string), tags.regexp], class: "dsh-wb-code-review-token-string" },
+  { tag: [tags.number, tags.bool, tags.null, tags.atom], class: "dsh-wb-code-review-token-literal" },
+  { tag: [tags.typeName, tags.className], class: "dsh-wb-code-review-token-type" },
+  { tag: tags.propertyName, class: "dsh-wb-code-review-token-property" },
+  { tag: tags.function(tags.variableName), class: "dsh-wb-code-review-token-function" },
+  { tag: tags.variableName, class: "dsh-wb-code-review-token-variable" },
+  { tag: tags.operator, class: "dsh-wb-code-review-token-operator" },
+  { tag: tags.tagName, class: "dsh-wb-code-review-token-tag" },
+  { tag: tags.attributeName, class: "dsh-wb-code-review-token-attribute" },
+  { tag: tags.heading, class: "dsh-wb-code-review-token-tag" },
+  { tag: tags.emphasis, class: "dsh-wb-code-review-token-emphasis" },
+  { tag: tags.strong, class: "dsh-wb-code-review-token-strong" },
+  { tag: tags.link, class: "dsh-wb-code-review-token-link" },
+  { tag: tags.meta, class: "dsh-wb-code-review-token-meta" },
+  { tag: tags.invalid, class: "dsh-wb-code-review-token-invalid" },
+]);
+
+export type SyntaxHighlightRange = { from: number; to: number; className: string };
+
+export function highlightSourceText(source: string, language: string | null): SyntaxHighlightRange[] {
+  if (!language || !languageExtension(language).length || !source) return [];
+  const state = EditorState.create({ doc: source, extensions: languageExtension(language) });
+  const tree = ensureSyntaxTree(state, state.doc.length, 50) ?? syntaxTree(state);
+  const ranges: SyntaxHighlightRange[] = [];
+  highlightTree(tree, reviewDiffHighlighter, (from, to, className) => ranges.push({ from, to, className }));
+  return ranges;
+}
 
 const diffTheme = EditorView.theme({
   "&.cm-merge-a .cm-changedLine, .cm-deletedChunk": {
