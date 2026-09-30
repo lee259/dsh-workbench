@@ -1,6 +1,6 @@
 /* Workbench semantic tokens. Map local roles to the host design system here. */
 
-:where(.dsh-wb-sidebar, .dsh-wb-toggle, .dsh-wb-tool-row) {
+:where(.dsh-wb-sidebar, .dsh-wb-toggle, .dsh-wb-tool-row, .dsh-wb-native-workbench, .dsh-wb-native-tree-page, .dsh-wb-native-content-page, .dsh-wb-code-review) {
   --dsh-wb-button-fill: transparent;
   --dsh-wb-button-hover-fill: var(--dsw-alias-interactive-bg-hover-solid);
   --dsh-wb-field-fill: var(--dsw-alias-interactive-bg-hover-solid);
@@ -40,7 +40,7 @@
   --dsh-wb-motion-fast: 120ms ease-out;
 }
 
-body[data-ds-dark-theme] :where(.dsh-wb-sidebar, .dsh-wb-toggle, .dsh-wb-tool-row) {
+body[data-ds-dark-theme] :where(.dsh-wb-sidebar, .dsh-wb-toggle, .dsh-wb-tool-row, .dsh-wb-native-workbench, .dsh-wb-native-tree-page, .dsh-wb-native-content-page, .dsh-wb-code-review) {
   --dsh-wb-code-comment-label: #5c6370;
   --dsh-wb-code-keyword-label: #c678dd;
   --dsh-wb-code-string-label: #98c379;

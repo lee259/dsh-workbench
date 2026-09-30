@@ -10,7 +10,8 @@ const target = resolve(requested ?? (process.cwd() === plugin ? debugWorkspace :
 const profile = process.env.DSH_PROFILE ?? "web-debug";
 const port = process.env.DSH_PORT ?? (profile === "web-debug" ? "8788" : "");
 const dsh = process.env.DSH_BIN ?? "pnpm";
-const prefix = dsh === "pnpm" || dsh.endsWith("/pnpm") ? ["dlx", "@deepseek-ai/dsh"] : [];
+const dshVersion = process.env.DSH_VERSION ?? "0.1.7-rc.2";
+const prefix = dsh === "pnpm" || dsh.endsWith("/pnpm") ? ["dlx", `@deepseek-ai/dsh@${dshVersion}`] : [];
 
 function run(command, args, cwd = target) {
   return new Promise((resolveExit, reject) => {

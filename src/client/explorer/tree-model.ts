@@ -150,12 +150,34 @@ export function filterTree(tree: WorkspaceTree, query: string): WorkspaceTree {
 }
 
 export function flattenVisibleRows(tree: WorkspaceTree, open: readonly string[]): TreeRow[] {
-  const walk = (parent: string, depth: number): TreeRow[] => treeChildren(tree, parent)
-    .flatMap((node) => {
-      const row = { ...node, depth };
-      return node.kind === "directory" && open.includes(node.path) ? [row, ...walk(node.path, depth + 1)] : [row];
-    });
-  return walk("", 0);
+  const childrenByParent = new Map<string, TreeNode[]>();
+  const push = (path: string, kind: TreeKind) => {
+    const name = path.split("/").at(-1) ?? path;
+    const parent = path.split("/").slice(0, -1).join("/");
+    const bucket = childrenByParent.get(parent);
+    const node = { path, name, kind };
+    if (bucket) bucket.push(node);
+    else childrenByParent.set(parent, [node]);
+  };
+  for (const directory of tree.directories) push(directory, "directory");
+  for (const file of tree.files) push(file.path, "file");
+  const sortedChildren = (parent: string): readonly TreeNode[] => {
+    const bucket = childrenByParent.get(parent);
+    if (!bucket) return [];
+    bucket.sort((left, right) => (
+      left.kind === right.kind ? left.name.localeCompare(right.name) : left.kind === "directory" ? -1 : 1
+    ));
+    return bucket;
+  };
+  const rows: TreeRow[] = [];
+  const walk = (parent: string, depth: number): void => {
+    for (const node of sortedChildren(parent)) {
+      rows.push({ ...node, depth });
+      if (node.kind === "directory" && open.includes(node.path)) walk(node.path, depth + 1);
+    }
+  };
+  walk("", 0);
+  return rows;
 }
 
 export function moveTreeFocus(rows: readonly TreeRow[], currentPath: string, delta: number): string | undefined {

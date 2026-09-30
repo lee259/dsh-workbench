@@ -17,7 +17,7 @@ export type FileState = {
   preview: string;
 };
 
-export type FileLoader = (path: string, mode?: FileOpenMode) => Promise<FilePayload>;
+export type FileLoader = (path: string, mode?: FileOpenMode, sessionId?: string) => Promise<FilePayload>;
 
 export type EditorSession = {
   saving?: boolean;
@@ -34,9 +34,11 @@ export type FileStore = {
   completeSave(session: EditorSession, savedContent: string): void;
   hasUnsavedChanges(): boolean;
   setWorkspace(root: string): void;
+  setSession(sessionId: string): void;
+  registerDirtyCheck(check: () => boolean): () => void;
   getSnapshot(): FileState;
   subscribe(listener: () => void): () => void;
-  open(path: string, mode?: FileOpenMode, line?: number, reveal?: boolean, kind?: TabOpenKind): Promise<void>;
+  open(path: string, mode?: FileOpenMode, line?: number, reveal?: boolean, kind?: TabOpenKind, sessionId?: string): Promise<void>;
   activate(path: string, mode?: FileOpenMode, line?: number): Promise<void>;
   pin(path: string): void;
   reorder(open: readonly string[]): void;
@@ -62,18 +64,22 @@ const empty: FileState = {
   preview: "",
 };
 
-export async function fetchWorkspaceFile(path: string, mode: FileOpenMode = "auto"): Promise<FilePayload> {
-  const response = await fetch(`${FILE_API_PATH}?path=${encodeURIComponent(path)}&mode=${mode}`);
+export async function fetchWorkspaceFile(path: string, mode: FileOpenMode = "auto", sessionId?: string): Promise<FilePayload> {
+  const query = new URLSearchParams({ path, mode });
+  if (sessionId) query.set("session", sessionId);
+  const response = await fetch(`${FILE_API_PATH}?${query}`);
   const payload = await response.json() as FilePayload & { error?: string };
   if (!response.ok) throw new Error(payload.error || "read_failed");
   return payload;
 }
 
-export async function saveWorkspaceFile(path: string, content: string, expected: string): Promise<FilePayload> {
+export async function saveWorkspaceFile(path: string, content: string, expected: string, sessionId?: string): Promise<FilePayload> {
+  const body: { path: string; content: string; expected: string; session?: string } = { path, content, expected };
+  if (sessionId) body.session = sessionId;
   const response = await fetch(FILE_API_PATH, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ path, content, expected }),
+    body: JSON.stringify(body),
   });
   const payload = await response.json() as FilePayload & { error?: string };
   if (!response.ok) throw new Error(payload.error || "read_failed");
@@ -124,16 +130,19 @@ function replaceKey(items: readonly string[], from: string, to: string): string[
 
 export function createFileStore(load: FileLoader = fetchWorkspaceFile, confirmDiscard: () => boolean = () => false): FileStore {
   let workspace = "";
+  let activeSessionId = "";
   const sessions = new Map<string, Map<string, EditorSession>>();
-  const currentSessions = () => {
-    let entries = sessions.get(workspace);
-    if (!entries) { entries = new Map(); sessions.set(workspace, entries); }
+  const sessionKey = (sessionId = activeSessionId) => `${workspace}\0${sessionId}`;
+  const currentSessions = (sessionId = activeSessionId) => {
+    const key = sessionKey(sessionId);
+    let entries = sessions.get(key);
+    if (!entries) { entries = new Map(); sessions.set(key, entries); }
     return entries;
   };
-  const editorSession = (path: string): EditorSession => {
+  const editorSession = (path: string, sessionId = activeSessionId): EditorSession => {
     const key = normalizePath(path);
-    let session = currentSessions().get(key);
-    if (!session) { session = { baseline: null, content: "", memory: {} }; currentSessions().set(key, session); }
+    let session = currentSessions(sessionId).get(key);
+    if (!session) { session = { baseline: null, content: "", memory: {} }; currentSessions(sessionId).set(key, session); }
     return session;
   };
   const isDirty = (session: EditorSession) => session.baseline !== null && session.content !== session.baseline;
@@ -141,6 +150,7 @@ export function createFileStore(load: FileLoader = fetchWorkspaceFile, confirmDi
   let requestId = 0;
   const modes = new Map<string, FileOpenMode>();
   const listeners = new Set<() => void>();
+  const dirtyChecks = new Set<() => boolean>();
 
   const emit = () => {
     for (const listener of listeners) listener();
@@ -150,8 +160,15 @@ export function createFileStore(load: FileLoader = fetchWorkspaceFile, confirmDi
     state = next;
     emit();
   };
+  const setSession = (sessionId: string) => {
+    if (sessionId === activeSessionId) return;
+    activeSessionId = sessionId;
+    requestId += 1;
+    modes.clear();
+    set({ ...empty, visible: state.visible, disk: state.disk });
+  };
 
-  const loadActive = async (path: string, mode: FileOpenMode = "auto", line: number | null = null, bumpReveal = false, kind?: TabOpenKind) => {
+  const loadActive = async (path: string, mode: FileOpenMode = "auto", line: number | null = null, bumpReveal = false, kind?: TabOpenKind, sessionId = activeSessionId) => {
     const id = requestId + 1;
     requestId = id;
     const tabs = kind != null
@@ -163,7 +180,7 @@ export function createFileStore(load: FileLoader = fetchWorkspaceFile, confirmDi
     if (state.preview && state.preview !== tabs.preview) delete views[state.preview];
     set({ ...withActive(tabs.open, path, { loading: true, payload: null, error: "", line, reveal, disk, views, preview: tabs.preview }), visible: true });
     try {
-      const payload = payloadForMode(await load(path, mode), mode);
+      const payload = payloadForMode(await load(path, mode, sessionId), mode);
       if (requestId !== id) return;
       // Adopt the host-normalized path as the canonical tab key, so an
       // absolute path clicked in the conversation lands on the same relative
@@ -231,13 +248,18 @@ export function createFileStore(load: FileLoader = fetchWorkspaceFile, confirmDi
       else session.baseline = savedContent;
       set({ ...state });
     },
-    hasUnsavedChanges: () => [...sessions.values()].some((entries) => [...entries.values()].some(isDirty)),
+    hasUnsavedChanges: () => [...sessions.values()].some((entries) => [...entries.values()].some(isDirty)) || [...dirtyChecks].some((check) => check()),
     setWorkspace(root) {
       if (root === workspace) return;
       workspace = root;
       requestId += 1;
       modes.clear();
       set({ ...empty, visible: state.visible, disk: state.disk });
+    },
+    setSession,
+    registerDirtyCheck(check) {
+      dirtyChecks.add(check);
+      return () => dirtyChecks.delete(check);
     },
     getSnapshot: () => state,
     subscribe(listener) {
@@ -246,7 +268,8 @@ export function createFileStore(load: FileLoader = fetchWorkspaceFile, confirmDi
         listeners.delete(listener);
       };
     },
-    open(path, mode = "auto", line, reveal = true, kind = "keep") {
+    open(path, mode = "auto", line, reveal = true, kind = "keep", sessionId) {
+      if (sessionId !== undefined) setSession(sessionId);
       const key = normalizePath(path);
       const target = line ?? null;
       modes.set(key, mode);
@@ -262,7 +285,7 @@ export function createFileStore(load: FileLoader = fetchWorkspaceFile, confirmDi
         });
         return Promise.resolve();
       }
-      return loadActive(key, mode, target, reveal, kind);
+      return loadActive(key, mode, target, reveal, kind, sessionId ?? activeSessionId);
     },
     pin(path) {
       const key = normalizePath(path);

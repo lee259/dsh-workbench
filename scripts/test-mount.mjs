@@ -10,7 +10,7 @@ const workspace = join(scratch, "workspace");
 const profile = join(scratch, "home/profiles/web");
 const env = { ...process.env, DSH_HOME: join(scratch, "home") };
 const dshCommand = process.env.DSH_BIN ?? "pnpm";
-const dshVersion = process.env.DSH_VERSION ?? "0.1.2-rc.1";
+const dshVersion = process.env.DSH_VERSION ?? "0.1.7-rc.2";
 const dshPrefix = process.env.DSH_BIN ? [] : ["dlx", `@deepseek-ai/dsh@${dshVersion}`];
 const children = new Set();
 let webLog = "";
@@ -75,7 +75,7 @@ try {
     server.on("exit", (code) => { clearTimeout(timer); reject(new Error(`DSH exited before readiness: ${code}`)); });
   });
   console.log(`DSH ${dshVersion} ready; testing the installed tarball in Chromium.`);
-  await run("pnpm", ["exec", "playwright", "test"], { env: { ...env, DSH_E2E_URL: url, DSH_E2E_WORKSPACE: workspace } });
+  await run("pnpm", ["exec", "playwright", "test"], { env: { ...env, DSH_E2E_URL: url, DSH_E2E_WORKSPACE: workspace, DSH_E2E_VERSION: dshVersion } });
 } catch (error) {
   console.error(webLog.replace(/token=[^\s&]+/g, "token=[redacted]").slice(-8000));
   throw error;

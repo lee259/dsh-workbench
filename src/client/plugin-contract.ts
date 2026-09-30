@@ -10,11 +10,13 @@ export type WorkbenchSlotContext = {
 
 export type WorkbenchClientContext = WorkbenchSlotContext & DshWorkspaceFaces & {
   locale: DshLocaleFace;
+  sidebarRight?: unknown;
+  sidebarRightTabs?: unknown;
   get(name: string): unknown;
   effect(factory: () => (() => void) | void, name: string): void;
 };
 
 export type WorkbenchPlugin = {
-  inject: ["slots", "locale", "modules", "sessions", "workspaces", "connection"];
+  inject: ["slots", "locale", "sessions", "workspaces"];
   apply(ctx: WorkbenchClientContext): void;
 };

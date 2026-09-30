@@ -55,7 +55,7 @@ export class ActivityStore {
   private readonly pending = new Map<string, PendingActivity>();
   private sequence = 0;
 
-  constructor(private readonly canonicalize: (path: string) => string = normalizePath) {}
+  constructor(private readonly canonicalize: (path: string, sessionId?: string) => string = normalizePath) {}
 
   record(event: SessionEvent, sessionId: string): ActivityRecord | null {
     if (event.type === "tool/call") return this.recordCall(event, sessionId);
@@ -82,7 +82,7 @@ export class ActivityStore {
       sessionId,
       kind: isFileTool(name) ? "tool" : "code",
       name,
-      path: pathOf(data, this.canonicalize),
+      path: pathOf(data, (path) => this.canonicalize(path, sessionId)),
       summary: summaryOf(data),
       status: "running",
       createdAt: Date.now(),
@@ -118,7 +118,7 @@ export class ActivityStore {
       sessionId,
       kind: "code",
       name,
-      path: pathOf(data, this.canonicalize),
+      path: pathOf(data, (path) => this.canonicalize(path, sessionId)),
       summary: summaryOf(data),
       status: data.isError === true ? "error" : "done",
       createdAt: Date.now(),

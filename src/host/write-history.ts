@@ -3,8 +3,11 @@ import { isFileTool, normalizePath, type FileRevision, type FileToolName, type R
 
 export type SessionEvent = {
   type?: string;
+  seq?: number;
   data?: Record<string, unknown>;
 };
+
+export type ReviewDiscardResult = "discarded" | "not_found" | "not_discardable" | "stale";
 
 type ToolArgs = {
   file_path?: unknown;
@@ -132,26 +135,42 @@ function diffsFromMeta(meta: unknown): FileDiff[] {
  */
 export class WriteHistory {
   private readonly revisions = new Map<string, FileRevision>();
+  private readonly latestRevisions = new Map<string, FileRevision>();
   private readonly reviewRevisions = new Map<string, ReviewChange>();
+  private readonly reviewEventSeq = new Map<string, number>();
   private readonly sessionRoots = new Map<string, string>();
   private readonly seenCalls = new Set<string>();
   private readonly pending = new Map<string, PendingCall>();
+  private readonly acknowledgedReviews = new Set<string>();
 
-  constructor(private readonly canonicalize: (path: string) => string = normalizePath) {}
+  constructor(private readonly canonicalize: (path: string, sessionId?: string) => string = normalizePath) {}
 
   record(event: SessionEvent, sessionId: string): FileRevision | null {
-    if (event.type === "tool/call") return this.rememberCall(event, sessionId);
-    if (event.type === "tool/result") return this.recordResult(event, sessionId);
-    if (event.type === "tool/code-dispatch") return this.recordDispatch(event, sessionId);
-    return null;
+    let revision: FileRevision | null = null;
+    if (event.type === "tool/call") revision = this.rememberCall(event, sessionId);
+    else if (event.type === "tool/result") revision = this.recordResult(event, sessionId);
+    else if (event.type === "tool/code-dispatch") revision = this.recordDispatch(event, sessionId);
+    if (revision?.source === "dsh-write") {
+      this.reviewEventSeq.set(this.reviewKey(sessionId, revision.path), event.seq ?? -1);
+    }
+    if (event.type === "tool/result") {
+      for (const diff of diffsFromMeta(event.data?.meta)) {
+        const path = this.key(diff.path, sessionId);
+        this.reviewEventSeq.set(this.reviewKey(sessionId, path), event.seq ?? -1);
+      }
+    }
+    return revision;
   }
 
   replay(events: readonly SessionEvent[], sessionId: string): void {
     for (const event of events) this.record(event, sessionId);
   }
 
-  get(path: string): FileRevision | null {
-    return this.revisions.get(this.key(path)) ?? null;
+  get(path: string, sessionId?: string): FileRevision | null {
+    const normalized = this.key(path, sessionId);
+    return (sessionId
+      ? this.revisions.get(this.revisionKey(sessionId, normalized))
+      : this.latestRevisions.get(normalized)) ?? null;
   }
 
   noteSessionRoot(sessionId: string, root: string): void {
@@ -161,6 +180,7 @@ export class WriteHistory {
 
   getReview(sessionId?: string, root?: string): ReviewChange[] {
     return [...this.reviewRevisions.values()].filter((change) => {
+      if (this.acknowledgedReviews.has(this.reviewKey(change.sessionId, change.path))) return false;
       if (sessionId && change.sessionId !== sessionId) return false;
       if (!root) return true;
       const sessionRoot = this.sessionRoots.get(change.sessionId);
@@ -168,12 +188,60 @@ export class WriteHistory {
     });
   }
 
+  getReviewAfter(sessionId: string, root: string | undefined, seq: number): ReviewChange[] {
+    return this.getReview(sessionId, root).filter((change) => {
+      return (this.reviewEventSeq.get(this.reviewKey(sessionId, change.path)) ?? -1) > seq;
+    });
+  }
+
+  acknowledgeReview(sessionId: string, path: string, root?: string): boolean {
+    const normalized = this.key(path, sessionId);
+    const change = this.reviewRevisions.get(this.reviewKey(sessionId, normalized));
+    if (!change) return false;
+    if (root) {
+      const sessionRoot = this.sessionRoots.get(sessionId);
+      if (sessionRoot && sessionRoot !== root) return false;
+    }
+    this.acknowledgedReviews.add(this.reviewKey(sessionId, normalized));
+    return true;
+  }
+
+  discardReview(sessionId: string, path: string, revision: number, root?: string): ReviewDiscardResult {
+    const normalized = this.key(path, sessionId);
+    const key = this.reviewKey(sessionId, normalized);
+    const change = this.reviewRevisions.get(key);
+    const revisionKey = this.revisionKey(sessionId, normalized);
+    const current = this.revisions.get(revisionKey);
+    if (!change || !current) return "not_found";
+    if (root) {
+      const sessionRoot = this.sessionRoots.get(sessionId);
+      if (sessionRoot && sessionRoot !== root) return "not_found";
+    }
+    if (change.revision !== revision || current.sessionId !== sessionId || current.revision !== revision) return "stale";
+    if (current.before === null) return "not_discardable";
+    this.revisions.delete(revisionKey);
+    const remaining = [...this.revisions.values()].filter((revision) => revision.path === normalized).at(-1);
+    if (remaining) this.latestRevisions.set(normalized, remaining);
+    else this.latestRevisions.delete(normalized);
+    this.reviewRevisions.delete(key);
+    this.acknowledgedReviews.delete(key);
+    return "discarded";
+  }
+
   reviewSessions(root?: string): string[] {
     return [...new Set(this.getReview(undefined, root).map((change) => change.sessionId))];
   }
 
-  private key(path: string): string {
-    return this.canonicalize(path);
+  private key(path: string, sessionId?: string): string {
+    return this.canonicalize(path, sessionId);
+  }
+
+  private reviewKey(sessionId: string, path: string): string {
+    return JSON.stringify([sessionId, path]);
+  }
+
+  private revisionKey(sessionId: string, path: string): string {
+    return JSON.stringify([sessionId, path]);
   }
 
   private rememberCall(event: SessionEvent, sessionId: string): FileRevision | null {
@@ -197,7 +265,7 @@ export class WriteHistory {
     const block = resultBlockOf(data.message);
     const callId = asString(block?.toolCallId) ?? callIdOf({ ...data, ...message }, `${sessionId}:result`);
     if (callId == null) return null;
-    if (this.seenCalls.has(callId)) return this.revisionForCall(callId);
+    if (this.seenCalls.has(callId)) return this.revisionForCall(callId, sessionId);
     this.seenCalls.add(callId);
 
     const pending = this.pending.get(callId);
@@ -207,7 +275,7 @@ export class WriteHistory {
     if (fromMeta.length > 0) {
       let last: FileRevision | null = null;
       for (const diff of fromMeta) {
-        last = this.commit(this.key(diff.path), diff.newText, sessionId, "dsh-write", diff.oldText);
+        last = this.commit(this.key(diff.path, sessionId), diff.newText, sessionId, "dsh-write", diff.oldText);
       }
       return last;
     }
@@ -228,8 +296,8 @@ export class WriteHistory {
     const args = parseArgs(data.arguments);
     if (!args) return null;
 
-    const callId = callIdOf(data, `${sessionId}:${name}:${filePathOf(args, this.canonicalize) ?? ""}`);
-    if (this.seenCalls.has(callId)) return this.revisionForCall(callId);
+    const callId = callIdOf(data, `${sessionId}:${name}:${filePathOf(args, (path) => this.key(path, sessionId)) ?? ""}`);
+    if (this.seenCalls.has(callId)) return this.revisionForCall(callId, sessionId);
     this.seenCalls.add(callId);
     return this.applyTool(name, args, sessionId, data.content);
   }
@@ -240,21 +308,22 @@ export class WriteHistory {
     sessionId: string,
     content: unknown,
   ): FileRevision | null {
-    const path = filePathOf(args, this.canonicalize);
+    const path = filePathOf(args, (value) => this.key(value, sessionId));
     if (!path) return null;
+    const revisionKey = this.revisionKey(sessionId, path);
 
     if (name === "read") {
-      if (this.revisions.has(path)) return this.revisions.get(path) ?? null;
+      if (this.revisions.has(revisionKey)) return this.revisions.get(revisionKey) ?? null;
       const text = parseReadOutput(content);
       return text == null ? null : this.commit(path, text, sessionId, "dsh-read", null);
     }
 
     if (name === "write") {
       const text = asString(args.content);
-      return text == null ? null : this.commit(path, text, sessionId, "dsh-write", undefined, changeSummary(name, args, this.revisions.get(path)?.content ?? null));
+      return text == null ? null : this.commit(path, text, sessionId, "dsh-write", undefined, changeSummary(name, args, this.revisions.get(revisionKey)?.content ?? null));
     }
 
-    const previous = this.revisions.get(path);
+    const previous = this.revisions.get(revisionKey);
     if (previous) {
       const next = applyEdit(previous.content, args);
       return next == null ? previous : this.commit(path, next, sessionId, "dsh-write", undefined, changeSummary(name, args, previous.content));
@@ -274,7 +343,8 @@ export class WriteHistory {
     before: string | null | undefined = undefined,
     summary = "Updated file",
   ): FileRevision {
-    const previous = this.revisions.get(path);
+    const revisionKey = this.revisionKey(sessionId, path);
+    const previous = this.revisions.get(revisionKey);
     const revision: FileRevision = {
       path,
       before: before !== undefined ? before : previous?.content ?? null,
@@ -283,18 +353,20 @@ export class WriteHistory {
       sessionId,
       source,
     };
-    this.revisions.set(path, revision);
+    this.revisions.set(revisionKey, revision);
+    this.latestRevisions.set(path, revision);
     if (source === "dsh-write") {
-      const key = `${sessionId}:${path}`;
+      const key = this.reviewKey(sessionId, path);
+      this.acknowledgedReviews.delete(key);
       this.reviewRevisions.delete(key);
       this.reviewRevisions.set(key, { path: revision.path, sessionId, revision: revision.revision, summary, ...countDiffLines(revision.before, revision.content) });
     }
     return revision;
   }
 
-  private revisionForCall(callId: string): FileRevision | null {
+  private revisionForCall(callId: string, sessionId: string): FileRevision | null {
     const pending = this.pending.get(callId);
-    const path = pending ? filePathOf(pending.args, this.canonicalize) : null;
-    return path ? this.revisions.get(path) ?? null : null;
+    const path = pending ? filePathOf(pending.args, (value) => this.key(value, sessionId)) : null;
+    return path ? this.revisions.get(this.revisionKey(sessionId, path)) ?? null : null;
   }
 }

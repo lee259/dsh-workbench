@@ -8,8 +8,8 @@ import { followWorkspaceEvents } from "../workspace-events.js";
 import { lastWorkbenchSession, sessionIdFromEvent } from "../workspace-identity.js";
 import { WorkbenchTooltip } from "../chrome/tooltip.js";
 
-export function WorkbenchToggle() {
-  const { store, i18n } = useWorkbenchServices();
+export function WorkbenchToggle({ reviewOnly = false }: { reviewOnly?: boolean }) {
+  const { store, i18n, navigation } = useWorkbenchServices();
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   const t = i18n.t;
   const [files, setFiles] = useState<GitFileDiff[]>([]);
@@ -49,26 +49,26 @@ export function WorkbenchToggle() {
   }, []);
   const { additions, deletions } = reviewDiffCounts(files);
   const hasReview = files.length > 0;
-  const label = state.visible ? t("hidePanel") : t("showPanel");
+  const label = reviewOnly ? t("reviewTitle") : state.visible ? t("hidePanel") : t("showPanel");
   return (
     <WorkbenchTooltip label={label}>
     <button
       className={`dsh-wb-toggle${hasReview ? " is-review" : ""}`}
       type="button"
       aria-label={label}
-      aria-expanded={state.visible}
+      aria-expanded={reviewOnly ? undefined : state.visible}
       data-open={state.visible ? "true" : "false"}
       onClick={() => {
+        if (navigation.openReview()) return;
         if (state.visible) {
           store.hide();
           return;
         }
         store.show();
-        if (hasReview) window.dispatchEvent(new Event("dsh-wb-review-request"));
       }}
     >
       <span className="dsh-wb-toggle-label">
-        {hasReview ? t("editedFiles", { count: files.length }) : t("workbench")}
+        {reviewOnly ? t("reviewTitle") : hasReview ? t("editedFiles", { count: files.length }) : t("workbench")}
         {hasReview && (additions > 0 || deletions > 0) ? (
           <span className="dsh-wb-toggle-counts">
             {additions > 0 ? <b className="is-add">+{additions}</b> : null}

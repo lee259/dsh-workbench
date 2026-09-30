@@ -104,7 +104,7 @@ export function CodeView({ state, commandsRef, sessionId, diffView }: {
     session.saving = true;
     setSaveState("saving");
     try {
-      await saveWorkspaceFile(payload.path, savedContent, baseline);
+      await saveWorkspaceFile(payload.path, savedContent, baseline, sessionId);
       store.completeSave(session, savedContent);
       window.dispatchEvent(new Event("dsh-wb-workspace-change"));
       if (activeSessionRef.current !== session) return;
@@ -215,7 +215,7 @@ export function CodeView({ state, commandsRef, sessionId, diffView }: {
 
   if (kind === "image" && payload.source !== "dsh-write") return <div className="dsh-wb-preview-shell">
     {toolbar}
-    <div className="dsh-wb-image-preview"><img src={`${FILE_ASSET_API_PATH}?path=${encodeURIComponent(payload.path)}&revision=${payload.revision}`} alt={payload.path} /></div>
+    <div className="dsh-wb-image-preview"><img src={`${FILE_ASSET_API_PATH}?path=${encodeURIComponent(payload.path)}&revision=${payload.revision}${sessionId ? `&session=${encodeURIComponent(sessionId)}` : ""}`} alt={payload.path} /></div>
   </div>;
 
   if (isMarkdown && !markdownSource) {

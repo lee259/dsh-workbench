@@ -12,7 +12,7 @@ function isWriteLikeTool(name: string): boolean {
 }
 
 export function FileToolRow({ toolName, block }: { toolName: string; block?: unknown }) {
-    const { store, i18n } = useWorkbenchServices();
+    const { store, i18n, navigation } = useWorkbenchServices();
     const t = i18n.t;
     const filePath = filePathFromBlock(block);
     const settled = Boolean(block && typeof block === "object" && "kind" in block);
@@ -31,17 +31,10 @@ export function FileToolRow({ toolName, block }: { toolName: string; block?: unk
                 event.preventDefault();
                 event.stopPropagation();
                 if (isWriteLikeTool(toolName)) {
-                  if (typeof window !== "undefined") {
-                    window.dispatchEvent(new CustomEvent("dsh-wb-review-request", { detail: filePath }));
-                  }
-                  if (!store.getSnapshot().visible) store.show();
+                  if (!navigation.openReview(filePath)) store.show();
                   return;
                 }
-                if (typeof window !== "undefined") {
-                  window.dispatchEvent(new CustomEvent("dsh-wb-file-request", { detail: { path: filePath, mode: "view" } }));
-                  return;
-                }
-                void store.open(filePath, "view");
+                if (!navigation.openFile(filePath, "view")) void store.open(filePath, "view");
               }}
           >
             {filePath}

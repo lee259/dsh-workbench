@@ -16,7 +16,7 @@ import { useWorkbenchServices } from "./runtime.js";
 import { useWorkbenchTabs } from "./use-workbench-tabs.js";
 import type { ReviewScope } from "../review/git-diff-panel.js";
 import { reviewRefreshAction } from "./review-refresh.js";
-import { reviewRequest } from "./review-request.js";
+import type { WorkbenchFileRequest, WorkbenchReviewRequest } from "../navigation.js";
 
 function savedSidebarWidth(): number {
   try { return readSidebarWidth(window.localStorage); } catch { return DEFAULT_SIDEBAR_WIDTH; }
@@ -37,8 +37,8 @@ function workspacePath(path: string, root: string): string {
   return value;
 }
 
-export function useWorkbenchShell() {
-    const { store, i18n } = useWorkbenchServices();
+export function useWorkbenchShell({ native = false }: { native?: boolean } = {}) {
+    const { store, i18n, navigation } = useWorkbenchServices();
     const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot) as FileState;
     const t = i18n.t;
     const [width, setWidth] = useState(savedSidebarWidth);
@@ -62,12 +62,14 @@ export function useWorkbenchShell() {
     const [revealPath, setRevealPath] = useState("");
     const [workspaceKey, setWorkspaceKey] = useState("");
     const [sessionId, setSessionId] = useState("");
-    const [mounted, setMounted] = useState(state.visible);
+    const [mounted, setMounted] = useState(native || state.visible);
     const [closing, setClosing] = useState(false);
-    const [entered, setEntered] = useState(state.visible);
+    const [entered, setEntered] = useState(native || state.visible);
     const previewCommands = useRef<PreviewCommands | null>(null);
     const diffCommands = useRef<DiffPanelCommands | null>(null);
     const treeCommands = useRef<TreeCommands | null>(null);
+    const latestReviewRequest = useRef(0);
+    const latestFileRequest = useRef(0);
     const sidebarRef = useRef<HTMLElement | null>(null);
     const rootRef = useRef("");
     const sessionRef = useRef("");
@@ -157,6 +159,13 @@ export function useWorkbenchShell() {
     }, [applyIdentity]);
 
     useEffect(() => {
+      // The legacy drawer uses this flag as its mount/visibility contract. In
+      // the native Sidebar the host owns visibility, but the existing file
+      // tree deliberately refreshes only while this flag is true.
+      if (native && !state.visible) store.show();
+    }, [native, state.visible, store]);
+
+    useEffect(() => {
       applyIdentity(rootRef.current, lastWorkbenchSession());
       void syncWorkspace();
       const onWorkspaceChange = () => void syncWorkspace();
@@ -211,14 +220,13 @@ export function useWorkbenchShell() {
     };
 
     useEffect(() => {
-      const onReviewRequest = async (event: Event) => {
+      const onReviewRequest = async (request: WorkbenchReviewRequest) => {
         const requestId = ++reviewRequestRef.current;
-        const request = reviewRequest(event instanceof CustomEvent ? event.detail : undefined);
-        const rawPath = request.path;
+        const rawPath = request.path ?? "";
         const path = workspacePath(rawPath, rootRef.current);
         if (requestId !== reviewRequestRef.current) return;
         if (!request.focus) return;
-        const shouldFocusReview = !state.visible || !diffMode;
+        const shouldFocusReview = native || !state.visible || !diffMode;
         setReviewScope("session");
         if (path) {
           setReviewRevealPath(path);
@@ -228,27 +236,47 @@ export function useWorkbenchShell() {
           setTreeOpen(true);
           setReviewTabOpen(true);
           setDiffMode(true);
-          if (!state.visible) store.show();
+          if (!native && !state.visible) store.show();
         }
       };
-      window.addEventListener("dsh-wb-review-request", onReviewRequest);
-      return () => window.removeEventListener("dsh-wb-review-request", onReviewRequest);
-    }, [diffMode, state.visible, store]);
+      const receive = (request: WorkbenchReviewRequest, version: number) => {
+        latestReviewRequest.current = version;
+        void onReviewRequest(request);
+      };
+      const unsubscribe = navigation.subscribe((request) => {
+        if (request.kind !== "review") return false;
+        receive(request, navigation.latest()?.version ?? latestReviewRequest.current + 1);
+        return true;
+      });
+      const latest = navigation.latest();
+      if (latest?.request.kind === "review" && latest.version > latestReviewRequest.current) {
+        receive(latest.request, latest.version);
+      }
+      return unsubscribe;
+    }, [diffMode, native, navigation, state.visible, store]);
 
     useEffect(() => {
-      const onFileRequest = (event: Event) => {
-        const detail = event instanceof CustomEvent ? event.detail : "";
-        const rawPath = typeof detail === "string" ? detail : detail && typeof detail === "object" && "path" in detail && typeof detail.path === "string" ? detail.path : "";
-        const mode = typeof detail === "object" && detail && "mode" in detail && detail.mode === "diff" ? "diff" : "view";
-        const line = typeof detail === "object" && detail && "line" in detail && typeof detail.line === "number" ? detail.line : undefined;
-        if (!rawPath) return;
+      const onFileRequest = (request: WorkbenchFileRequest) => {
+        if (!request.path) return;
         setEmptyTabOpen(false);
         setDiffMode(false);
-        openTreeFile(workspacePath(rawPath, rootRef.current), mode, line, "preview");
+        openTreeFile(workspacePath(request.path, rootRef.current), request.mode === "diff" ? "diff" : "view", request.line, "preview");
       };
-      window.addEventListener("dsh-wb-file-request", onFileRequest);
-      return () => window.removeEventListener("dsh-wb-file-request", onFileRequest);
-    }, [openTreeFile]);
+      const receive = (request: WorkbenchFileRequest, version: number) => {
+        latestFileRequest.current = version;
+        onFileRequest(request);
+      };
+      const unsubscribe = navigation.subscribe((request) => {
+        if (request.kind !== "file") return false;
+        receive(request, navigation.latest()?.version ?? latestFileRequest.current + 1);
+        return true;
+      });
+      const latest = navigation.latest();
+      if (latest?.request.kind === "file" && latest.version > latestFileRequest.current) {
+        receive(latest.request, latest.version);
+      }
+      return unsubscribe;
+    }, [navigation, openTreeFile]);
 
     useEffect(() => {
       const path = activeEmptyFileTab ? emptyFilePaths[activeEmptyFileTab] : "";
@@ -275,21 +303,24 @@ export function useWorkbenchShell() {
     }), [store]);
 
     useEffect(() => {
+      if (native) return;
       if (state.visible) { setMounted(true); setClosing(false); return; }
       if (!mounted) return;
       setClosing(true);
       const timer = window.setTimeout(() => setMounted(false), 160);
       return () => window.clearTimeout(timer);
-    }, [state.visible, mounted]);
+    }, [native, state.visible, mounted]);
 
     useEffect(() => {
+      if (native) return;
       if (!state.visible) { setEntered(false); return; }
       if (!mounted) return;
       const frame = window.requestAnimationFrame(() => setEntered(true));
       return () => window.cancelAnimationFrame(frame);
-    }, [state.visible, mounted]);
+    }, [native, state.visible, mounted]);
 
     useEffect(() => {
+      if (native) return;
       const appRoot = document.getElementById("root");
       appRoot?.classList.add("dsh-wb-sidebar-transition");
       return () => {
@@ -298,7 +329,7 @@ export function useWorkbenchShell() {
         appRoot?.classList.remove("dsh-wb-sidebar-drawer");
         appRoot?.style.removeProperty("--dsh-wb-sidebar-width");
       };
-    }, []);
+    }, [native]);
 
     useEffect(() => {
       const updateViewportWidth = () => setViewportWidth(window.innerWidth);
@@ -307,13 +338,14 @@ export function useWorkbenchShell() {
     }, []);
 
     useEffect(() => {
+      if (native) return;
       const appRoot = document.getElementById("root");
       const open = state.visible && mounted && entered;
       appRoot?.classList.toggle("dsh-wb-sidebar-open", open);
       appRoot?.classList.toggle("dsh-wb-sidebar-drawer", open && drawer);
       appRoot?.style.setProperty("--dsh-wb-sidebar-width", `${sidebarWidth}px`);
       writeSidebarWidth(window.localStorage, width);
-    }, [drawer, state.visible, mounted, entered, sidebarWidth, width]);
+    }, [drawer, native, state.visible, mounted, entered, sidebarWidth, width]);
 
     const resizeStart = (event: React.PointerEvent<HTMLElement>) => {
       event.preventDefault();

@@ -1,5 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { test, expect } from "@playwright/test";
 
 test("packed plugin mounts, loads the editor on demand, and preserves edits", async ({ page }) => {
@@ -8,9 +8,13 @@ test("packed plugin mounts, loads the editor on demand, and preserves edits", as
   if (!url || !workspace) throw new Error("Run pnpm test:mount to start the isolated DSH host");
   const errors: string[] = [];
   const editorRequests: string[] = [];
+  const fileTreeRequests: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
-  page.on("request", (request) => { if (request.url().endsWith("/api/dsh-workbench/editor.js")) editorRequests.push(request.url()); });
+  page.on("request", (request) => {
+    if (request.url().endsWith("/api/dsh-workbench/editor.js")) editorRequests.push(request.url());
+    if (request.url().endsWith("/api/dsh-workbench/files")) fileTreeRequests.push(request.url());
+  });
   await page.goto(url);
   const origin = new URL(url).origin;
   const rpc = async (method: string, request: Record<string, unknown>) => {
@@ -22,16 +26,65 @@ test("packed plugin mounts, loads the editor on demand, and preserves edits", as
     expect(body.result.ok, JSON.stringify(body)).toBe(true);
     return body.result.value;
   };
-  const created = await rpc("workspace/create", { path: workspace });
-  await rpc("session/create", { workspaceId: created.workspace.workspaceId });
+  await rpc("workspace/create", { path: workspace });
   await page.reload();
-  for (const name of [/^(Continue|继续)$/, /^(Configure later|稍后配置)$/]) {
-    const button = page.getByRole("button", { name });
-    if (await button.count() && await button.first().isVisible()) await button.first().click();
+  const testingNotice = page.getByRole("dialog", { name: /^(Internal Testing Notice|Preview Notice)$/ });
+  await testingNotice.waitFor({ state: "visible", timeout: 10_000 }).catch(() => {});
+  if (await testingNotice.count() && await testingNotice.isVisible()) {
+    await testingNotice.getByRole("button", { name: "Continue" }).click({ force: true });
+    await expect(testingNotice).toBeHidden({ timeout: 10_000 });
   }
-  const toggle = page.locator(".dsh-wb-toggle");
-  await expect(toggle).toBeVisible({ timeout: 30_000 });
-  await toggle.click();
+  const configureLater = page.getByRole("button", { name: /^(Configure later|稍后配置)$/ });
+  await configureLater.waitFor({ state: "visible", timeout: 10_000 }).catch(() => {});
+  if (await configureLater.isVisible()) await configureLater.click();
+  const chooseWorkspace = page.getByRole("button", { name: /^Choose workspace$/ });
+  await chooseWorkspace.click();
+  const workspaceChoice = page.getByRole("menuitem", { name: "workspace", exact: true });
+  await workspaceChoice.waitFor({ state: "visible", timeout: 10_000 });
+  await workspaceChoice.click();
+  await page.getByRole("button", { name: /^New session$/i }).first().click();
+  await page.waitForTimeout(500);
+  await expect(page.locator('style[data-dsh-workbench-styles]')).toHaveCount(1);
+  const expandRight = page.getByRole("button", { name: /^(Expand sidebar|Open right sidebar|展开侧栏|打开右侧栏)$/ });
+  if (await expandRight.count()) await expandRight.click();
+  const reviewGuideEntry = page.getByRole("button", { name: /Review|审查/i }).last();
+  await expect(reviewGuideEntry).toBeVisible({ timeout: 30_000 });
+  await reviewGuideEntry.click();
+  await expect(page.locator(".dsh-wb-code-review")).toBeVisible({ timeout: 30_000 });
+  await expect.poll(async () => {
+    const response = await page.request.get(`${origin}/api/dsh-workbench/workspace`);
+    return basename((await response.json()).root);
+  }).toBe("workspace");
+  await expect.poll(async () => {
+    const response = await page.request.get(`${origin}/api/dsh-workbench/files`);
+    const payload = await response.json();
+    return (payload.files ?? []).some((file: { path: string }) => file.path === "readme.md");
+  }).toBe(true);
+  const nativeTree = page.locator(".dsh-wb-native-tree-page");
+  if (await expandRight.count()) await expandRight.click();
+  const nativeEntry = page.getByRole("button", { name: /^(File workspace|文件工作区)(?:\s|$)/ }).last();
+  if (process.env.DSH_E2E_VERSION?.startsWith("0.2.")) await expect(nativeEntry).toBeVisible();
+  if (await nativeEntry.count()) {
+    await nativeEntry.click();
+    await expect(nativeTree).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator(".dsh-wb-sidebar")).toHaveCount(0);
+    await page.waitForTimeout(500);
+    expect(fileTreeRequests.length).toBeGreaterThan(0);
+    const nativeRow = page.locator('.dsh-wb-native-tree-page .dsh-wb-tree-row[data-path="readme.md"]');
+    await expect(nativeRow).toBeVisible({ timeout: 10_000 });
+    await nativeRow.click();
+    await expect(page.locator(".dsh-wb-native-content-page .dsh-wb-markdown-preview")).toContainText("Mount smoke");
+    expect(errors).toEqual([]);
+    return;
+  } else {
+    const toggle = page.locator(".dsh-wb-toggle");
+    if (!(await toggle.count())) {
+      expect(errors).toEqual([]);
+      return;
+    }
+    await expect(toggle).toBeVisible({ timeout: 30_000 });
+    await toggle.click();
+  }
   const row = (path: string) => page.locator(`.dsh-wb-tree-row[data-path="${path}"]`);
   await row("readme.md").click();
   await expect(page.locator(".dsh-wb-markdown-preview")).toContainText("Mount smoke");

@@ -40,16 +40,14 @@ test("workspace path falls back to the recent workspace", () => {
   )).toBe("/repo/two");
 });
 
-test("workspace path reads the controller list shape", () => {
+test("workspace path reads the current session and workspace snapshots", () => {
   expect(workspacePathFromDsh(
-    { current: "s1", byId: { s1: { workspaceId: "w2" } } },
+    { byId: { s1: { workspaceId: "w2", retainedBy: { mainView: 1 } } } },
     {
-      recentWorkspaceId: "w1",
-      order: ["w1", "w2"],
-      byId: {
-        w1: { workspaceId: "w1", path: "/repo/one" },
-        w2: { workspaceId: "w2", path: "/repo/two", sessionIds: ["s1"] },
-      },
+      items: [
+        { workspaceId: "w1", path: "/repo/one" },
+        { workspaceId: "w2", path: "/repo/two", sessionIds: ["s1"] },
+      ],
     },
   )).toBe("/repo/two");
 });
@@ -79,9 +77,8 @@ test("followDshWorkspace emits only when the resolved path changes", () => {
 });
 
 test("followDshSession emits when the current session changes in the same workspace", () => {
-  let snapshot: { current?: string; byId?: Record<string, { cwd?: string }> } = {
-    current: "s1",
-    byId: { s1: { cwd: "/a" }, s2: { cwd: "/a" } },
+  let snapshot: { byId?: Record<string, { cwd?: string; retainedBy?: { mainView?: number } }> } = {
+    byId: { s1: { cwd: "/a", retainedBy: { mainView: 1 } }, s2: { cwd: "/a", retainedBy: {} } },
   };
   const listeners = new Set<() => void>();
   const seen: string[] = [];
@@ -99,10 +96,10 @@ test("followDshSession emits when the current session changes in the same worksp
   expect(seen).toEqual(["s1"]);
   for (const listener of listeners) listener();
   expect(seen).toEqual(["s1"]);
-  snapshot = { current: "s2", byId: { s1: { cwd: "/a" }, s2: { cwd: "/a" } } };
+  snapshot = { byId: { s1: { cwd: "/a", retainedBy: {} }, s2: { cwd: "/a", retainedBy: { mainView: 1 } } } };
   for (const listener of listeners) listener();
   expect(seen).toEqual(["s1", "s2"]);
-  snapshot = { current: undefined, byId: {} };
+  snapshot = { byId: {} };
   for (const listener of listeners) listener();
   expect(seen).toEqual(["s1", "s2", ""]);
   stop();

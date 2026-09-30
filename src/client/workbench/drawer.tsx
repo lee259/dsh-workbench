@@ -26,8 +26,8 @@ function previewMeta(state: FileState, t: LocaleStore["t"]): string {
   return t("linesWorkspace", { count: payload?.content.split("\n").length ?? 0 });
 }
 
-export function WorkbenchDrawer() {
-  const { state, t, width, drawer, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, diffMode, setDiffMode, diffView, setDiffView, reviewTabOpen, openReviewTab, closeReviewTab, reviewRevealPath, reviewRevealVersion, reviewRevision, reviewUpdates, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab, activateEmptyFileTab, closeEmptyFileTab, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
+export function WorkbenchDrawer({ native = false }: { native?: boolean }) {
+  const { state, t, width, drawer, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, diffMode, setDiffMode, diffView, setDiffView, reviewTabOpen, openReviewTab, closeReviewTab, reviewRevealPath, reviewRevealVersion, reviewRevision, reviewUpdates, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab, activateEmptyFileTab, closeEmptyFileTab, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell({ native });
   const [gitCounts, setGitCounts] = useState({ additions: 0, deletions: 0 });
   const [allDiffsCollapsed, setAllDiffsCollapsed] = useState(false);
 
@@ -37,12 +37,12 @@ export function WorkbenchDrawer() {
     <>
       <aside
         ref={sidebarRef}
-        className={`dsh-wb-sidebar${drawer ? " is-drawer" : ""}`}
-        data-state={closing ? "closing" : "open"}
-        style={{ width: drawer ? "100vw" : `${width}px` }}
+        className={native ? "dsh-wb-native-workbench" : `dsh-wb-sidebar${drawer ? " is-drawer" : ""}`}
+        data-state={native ? undefined : closing ? "closing" : "open"}
+        style={native ? undefined : { width: drawer ? "100vw" : `${width}px` }}
         aria-label={t("ariaWorkspace")}
       >
-        {!drawer ? <div
+        {!native && !drawer ? <div
           className="dsh-wb-resize-handle"
           role="separator"
           aria-label={t("resize")}
@@ -60,6 +60,7 @@ export function WorkbenchDrawer() {
           }}
         /> : null}
         <WorkbenchHeader
+          native={native}
           state={state}
           diffMode={diffMode}
           setDiffMode={setDiffMode}

@@ -6,14 +6,14 @@
 
 [中文文档](./README.zh-CN.md) · [Changelog](./CHANGELOG.md) · [Issues](https://github.com/lee259/dsh-workbench/issues) · [npm](https://www.npmjs.com/package/dsh-workbench)
 
-Codex-style file workspace and Git review for [DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart) Web. Keep the conversation, changed files, and diffs in one place.
+Codex-style Review inside [DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart) Web. Review Harness turn changes and native diffs without connecting to GitHub.
 
 ## What it does
 
-- Captures DSH `write` / `edit` changes with their original before/after content.
-- Switches between session edits, uncommitted, unstaged, and staged Git changes; the tree and diff share the same `+/−` counts.
+- Browses turn change summaries by DSH Session and loads Harness-native hunk diffs.
+- Shows a central Harness diff with changed-file navigation beside it.
 - Opens files from tool calls, the workspace tree, or search alongside the conversation. Conversation file links reveal the corresponding diff.
-- Lets you edit workspace files, copy paths, and insert a selected diff range into the active Harness draft.
+- Keeps file preview, workspace browsing, and path references as review helpers.
 
 ![DSH Workbench in DeepSeek Harness Web](./assets/dsh-workbench-demo.png)
 
@@ -83,12 +83,13 @@ To mount the packed plugin in an isolated DSH Web instance:
 
 ```bash
 pnpm test:mount
-DSH_VERSION=next pnpm test:mount
+DSH_VERSION=0.2.0-rc.2 pnpm test:mount
 ```
 
-The first command uses the supported `0.1.2-rc.1` baseline. The second follows
-the npm `next` channel and is also run weekly as a non-blocking compatibility
-smoke test.
+The first command uses the installable `dsh@0.1.7-rc.2`; set `DSH_VERSION` to
+mount against another release. `dsh@0.2.0-rc.2` currently references an
+unpublished `dsh-client-ui-settings-account@0.2.0-rc.2` package on npm, which
+can prevent a fresh CLI install until that dependency is published.
 
 - Host: `name`, `inject`, `apply(ctx)` from `src/index.ts`
 - Client: `dsh.client`, `exports["./client"]`, `window.__ModuleLoader__.load`
@@ -98,13 +99,13 @@ smoke test.
 
 ## Roadmap
 
-Inspect, navigate, and review what the agent touched. Diffs stay on captured DSH writes.
+Review the agent's changes inside DeepSeek Harness. The change list and hunk diffs use DSH's native `workspaceChanges` API; no GitHub PR integration is involved.
 
 ### Done
 
 - Read-only previews for `read` and file mentions
 - Captured DSH diffs for `write` / `edit`
-- Persistent, resizable right-side workspace
+- Native DSH right-sidebar workspace, with a drawer fallback when Sidebar services are unavailable
 - Multi-file tabs, preview / pin, path copy, and desktop shortcuts
 - In-file find / go-to-line, plus conversation `:line` / `#Lline` targets
 - Chinese / English UI following DSH locale
@@ -123,9 +124,9 @@ Inspect, navigate, and review what the agent touched. Diffs stay on captured DSH
 
 ### Next
 
-The target is a Codex-like development experience inside DeepSeek Harness: reuse proven
-workspace interactions where they help, while keeping DSH-native write capture and
-session review as the workbench's center of gravity.
+The target is a Codex-like Review experience inside DeepSeek Harness, using Harness
+turn changes as the review source and keeping the conversation, changed files, and diff
+in one review flow.
 
 1. Add terminal and background-task surfaces in small, DSH-native slices.
 2. Tighten review-to-conversation feedback, including inline guidance on diffs.
@@ -143,7 +144,6 @@ incremental review updates remain the differentiating foundation.
 
 - Open-in-editor and reveal-in-folder
 - Inline comments on a diff line that send guidance back to the composer
-- Native DSH panel controls and layout slots, if the host exposes a usable one
 - Pluggable workspace panels (Files / Review, and later DSH tools)
 
 ## License

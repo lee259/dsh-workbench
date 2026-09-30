@@ -1,12 +1,14 @@
 # UI
 
-Workbench is a DeepSeek Harness side panel. It should look like the host, not a second product.
+Review is a DeepSeek Harness side panel. It should look like the host, not a second product.
 
 ## Goal
 
-A quiet right-side file workbench. Open a file, read or diff it, return to the conversation. Review lists captured DSH writes in the same rail as the file tree.
+A quiet, Codex-inspired review surface for code changes made during a DSH turn. Use Harness-native summaries and diffs for completed turns, and show captured DSH file writes in an in-progress turn. Keep the host conversation and session navigation in charge of the surrounding app.
 
 Complete the named job with the fewest moves. If a click on an existing row does the work, that is the interaction. Extra chrome arrives when a later request names it.
+
+Review opens to a centered Diff with a changed-file list beside it. Each path appears once, using its latest Harness change. Selecting a file loads its Harness diff in the main area. If the Session has no turn changes, show the current workspace's uncommitted files.
 
 ## Tokens
 
@@ -79,5 +81,10 @@ black fill, white text, 8px radius, and `8px 10px` padding. They open after
   sidebar while it is open: the Tooltip bubble renders beside its trigger and
   a transformed sidebar would offset its fixed positioning.
 - Show `+/−` counts when they are non-zero.
-- Review and the file tree share one rail. Same head height, same row, same hover. The mode toggle replaces the list.
+- Review shows a central Diff, a searchable changed-file tree, and aggregate `+/−` counts; selecting a file scrolls to its Harness diff. There is no separate Summary view or turn selector.
+- Review follows the Codex-style diff workflow: split / unified view, collapse or expand one file or all files, copy a file path, hide or show the file tree, resize the tree rail, and navigate the tree with arrow keys, Home / End, Enter, and Escape in search.
+- Match the diff editor's unchanged-line folding: keep three context lines beside changes, fold only when at least six lines can be hidden, and reveal a folded run when clicked.
+- In split view, show pure additions and pure deletions in one full-width column; reserve two columns for files containing both kinds of change.
+- Horizontal scrolling belongs to each complete code pane, with the old and new panes kept in sync; individual code lines do not scroll independently.
+- Review file rows use the selected, hover, and focus states from the existing file tree. Search expands matching folder paths and Escape clears the query.
 - On viewports narrower than 768px, the workbench is a full-width drawer and does not reflow the conversation.

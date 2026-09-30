@@ -59,15 +59,16 @@ function openButtonHintFromTarget(target: EventTarget | null): OpenButtonHint | 
   };
 }
 
-export function installFileOpenCapture(open: (path: string, mode: FileOpenMode, line?: number) => void): () => void {
+export function installFileOpenCapture(open: (path: string, mode: FileOpenMode, line?: number) => boolean | void): () => void {
   const onClick = (event: MouseEvent) => {
     const hint = openButtonHintFromTarget(event.target);
     if (hint?.className.split(/\s+/).includes("dsh-wb-tool-path")) return;
     const target = hint ? fileOpenTargetFromHint(hint) : undefined;
     if (!target?.path) return;
+    const handled = open(target.path, fileOpenModeFromHint(hint as OpenButtonHint), target.line);
+    if (handled === false) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    open(target.path, fileOpenModeFromHint(hint as OpenButtonHint), target.line);
   };
   document.addEventListener("click", onClick, true);
   return () => document.removeEventListener("click", onClick, true);

@@ -10,14 +10,7 @@ import {
   type MouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import {
-  IconCodeOutline16,
-  IconCopyOutline16,
-  IconFolderOpen16,
-  IconLinkOutline16,
-  Menu,
-  writeClipboard,
-} from "@deepseek-ai/dsh-client-ui-primitives";
+import { Menu, writeClipboard } from "@deepseek-ai/dsh-client-ui-primitives";
 import { normalizePath, type FileOpenMode, type ReviewScope, type WorkspaceTree as WorkspaceTreeData } from "../../shared/types.js";
 import { FileTypeIcon, Icon, TreeChangeIcon, TreeChevron } from "../chrome/icons.js";
 import { startResizeDrag } from "../chrome/resize-drag.js";
@@ -243,8 +236,14 @@ export function WorkspaceTreePanel({
     }, [openMode, reviewChanges]);
 
     useEffect(() => {
-      if (fileState.visible) refreshTree();
-    }, [fileState.visible, fileState.disk, refreshTree]);
+      if (fileState.visible || sessionId) refreshTree();
+    }, [fileState.visible, fileState.disk, sessionId, refreshTree]);
+
+    useEffect(() => {
+      const refresh = () => refreshTree();
+      window.addEventListener("dsh-wb-workspace-change", refresh);
+      return () => window.removeEventListener("dsh-wb-workspace-change", refresh);
+    }, [refreshTree]);
 
     useEffect(() => {
       const target = locatePath || revealPath || pendingReveal;
@@ -472,11 +471,11 @@ export function WorkspaceTreePanel({
             {
               id: "open",
               label: t(menuIsDirectory ? "revealInTree" : "openFileAction"),
-              icon: menuIsDirectory ? <IconFolderOpen16 size={14} /> : <IconCodeOutline16 size={14} />,
+              icon: <Icon name={menuIsDirectory ? "folder-open" : "code"} />,
             },
-            ...(menuIsDirectory ? [] : [{ id: "open-system", label: t("openWithDefault"), icon: <IconCodeOutline16 size={14} /> }]),
-            { id: "reference", label: t("referencePathAction"), icon: <IconLinkOutline16 size={14} /> },
-            { id: "copy", label: t("copyPathAction"), icon: <IconCopyOutline16 size={14} /> },
+            ...(menuIsDirectory ? [] : [{ id: "open-system", label: t("openWithDefault"), icon: <Icon name="code" /> }]),
+            { id: "reference", label: t("referencePathAction"), icon: <Icon name="link" /> },
+            { id: "copy", label: t("copyPathAction"), icon: <Icon name="copy" /> },
           ]}
           onSelect={(id: string) => {
             if (id === "open") menuIsDirectory ? locate(menuPath) : openFromTree(menuPath, "keep");

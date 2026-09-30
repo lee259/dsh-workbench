@@ -52,6 +52,7 @@ function ActivityMeta({ sessionId, t, onOpen }: { sessionId: string; t(key: "tas
 }
 
 export function WorkbenchHeader({
+    native = false,
     state,
     diffMode,
     setDiffMode,
@@ -83,6 +84,7 @@ export function WorkbenchHeader({
     reviewCounts,
     sessionId,
   }: {
+    native?: boolean;
     state: FileState;
     diffMode: boolean;
     setDiffMode(next: boolean): void;
@@ -285,7 +287,7 @@ export function WorkbenchHeader({
                     aria-label={`${t("closeFile")}: ${t("reviewTab")}`}
                     onClick={() => {
                       closeReviewTab();
-                      if (!hasTabsAfter("review")) store.hide();
+                      if (!native && !hasTabsAfter("review")) store.hide();
                       else if (normalFileTabs[0]) activateNormalFile(normalFileTabs[0]);
                       else if (emptyTabOpen) setEmptyTabOpen(true);
                       else if (emptyFileTabs[0]) activateFileTab(emptyFileTabs[0]);
@@ -354,7 +356,7 @@ export function WorkbenchHeader({
                     aria-label={`${t("closeFile")}: ${t("newTab")}`}
                     onClick={() => {
                       setEmptyTabOpen(false);
-                      if (!hasTabsAfter("empty")) store.hide();
+                      if (!native && !hasTabsAfter("empty")) store.hide();
                       else if (normalFileTabs.at(-1)) activateNormalFile(normalFileTabs.at(-1) as string);
                       else if (reviewTabOpen) openReviewTab();
                       else if (emptyFileTabs[0]) activateFileTab(emptyFileTabs[0]);
@@ -409,7 +411,7 @@ export function WorkbenchHeader({
               </WorkbenchTooltip>
             </div>
           </div>
-          <div className="dsh-wb-tab-actions">
+          {!native ? <div className="dsh-wb-tab-actions">
             <WorkbenchTooltip label={t("hidePanel")}>
             <button
               className="dsh-wb-button dsh-wb-icon-button dsh-wb-close-button"
@@ -421,6 +423,7 @@ export function WorkbenchHeader({
             </button>
             </WorkbenchTooltip>
           </div>
+          : null}
         </nav>
         {!emptyTabOpen && (state.path || diffMode) ? (
           <nav className={`dsh-wb-pathbar${diffMode ? " is-review" : ""}`} aria-label={t("filePath")}>

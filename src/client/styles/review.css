@@ -50,6 +50,11 @@
   padding: 2px 4px 12px;
 }
 
+.dsh-wb-review-row {
+  display: flex;
+  align-items: stretch;
+}
+
 .dsh-wb-review-item {
   display: flex;
   width: 100%;
@@ -67,6 +72,54 @@
   font: inherit;
   font-size: 12px;
   transition: background-color 120ms ease-out;
+}
+
+.dsh-wb-review-row .dsh-wb-review-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.dsh-wb-review-ack {
+  flex: 0 0 28px;
+  border: 0;
+  border-radius: 4px;
+  color: var(--dsw-alias-label-tertiary);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+
+.dsh-wb-review-ack:hover {
+  color: var(--dsw-alias-state-success-primary);
+  background: var(--dsh-wb-nav-item-hover-fill);
+}
+
+.dsh-wb-review-ack:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.dsh-wb-review-discard {
+  flex: 0 0 28px;
+  border: 0;
+  border-radius: 4px;
+  color: var(--dsw-alias-label-tertiary);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.dsh-wb-review-discard:hover {
+  color: var(--dsw-alias-state-error-primary);
+  background: var(--dsh-wb-nav-item-hover-fill);
+}
+
+.dsh-wb-review-discard:disabled {
+  cursor: wait;
+  opacity: .65;
 }
 
 .dsh-wb-review-item:hover {

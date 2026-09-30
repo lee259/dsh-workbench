@@ -1,6 +1,7 @@
 /* Shared interactive-control states. Sizes remain with the owning surface. */
 
 .dsh-wb-sidebar button:focus-visible,
+.dsh-wb-native-workbench button:focus-visible,
 .dsh-wb-toggle:focus-visible,
 .dsh-wb-tool-path:focus-visible {
   outline: 2px solid var(--dsh-wb-focus-ring);

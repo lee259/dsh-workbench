@@ -23,7 +23,9 @@ src/
 │   └── jsx.d.ts
 ├── client/                  # 客户端（browser bundle）
 │   ├── entry.ts             # bundle 入口（被 src/client.ts 转导）
-│   ├── ui.tsx               # 组装：FileDrawer、FileToolRow
+│   ├── ui.tsx               # 组装：FileDrawer、FileToolRow 与原生 tab
+│   ├── navigation.ts         # 文件 / Review 打开的展示层无关导航
+│   ├── presentation.ts       # 旧版抽屉与原生 Sidebar 展示层 adapter
 │   ├── store.ts             # FileStore：open / activate / close
 │   ├── mount.ts             # mountWorkbenchDrawer：挂载到 document.body
 │   ├── react-bridge.ts      # 把宿主 React 交给非 JSX 模块
@@ -35,8 +37,10 @@ src/
 │   ├── chrome/              # 侧栏宽度、快捷键、tab 集合、图标
 │   ├── explorer/            # 文件树 / Quick Open / 路径插入
 │   ├── preview/             # CodeMirror 预览、diff、跳行
-│   ├── review/              # 当前会话的 DSH 写入列表
+│   ├── review/              # Harness turn changes 与 diff 数据读取
 │   ├── workbench/           # 侧栏壳：header / body / drawer
+│   │   ├── native-*-tab.tsx # 原生 Workspace / File / Review 内容
+│   │   └── native-title.tsx # 跟随 locale 的原生 tab 标题
 │   ├── workspace-identity.ts
 │   └── capture/             # 对话里的文件打开捕获
 ├── client.ts                # 转导层 → ./client/entry.js（tsdown entry）
@@ -49,7 +53,7 @@ src/
 | Module | Interface | Owns |
 | --- | --- | --- |
 | `createPathIdentity` | `identify(path)` | One display path for relative and absolute inputs under the same root |
-| `WriteHistory` | `record(event, sessionId)`, `replay(events, sessionId)`, `get(path)` | File revisions from the session log. `replay` rebuilds from an existing log; `record` follows live events. An edit without a prior read still records `dsh-write` from `old_string` / `new_string`. **Note:** real DSH `tool/result` has no top-level `callId` — the call identity lives in `message.content[0].toolCallId` (ToolResultBlock). `recordResult` extracts it via `resultBlockOf()`. |
+| `WriteHistory` | `record(event, sessionId)`, `replay(events, sessionId)`, `get(path, sessionId?)`, `getReviewAfter(sessionId, root, seq)` | Session-scoped file revisions for previews and live Review while a turn is running. Once Harness records `workspace/changes`, the review switches to its native turn diff. |
 | `createWorkspace` | `read(path)` | File reads (relative to start cwd, or any absolute path). Uses `createPathIdentity`. |
 | `toFilePayload` | disk + revision → preview DTO | Overlay DSH writes on disk content |
 | `createFileStore` | `open` / `activate` / `pin` / `close` | Open set + active file + optional preview `line`. `open(..., reveal)` bumps `reveal` so the tree can scroll only for conversation / Quick Open, not tab switches. Tree / Quick Open use a single italic preview tab; double-click or a conversation open pins it. |
@@ -63,30 +67,38 @@ src/
 | `treeFileOpenMode` | tree / Quick Open → `view` | Browse the workspace file; do not overlay a captured DSH write diff |
 | `treeKeyAction` / `consumeTreeEscape` | key + visible rows → move/toggle/open | Home/End, parent/child arrows, Esc closes menu then filter |
 | `createChangePump` | `notify` / `subscribe` | Debounced workspace change events; skips dependency directories |
-| `startWorkspaceWatch` | root + onChange | Recursive disk watch that never attaches to `node_modules` / `lib` / `.git`. Host `apply` starts it only when a client opens the change SSE; the same SSE also emits captured DSH write paths for agent-following. |
+| `startWorkspaceWatch` | root + onChange | Recursive disk watch that never attaches to `node_modules` / `lib` / `.git`. Host `apply` starts it only when a client opens the change SSE; the same SSE also emits captured DSH write paths for agent-following. Native clients keep those paths as background Review updates and do not steal the active host tab. |
 | `insertDraftText` / `spliceDraftValue` | draft + path → updated input | Insert a workspace path into the conversation composer |
 | `mountWorkbenchDrawer` | React + createRoot + FileDrawer | Mount the sidebar host on `document.body` |
+| `createWorkbenchNavigation` | `openFile` / `openReview` / `subscribe` | Route file and review requests without coupling callers to a particular sidebar presentation |
+| `createLegacyWorkbenchPresentation` | `mount()` | Existing `document.body` drawer presentation for Harness versions without a native Sidebar |
+| `nativeFileAddress` | `sessionId + path ↔ dsh-resource://file/session/...` | Session-scoped DSH file resource identity for a Workbench-owned file tab |
+| `createNativeWorkbenchPresentation` | `mount()` | Registers workspace, file, and review bodies in host Tabs; the host owns all tab state and layout |
 | `languageForPath` | path → LanguageId or null | Extension / basename → canonical language identifier (for CodeMirror language selection) |
 
 ## Host
 
-- `inject`: `sessions`, `webServer`
-- `GET /api/dsh-workbench/file?path=`
+- `inject`: `sessions`, `webServer`, `workspaceChanges`
+- `GET /api/dsh-workbench/file?path=&session=`
+- `GET /api/dsh-workbench/review?source=harness&session=` returns completed Harness turn summaries plus a provisional in-progress turn from captured DSH file writes; add `seq` and `index` for a selected file diff (`seq=-1` selects the provisional turn).
 - Relative reads resolve from the current workbench root (starts at `process.cwd()`; `POST /api/dsh-workbench/workspace` follows the DSH workspace)
 - On apply, `sessions.list()` and `session/created` replay each session log; `session/event` records live events
 
 ## Client
 
-- Slots: `tool.call.toolview` for `read` / `write` / `edit` at `priority: -1` (lowest renders; shadows the shipped rows at 0). The Session header toggle registers on the host list `conversation.session.header.utilities` (`id: dsh-workbench`, `order: 10`) so it sits with Session log; do not take the single `conversation.session.header` seat. Path clicks on tool rows, produced-file chips, and markdown file mentions open the workbench sidebar, not the host default app. Mentions with `:line` or `#Lline` jump to that line in the preview. The sidebar mounts on `document.body` via `react-dom/client` as a fixed right-side panel (no backdrop); opening it toggles `#root.dsh-wb-sidebar-open`, which reserves the right margin so the conversation reflows. On viewports below 768px it becomes a full-width drawer instead, leaving the conversation layout unchanged. DSH Tooltip bubbles render beside their triggers, so the open sidebar must not retain a CSS transform. The workspace file tree sits to the right of the preview, starts closed, and can be opened with `⌘⇧E` or the tab-bar toggle. Tree search locates a row without opening it; `⌘P` opens a file. Chrome tokens, sizes, and interaction live in [ui.md](./ui.md). Write/edit uses CodeMirror `unifiedMergeView`; other opens use a read-only CodeMirror view. Folding comes from `@codemirror/language` `foldGutter`. In-file find / go-to-line use `@codemirror/search` and only steal those keys when focus is inside the sidebar. Syntax highlighting via CodeMirror language extensions and `defaultHighlightStyle`.
+- On a host with the right Sidebar API, the host owns the right-column layout, opening/closing, splits, and the only Tab strip. The plugin contributes **File workspace**, Session-scoped `workbench-file` resources, and **Review**. Review shows a central Harness diff and a changed-file rail with the latest changed version of each path across turns; selecting a row loads that file's native hunk diff. If the selected session has no turn changes, the rail falls back to the session workspace's uncommitted files. The legacy drawer keeps its captured-write review as a fallback. Tool rows, tree rows, and captured file references use `nativeFileAddress(path, sessionId)`, so the host deduplicates files through `(kind, contentId)` without merging same-path files across sessions. The native path never renders `WorkbenchHeader` or `useWorkbenchTabs`; those remain only in the old-drawing fallback. The host's own Files and text tabs remain available and are not overridden. Without the host Sidebar, the Session header toggle registers on the host list `conversation.session.header.utilities` (`id: dsh-workbench`, `order: 10`) and the fixed `document.body` drawer preserves the legacy workflow. Mentions with `:line` or `#Lline` jump to that line in the preview. Chrome tokens, sizes, and interaction live in [ui.md](./ui.md). Write/edit uses CodeMirror `unifiedMergeView`; other opens use a read-only CodeMirror view. Folding comes from `@codemirror/language` `foldGutter`. In-file find / go-to-line use `@codemirror/search` and only steal those keys when focus is inside the sidebar. Syntax highlighting via CodeMirror language extensions and `defaultHighlightStyle`.
 - A true layout-slot sidebar (`conversation.details.tool`) is not used: it is a `single` slot already occupied by `@deepseek-ai/dsh-client-ui-tool` at the same priority, and registering there throws (`single slot "conversation.details.tool" already has a registration at priority 0`). The body-margin sidebar avoids the host slot conflict entirely.
 - Locale follows the DSH settings language via `ctx.locale` / `locale/change`
-- Workspace root follows `ctx.sessions` / `ctx.workspaces` and retargets the host via `POST /api/dsh-workbench/workspace`. The identity adapter accepts both the legacy `items` workspace list and the controller's ordered `byId` projection. Switching workspace resets open tabs; review follows the current session without clearing the editor.
+- Workspace root follows `ctx.sessions` / `ctx.workspaces` and retargets the host via `POST /api/dsh-workbench/workspace`. DSH 0.2 session selection comes from `SessionSummary.retainedBy.mainView`; older `current` snapshots remain supported. Workspace resolution prefers the Session `cwd`, then its `workspaceId`, and accepts both legacy `items` / ordered `byId` projections and current Workspace `items`. File drafts and captured write revisions are partitioned by Session so matching paths do not share state.
 - File references use the legacy `conversation.input.for(scope)` face when present and the split `uiSession` input face when supplied by newer Harness clients. The adapter keeps the same `insertReference` seam for both.
 
 ## Build
 
 `tsc` emits host modules into `lib/`. `tsdown` then emits `lib/client.js` as a CJS module-loader factory: `window.__ModuleLoader__.load({ id, factory(require) })`. Keep `clean: false` so the host output remains, bundle application code, and leave host-owned React, React DOM, and DSH UI primitives external for the factory's `require`. Client CSS lives in `src/client/styles.css`. `scripts/embed-css.mjs` copies it into the client bundle at build time.
 
-`pnpm test:mount` packs the plugin and mounts it in an isolated `dsh@0.1.2-rc.1`
-Web instance. Set `DSH_VERSION=next` to test npm's current prerelease channel;
-CI runs that variant weekly without blocking the normal release gate.
+`pnpm test:mount` packs the plugin and mounts it in an isolated
+`dsh@0.1.7-rc.2` Web instance by default. Set `DSH_VERSION` to test another Harness
+release explicitly. The current client activation gate follows the native
+runtime (`slots`, `locale`, `sessions`, and `workspaces`); Sidebar faces are
+optional and are discovered through `ctx.get()`, leaving the legacy drawer
+available on hosts that have not shipped the native presentation.

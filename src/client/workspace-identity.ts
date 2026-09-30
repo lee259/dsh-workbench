@@ -3,9 +3,11 @@ import { WORKSPACE_API_PATH } from "../shared/types.js";
 export type DshSessionSummary = {
   cwd?: string;
   workspaceId?: string;
+  retainedBy?: { mainView?: number };
 };
 
 export type DshSessionList = {
+  ids?: readonly string[];
   current?: string | { sessionId?: string };
   byId?: Record<string, DshSessionSummary | undefined>;
 };
@@ -43,7 +45,8 @@ export type DshWorkspaceFaces = {
 export function currentSessionId(sessions?: DshSessionList): string {
   const current = sessions?.current;
   if (typeof current === "string") return current;
-  return current && typeof current.sessionId === "string" ? current.sessionId : "";
+  if (current && typeof current.sessionId === "string") return current.sessionId;
+  return Object.entries(sessions?.byId ?? {}).find(([, session]) => (session?.retainedBy?.mainView ?? 0) > 0)?.[0] ?? "";
 }
 
 export function workspacePathFromDsh(sessions?: DshSessionList, workspaces?: DshWorkspaceList): string | null {
@@ -53,7 +56,8 @@ export function workspacePathFromDsh(sessions?: DshSessionList, workspaces?: Dsh
 
   const items = workspaceItems(workspaces);
   if (currentId) {
-    const owned = items.find((item) => item.sessionIds?.includes(currentId));
+    const workspaceId = sessions?.byId?.[currentId]?.workspaceId;
+    const owned = items.find((item) => item.workspaceId === workspaceId || item.sessionIds?.includes(currentId));
     if (typeof owned?.path === "string" && owned.path.trim()) return owned.path.trim();
   }
   const recent = items.find((item) => item.workspaceId === workspaces?.recentWorkspaceId);

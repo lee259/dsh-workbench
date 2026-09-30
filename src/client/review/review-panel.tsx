@@ -6,7 +6,7 @@ import { startResizeDrag } from "../chrome/resize-drag.js";
 import { MAX_TREE_WIDTH, MIN_TREE_WIDTH } from "../explorer/tree-model.js";
 import { useWorkbenchServices } from "../workbench/runtime.js";
 import { followWorkspaceEvents } from "../workspace-events.js";
-import { fetchReview } from "./review-data.js";
+import { acknowledgeReview, discardReview, fetchReview, type ReviewActionErrorCode } from "./review-data.js";
 import {
   useCallback,
   useEffect,
@@ -81,12 +81,25 @@ export function ReviewRail({
   );
 }
 
-export function ReviewPanel({ store, sessionId }: { store: FileStore; sessionId?: string }) {
+export function ReviewPanel({
+  store,
+  sessionId,
+  onOpenChange,
+  showSummary = true,
+}: {
+  store: FileStore;
+  sessionId?: string;
+  onOpenChange?: (path: string) => boolean;
+  showSummary?: boolean;
+}) {
   const { i18n } = useWorkbenchServices();
   const t = i18n.t;
   const [data, setData] = useState<ReviewResponse>({ changes: [] });
   const [loading, setLoading] = useState(Boolean(sessionId));
   const [error, setError] = useState(false);
+  const [acknowledgingPath, setAcknowledgingPath] = useState("");
+  const [discardingPath, setDiscardingPath] = useState("");
+  const [actionError, setActionError] = useState<ReviewActionErrorCode | "">("");
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   const requestId = useRef(0);
 
@@ -128,7 +141,37 @@ export function ReviewPanel({ store, sessionId }: { store: FileStore; sessionId?
   const totalDeletions = changes.reduce((total, change) => total + change.deletions, 0);
 
   const openChange = (change: ReviewChange, kind: "preview" | "keep") => {
+    if (onOpenChange?.(change.path)) return;
     void store.open(change.path, "diff", undefined, false, kind);
+  };
+
+  const acknowledge = async (change: ReviewChange) => {
+    if (!sessionId || acknowledgingPath || discardingPath) return;
+    setActionError("");
+    setAcknowledgingPath(change.path);
+    try {
+      await acknowledgeReview(sessionId, change.path);
+      await load(sessionId, true);
+    } catch {
+      setError(true);
+    } finally {
+      setAcknowledgingPath("");
+    }
+  };
+
+  const discard = async (change: ReviewChange) => {
+    if (!sessionId || acknowledgingPath || discardingPath) return;
+    setActionError("");
+    setDiscardingPath(change.path);
+    try {
+      await discardReview(sessionId, change.path);
+      await load(sessionId, true);
+    } catch (error) {
+      const code = error && typeof error === "object" && "code" in error ? error.code : "file_not_found";
+      setActionError(code === "file_changed" || code === "review_not_discardable" || code === "file_not_found" ? code : "file_not_found");
+    } finally {
+      setDiscardingPath("");
+    }
   };
 
   let body: ReactNode;
@@ -148,24 +191,49 @@ export function ReviewPanel({ store, sessionId }: { store: FileStore; sessionId?
       <div className="dsh-wb-review-list">
         {changes.map((change) => {
           const parent = fileParent(change.path);
+          const file = data.files?.find((item) => item.path === change.path);
+          const canDiscard = file?.before !== null && file !== undefined;
           return (
-            <button
-              className={`dsh-wb-review-item${change.path === state.active ? " is-active" : ""}`}
-              type="button"
-              key={`${change.sessionId}:${change.path}`}
-              onClick={() => openChange(change, "preview")}
-              onDoubleClick={() => openChange(change, "keep")}
-            >
-              <FileTypeIcon path={change.path} />
-              <span className="dsh-wb-review-copy">
-                <span className="dsh-wb-review-name">
-                  <span className="dsh-wb-review-path">{fileName(change.path)}</span>
-                  {parent ? <span className="dsh-wb-review-parent">{parent}</span> : null}
+            <div className="dsh-wb-review-row" key={`${change.sessionId}:${change.path}`}>
+              <button
+                className={`dsh-wb-review-item${change.path === state.active ? " is-active" : ""}`}
+                type="button"
+                onClick={() => openChange(change, "preview")}
+                onDoubleClick={() => openChange(change, "keep")}
+              >
+                <FileTypeIcon path={change.path} />
+                <span className="dsh-wb-review-copy">
+                  <span className="dsh-wb-review-name">
+                    <span className="dsh-wb-review-path">{fileName(change.path)}</span>
+                    {parent ? <span className="dsh-wb-review-parent">{parent}</span> : null}
+                  </span>
+                  <span className="dsh-wb-review-summary">{change.summary}</span>
                 </span>
-                <span className="dsh-wb-review-summary">{change.summary}</span>
-              </span>
-              <ReviewCounts additions={change.additions} deletions={change.deletions} />
-            </button>
+                <ReviewCounts additions={change.additions} deletions={change.deletions} />
+              </button>
+              <button
+                className="dsh-wb-review-ack"
+                type="button"
+                aria-label={t("markReviewed")}
+                title={t("markReviewed")}
+                disabled={Boolean(acknowledgingPath || discardingPath)}
+                onClick={() => void acknowledge(change)}
+              >
+                {acknowledgingPath === change.path ? "…" : "✓"}
+              </button>
+              {canDiscard ? (
+                <button
+                  className="dsh-wb-review-discard"
+                  type="button"
+                  aria-label={t("discardReview")}
+                  title={t("discardReview")}
+                  disabled={Boolean(acknowledgingPath || discardingPath)}
+                  onClick={() => void discard(change)}
+                >
+                  {discardingPath === change.path ? "…" : "×"}
+                </button>
+              ) : null}
+            </div>
           );
         })}
       </div>
@@ -174,22 +242,27 @@ export function ReviewPanel({ store, sessionId }: { store: FileStore; sessionId?
 
   return (
     <section className="dsh-wb-review">
-      <div className="dsh-wb-tree-head">
-        <div className="dsh-wb-review-meta">
-          {changes.length > 0 ? (
-            <>
-              {changes.length} {t("reviewFiles")}
-              {totalAdditions > 0 ? <> · <b className="is-add">+{totalAdditions}</b></> : null}
-              {totalDeletions > 0 ? (
-                <>
-                  {totalAdditions > 0 ? " " : " · "}
-                  <b className="is-delete">−{totalDeletions}</b>
-                </>
-              ) : null}
-            </>
-          ) : null}
+      {showSummary ? (
+        <div className="dsh-wb-tree-head">
+          <div className="dsh-wb-review-meta">
+            {actionError === "file_changed" ? t("reviewConflict") : null}
+            {actionError === "review_not_discardable" ? t("reviewNotDiscardable") : null}
+            {actionError === "file_not_found" ? t("reviewError") : null}
+            {changes.length > 0 ? (
+              <>
+                {changes.length} {t("reviewFiles")}
+                {totalAdditions > 0 ? <> · <b className="is-add">+{totalAdditions}</b></> : null}
+                {totalDeletions > 0 ? (
+                  <>
+                    {totalAdditions > 0 ? " " : " · "}
+                    <b className="is-delete">−{totalDeletions}</b>
+                  </>
+                ) : null}
+              </>
+            ) : null}
+          </div>
         </div>
-      </div>
+      ) : null}
       {body}
     </section>
   );

@@ -97,10 +97,22 @@ export type MessageKey =
   | "fileSaved"
   | "markdownOutline"
   | "reviewTitle"
+  | "reviewTurnNumber"
+  | "reviewTurnWorkspace"
+  | "reviewTurnLive"
+  | "reviewDiffEmpty"
+  | "reviewDiffError"
+  | "reviewBinary"
+  | "reviewOversized"
   | "reviewError"
   | "reviewEmpty"
   | "reviewEmptyHint"
   | "reviewFiles"
+  | "reviewFileList"
+  | "markReviewed"
+  | "discardReview"
+  | "reviewConflict"
+  | "reviewNotDiscardable"
   | "editedFiles"
   | "sessionEdits"
   | "uncommitted"
@@ -112,7 +124,8 @@ export type MessageKey =
   | "collapseAllDiffs"
   | "expandAllDiffs"
   | "unifiedDiff"
-  | "splitDiff";
+  | "splitDiff"
+  | "showUnmodifiedLines";
 
 const zh: Record<MessageKey, string> = {
   loadingTitle: "正在读取文件",
@@ -210,11 +223,23 @@ const zh: Record<MessageKey, string> = {
   savingFile: "正在保存…",
   fileSaved: "已保存",
   markdownOutline: "文档目录",
-  reviewTitle: "变更审阅",
+  reviewTitle: "审查",
+  reviewTurnNumber: "第 {turn} 轮",
+  reviewTurnWorkspace: "工作区未提交变更",
+  reviewTurnLive: "进行中",
+  reviewDiffEmpty: "此文件没有可显示的文本差异",
+  reviewDiffError: "无法读取该文件的原生 Diff",
+  reviewBinary: "二进制文件没有文本 Diff",
+  reviewOversized: "文件过大，Harness 未提供 Diff",
   reviewError: "变更加载失败",
   reviewEmpty: "暂无捕获的变更",
-  reviewEmptyHint: "DSH 写入文件后会显示在这里",
+  reviewEmptyHint: "当前会话和工作区都没有可审查的变更",
   reviewFiles: "个文件",
+  reviewFileList: "文件",
+  markReviewed: "标记为已审阅",
+  discardReview: "放弃此变更",
+  reviewConflict: "文件已被外部修改，未放弃变更",
+  reviewNotDiscardable: "新建文件暂不支持放弃",
   editedFiles: "已编辑 {count} 个文件",
   sessionEdits: "会话编辑",
   uncommitted: "未提交",
@@ -227,6 +252,7 @@ const zh: Record<MessageKey, string> = {
   expandAllDiffs: "展开全部 diff",
   unifiedDiff: "统一差异视图",
   splitDiff: "拆分差异视图",
+  showUnmodifiedLines: "{count} 行未变更内容",
 };
 
 const en: Record<MessageKey, string> = {
@@ -325,11 +351,23 @@ const en: Record<MessageKey, string> = {
   savingFile: "Saving…",
   fileSaved: "Saved",
   markdownOutline: "Document outline",
-  reviewTitle: "Review changes",
+  reviewTitle: "Review",
+  reviewTurnNumber: "Turn {turn}",
+  reviewTurnWorkspace: "Uncommitted workspace changes",
+  reviewTurnLive: "In progress",
+  reviewDiffEmpty: "No text changes to display for this file",
+  reviewDiffError: "Couldn't load the native diff for this file",
+  reviewBinary: "Binary files do not have a text diff",
+  reviewOversized: "File is too large for a Harness diff",
   reviewError: "Failed to load changes",
   reviewEmpty: "No captured changes",
-  reviewEmptyHint: "DSH file writes will appear here",
+  reviewEmptyHint: "No reviewable changes in this session or workspace",
   reviewFiles: "files",
+  reviewFileList: "Files",
+  markReviewed: "Mark as reviewed",
+  discardReview: "Discard this change",
+  reviewConflict: "The file changed externally; the change was not discarded",
+  reviewNotDiscardable: "Discarding newly created files is not supported yet",
   editedFiles: "{count} files edited",
   sessionEdits: "Session edits",
   uncommitted: "Uncommitted",
@@ -342,6 +380,7 @@ const en: Record<MessageKey, string> = {
   expandAllDiffs: "Expand all diffs",
   unifiedDiff: "Unified diff view",
   splitDiff: "Split diff view",
+  showUnmodifiedLines: "{count} unchanged lines",
 };
 
 const catalogs: Record<Locale, Record<MessageKey, string>> = { zh, en };

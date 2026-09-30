@@ -89,3 +89,36 @@ test("review treats the latest write as the newest session and file", () => {
   expect(history.getReview().map((change) => change.path)).toEqual(["b.ts", "a.ts"]);
   expect(history.getReview("s1").map((change) => change.path)).toEqual(["a.ts"]);
 });
+
+test("acknowledging a review hides it until the file is written again", () => {
+  const history = new WriteHistory();
+  history.record({ type: "tool/code-dispatch", data: { name: "write", arguments: { file_path: "a.ts", content: "a" }, callId: "w1" } }, "s1");
+  expect(history.acknowledgeReview("s1", "a.ts")).toBe(true);
+  expect(history.getReview("s1")).toEqual([]);
+  history.record({ type: "tool/code-dispatch", data: { name: "write", arguments: { file_path: "a.ts", content: "aa" }, callId: "w2" } }, "s1");
+  expect(history.getReview("s1").map((change) => change.path)).toEqual(["a.ts"]);
+});
+
+test("acknowledging a review respects the session workspace", () => {
+  const history = new WriteHistory();
+  history.noteSessionRoot("s1", "/repo/one");
+  history.record({ type: "tool/code-dispatch", data: { name: "write", arguments: { file_path: "a.ts", content: "a" }, callId: "w1" } }, "s1");
+  expect(history.acknowledgeReview("s1", "a.ts", "/repo/two")).toBe(false);
+  expect(history.getReview("s1")).toHaveLength(1);
+});
+
+test("discarding a captured edit clears the revision after the caller restores the file", () => {
+  const history = new WriteHistory();
+  history.record({ type: "tool/code-dispatch", data: { name: "write", arguments: { file_path: "a.ts", content: "new" }, callId: "w1" } }, "s1");
+  history.record({ type: "tool/code-dispatch", data: { name: "edit", arguments: { file_path: "a.ts", old_string: "new", new_string: "newer" }, callId: "e1" } }, "s1");
+  expect(history.discardReview("s1", "a.ts", 2)).toBe("discarded");
+  expect(history.get("a.ts")).toBeNull();
+  expect(history.getReview("s1")).toEqual([]);
+});
+
+test("newly created files are not discardable through review", () => {
+  const history = new WriteHistory();
+  history.record({ type: "tool/code-dispatch", data: { name: "write", arguments: { file_path: "a.ts", content: "new" }, callId: "w1" } }, "s1");
+  expect(history.discardReview("s1", "a.ts", 1)).toBe("not_discardable");
+  expect(history.get("a.ts")?.content).toBe("new");
+});

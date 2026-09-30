@@ -53,7 +53,8 @@
     "client": {
       "inject": [
         "@deepseek-ai/dsh-client-locale",
-        "@deepseek-ai/dsh-client-modules",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar-right",
         "@deepseek-ai/dsh-api-session-controller",
         "@deepseek-ai/dsh-api-workspace-controller",
         "@deepseek-ai/dsh-client-ui-conversation",
@@ -88,14 +89,15 @@
     "@deepseek-ai/dsh-api-session-controller": "*",
     "@deepseek-ai/dsh-api-workspace-controller": "*",
     "@deepseek-ai/dsh-client-locale": "*",
-    "@deepseek-ai/dsh-client-modules": "*",
+    "@deepseek-ai/dsh-client-ui-layout": "*",
+    "@deepseek-ai/dsh-client-ui-sidebar-right": "*",
     "@deepseek-ai/dsh-client-ui-conversation": "*",
     "@deepseek-ai/dsh-client-ui-input-trigger": "*",
     "@deepseek-ai/dsh-client-ui-primitives": "*",
     "@deepseek-ai/dsh-client-ui-renderer": "*",
-    "@deepseek-ai/dsh-client-ui-slots": "*",
     "@deepseek-ai/dsh-client-ui-tool": "*",
-    "@deepseek-ai/dsh-session": "*"
+    "@deepseek-ai/dsh-session": "*",
+    "@deepseek-ai/dsh-workspace-changes": "*"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",

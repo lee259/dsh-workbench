@@ -1,28 +1,37 @@
 import { createElement, type ComponentType } from "react";
-import {
-  IconCheckOutline16,
-  IconChevronRightOutline14,
-  IconCloseFill14,
-  IconCodeOutline16,
-  IconCopyOutline16,
-  IconFolderOpen16,
-  IconPlusOutline16,
-} from "@deepseek-ai/dsh-client-ui-primitives";
-
 type PrimitiveIcon = ComponentType<{ size?: number; className?: string }>;
+
+function svgIcon(path: string, viewBox = "0 0 16 16"): PrimitiveIcon {
+  return function LocalIcon({ size = 16, className }: { size?: number; className?: string }) {
+    return createElement("svg", { width: size, height: size, className, viewBox, fill: "none", "aria-hidden": true },
+      createElement("path", { d: path, stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" }),
+    );
+  };
+}
+
+const IconCheckOutline16 = svgIcon("m3.5 8.5 3 3 6-7");
+const IconChevronRightOutline14 = svgIcon("m5.5 3.5 4.5 3.5-4.5 3.5", "0 0 14 14");
+const IconCloseFill14 = svgIcon("m4 4 6 6m0-6-6 6", "0 0 14 14");
+const IconCodeOutline16 = svgIcon("m5.5 4-4 4 4 4m5-8 4 4-4 4m-2-9-1 10");
+const IconCopyOutline16 = svgIcon("M5 5V2.5h8.5V11H11M2.5 5H11v8.5H2.5z");
+const IconLinkOutline16 = svgIcon("M6.5 9.5 9.5 6.5m-5 5H3.25a2.75 2.75 0 0 1 0-5.5H6m4 0h2.75a2.75 2.75 0 0 1 0 5.5H10m-2-3.5h0");
+const IconPlusOutline16 = svgIcon("M8 3v10M3 8h10");
 
 function renderPrimitive(icon: PrimitiveIcon, className: string, size = 16) {
   return createElement(icon, { className, size });
 }
 
-export type WorkbenchIconName = "search" | "copy" | "check" | "close" | "folder" | "panel" | "panel-open" | "panel-closed" | "commit" | "unified" | "split" | "collapse-all" | "expand-all" | "edit" | "refresh" | "outline";
+export type WorkbenchIconName = "search" | "copy" | "check" | "close" | "folder" | "folder-open" | "code" | "link" | "panel" | "panel-open" | "panel-closed" | "commit" | "unified" | "split" | "collapse-all" | "expand-all" | "edit" | "refresh" | "outline";
 
 const ICONS: Record<WorkbenchIconName, PrimitiveIcon> = {
   search: IconSearch16,
   copy: IconCopyOutline16,
   check: IconCheckOutline16,
   close: IconCloseFill14,
-  folder: IconFolderOpened16,
+  folder: IconFolder16,
+  "folder-open": IconFolderOpened16,
+  code: IconCodeOutline16,
+  link: IconLinkOutline16,
   panel: IconPanelRightOutline16,
   "panel-open": IconPanelRightOutline16,
   "panel-closed": IconPanelRightClosed16,

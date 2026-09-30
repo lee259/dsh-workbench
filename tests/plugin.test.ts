@@ -207,6 +207,37 @@ test("review route defaults to the session that wrote last", async () => {
   expect(body.changes.map((change) => change.path)).toEqual(["a.ts"]);
 });
 
+test("review route can acknowledge one captured change for the selected session", async () => {
+  const routes = [];
+  apply({
+    sessions: {
+      list: () => [{
+        id: "s1",
+        events: [{ type: "tool/code-dispatch", data: { name: "write", arguments: { file_path: "a.ts", content: "a" }, callId: "w1" } }],
+      }],
+    },
+    webServer: {
+      register(route) {
+        routes.push(route);
+        return () => {};
+      },
+    },
+    on() {},
+  });
+  const reviewRoute = routes.find((route) => route.path === REVIEW_API_PATH);
+  const acknowledged = jsonSink();
+  await reviewRoute.handler(
+    jsonRequest(`${REVIEW_API_PATH}?session=s1`, { action: "acknowledge", path: "a.ts" }, "POST"),
+    acknowledged.res,
+  );
+  expect(acknowledged.read()).toEqual({ acknowledged: true, path: "a.ts", sessionId: "s1" });
+
+  const after = jsonSink();
+  await reviewRoute.handler({ url: `${REVIEW_API_PATH}?session=s1` }, after.res);
+  expect(after.read().changes).toEqual([]);
+  expect(after.read().sessionFiles).toEqual([]);
+});
+
 test("apply replays existing session events into file previews", async () => {
   const routes = [];
   apply({

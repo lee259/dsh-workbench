@@ -31,7 +31,7 @@ export const DiffPanel = forwardRef<DiffPanelCommands, { sessionId?: string; rev
     snapshotReady.current = false;
     setLoading(true);
     void fetchReview(sessionId, controller.signal)
-      .then((response) => { if (!controller.signal.aborted && request === fullRequest.current) setFiles(response.files ?? []); })
+      .then((response) => { if (!controller.signal.aborted && request === fullRequest.current) setFiles(response.sessionFiles ?? response.files ?? []); })
       .catch(() => { if (!controller.signal.aborted && request === fullRequest.current) setFiles([]); })
       .finally(() => {
         if (controller.signal.aborted || request !== fullRequest.current) return;

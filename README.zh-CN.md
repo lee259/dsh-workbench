@@ -7,14 +7,14 @@
 
 [English](./README.md) · [更新日志](./CHANGELOG.zh-CN.md) · [Issues](https://github.com/lee259/dsh-workbench/issues) · [npm](https://www.npmjs.com/package/dsh-workbench)
 
-[DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart) Web 的 Codex 风格文件工作区与 Git 审查。把对话、改动文件和 diff 放在同一个地方看。
+[DeepSeek Harness](https://deepseek-harness.github.io/deepseek-harness/guide/quickstart) Web 内的 Codex 风格审查。直接审查 Harness 每轮记录的文件变更和原生 Diff，不接 GitHub。
 
 ## 能做什么
 
-- 捕获 DSH `write` / `edit` 的原始前后内容。
-- 可切换会话编辑、未提交、未暂存与已暂存 Git 变更；文件树和 diff 共用 `+/−` 统计。
+- 按 DSH Session 和 turn 浏览文件变更，并读取 Harness 原生 hunk Diff。
+- 主区域显示 Harness Diff，旁边列出变更文件供切换查看。
 - 从工具调用、工作区文件树或搜索打开文件；对话里的文件链接会展开对应 diff。
-- 可编辑工作区文件、复制路径，并把选中的 diff 范围插入当前 Harness 输入框。
+- 文件预览、工作区浏览和路径引用作为审查时的辅助能力保留。
 
 ![DSH Workbench 在 DeepSeek Harness Web 中运行](./assets/dsh-workbench-demo.png)
 
@@ -84,11 +84,12 @@ pnpm start -- /绝对路径/你的项目
 
 ```bash
 pnpm test:mount
-DSH_VERSION=next pnpm test:mount
+DSH_VERSION=0.2.0-rc.2 pnpm test:mount
 ```
 
-第一条命令使用受支持的 `0.1.2-rc.1` 基线；第二条跟随 npm 的 `next`
-渠道，并会通过每周的非阻塞兼容 smoke 自动执行。
+第一条命令使用当前可安装的 `dsh@0.1.7-rc.2`；设置 `DSH_VERSION` 可指定其他版本。
+目前 `dsh@0.2.0-rc.2` 依赖 npm 尚未发布的
+`dsh-client-ui-settings-account@0.2.0-rc.2`，因此全新安装 CLI 可能失败，需等该依赖发布。
 
 - Host：`src/index.ts` 导出 `name`、`inject`、`apply(ctx)`
 - Client：`dsh.client`、`exports["./client"]`、`window.__ModuleLoader__.load`
@@ -98,13 +99,13 @@ DSH_VERSION=next pnpm test:mount
 
 ## Roadmap
 
-在对话旁边查看、定位和审阅 agent 改过的文件。Diff 只来自捕获到的 DSH 写入。
+在 DeepSeek Harness 内审查 agent 每轮改动。变更列表与 hunk Diff 使用 DSH 原生 `workspaceChanges` API；不依赖 GitHub PR。
 
 ### 已完成
 
 - `read` 和文件提及的只读预览
 - `write` / `edit` 的真实 DSH Diff
-- 常驻、可调整宽度的右侧文件工作区
+- DSH 原生右侧工作区；原生 Sidebar 服务不可用时回退到插件抽屉
 - 多文件标签、预览 / 固定、复制路径和桌面快捷键
 - 文件内查找 / 跳行，以及对话里的 `:line` / `#Lline` 定位
 - 跟随 DSH locale 的中英文界面
@@ -123,8 +124,8 @@ DSH_VERSION=next pnpm test:mount
 
 ### 近期计划
 
-目标是在 DeepSeek Harness 内提供接近 Codex 的开发交互：复用成熟的工作区交互，
-同时保留 DSH 写入捕获和会话审阅作为本项目的核心。
+目标是在 DeepSeek Harness 内提供接近 Codex 的审查交互：以 Harness turn changes 为审查基准，
+把对话会话、改动文件和 Diff 放在同一个审查流程里。
 
 1. 以 DSH 原生方式逐步补齐终端与后台任务面板。
 2. 收紧审阅到对话的反馈，包括在 diff 中给出内联指导。
@@ -142,7 +143,6 @@ DSH_VERSION=next pnpm test:mount
 
 - 在编辑器中打开、在文件夹中显示
 - 在 Diff 行上写批注并送回对话输入框
-- 在宿主提供可用 slot 的前提下，接入 DSH 原生面板控制和布局
 - 可插拔工作区面板（Files / Review，以及后续 DSH 工具）
 
 ## License

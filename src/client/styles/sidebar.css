@@ -30,6 +30,522 @@
   animation: dsh-wb-fade-out 160ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
+.dsh-wb-native-workbench {
+  box-sizing: border-box;
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-specific-sidebar-fill);
+}
+
+.dsh-wb-native-workbench .dsh-wb-main {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.dsh-wb-native-workbench .dsh-wb-header {
+  flex: 0 0 auto;
+}
+
+.dsh-wb-native-tree-page,
+.dsh-wb-native-content-page {
+  position: relative;
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--dsw-specific-sidebar-fill);
+}
+
+.dsh-wb-native-tree-page .dsh-wb-tree-resize {
+  display: none;
+}
+
+.dsh-wb-native-tree-page .dsh-wb-tree {
+  position: absolute;
+  inset: 0;
+  width: auto !important;
+  min-width: 0;
+  height: auto;
+  border-left: 0;
+}
+
+.dsh-wb-native-content-page > .dsh-wb-preview-shell,
+.dsh-wb-native-content-page > .dsh-wb-diff-panel {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.dsh-wb-code-review {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-specific-sidebar-fill);
+  font-size: 12px;
+}
+
+.dsh-wb-code-review-header {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--dsw-alias-border-l2);
+}
+
+.dsh-wb-code-review-tools,
+.dsh-wb-code-review-file-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+}
+
+.dsh-wb-code-review-tools .dsh-wb-icon-button,
+.dsh-wb-code-review-file-actions .dsh-wb-icon-button {
+  width: 26px;
+  height: 26px;
+}
+
+.dsh-wb-code-review-tools .dsh-wb-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.dsh-wb-code-review-body {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dsh-wb-code-review-diff {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+}
+
+.dsh-wb-code-review-file-head {
+  position: sticky;
+  z-index: 4;
+  top: 0;
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-specific-sidebar-fill);
+  cursor: pointer;
+}
+
+.dsh-wb-code-review-file-head:hover {
+  background: var(--dsh-wb-nav-item-hover-fill);
+}
+
+.dsh-wb-code-review-file-collapse {
+  display: inline-flex;
+  width: 18px;
+  height: 24px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+}
+
+.dsh-wb-code-review-file-head .dsh-wb-icon-button {
+  opacity: 0;
+}
+
+.dsh-wb-code-review-file-head:hover .dsh-wb-icon-button,
+.dsh-wb-code-review-file-head:focus-within .dsh-wb-icon-button {
+  opacity: 1;
+}
+
+.dsh-wb-code-review-file-counts {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 5px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dsh-wb-code-review .is-add {
+  color: var(--dsw-alias-state-success-primary);
+}
+
+.dsh-wb-code-review .is-delete {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.dsh-wb-code-review-file-head strong {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dsh-wb-code-review-files {
+  display: flex;
+  width: 280px;
+  min-width: 0;
+  min-height: 0;
+  flex: 0 0 auto;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 5px 8px 0;
+  border-left: 1px solid var(--dsw-alias-border-l2);
+}
+
+.dsh-wb-code-review-files-head {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  min-height: 34px;
+  align-content: center;
+  padding: 0 7px;
+  color: var(--dsw-alias-label-secondary);
+  background: var(--dsw-specific-sidebar-fill);
+  font-weight: 500;
+}
+
+.dsh-wb-code-review-search {
+  display: flex;
+  min-height: 28px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  margin: 0 7px 5px;
+  padding: 0 7px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 4px;
+  color: var(--dsw-alias-label-tertiary);
+  background: var(--dsh-wb-field-fill);
+}
+
+.dsh-wb-code-review-search:focus-within {
+  border-color: var(--dsh-wb-focus-ring);
+}
+
+.dsh-wb-code-review-search > .dsh-wb-icon-svg {
+  flex: 0 0 auto;
+}
+
+.dsh-wb-code-review-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: var(--dsw-alias-label-primary);
+  background: transparent;
+  font: inherit;
+}
+
+.dsh-wb-code-review-search input::placeholder {
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.dsh-wb-code-review-search-clear {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.dsh-wb-code-review-tree {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 0 0 8px 5px;
+  overscroll-behavior: contain;
+}
+
+.dsh-wb-code-review-no-matches {
+  padding: 12px 8px;
+  color: var(--dsw-alias-label-tertiary);
+  text-align: center;
+}
+
+.dsh-wb-code-review-resize {
+  flex: 0 0 5px;
+  margin: 0 -2px 0 0;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.dsh-wb-code-review-tree-row {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 26px;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px 3px 0;
+  border: 0;
+  border-radius: 4px;
+  color: var(--dsw-alias-label-primary);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.dsh-wb-code-review-tree-row:hover {
+  background: var(--dsh-wb-nav-item-hover-fill);
+}
+
+.dsh-wb-code-review-tree-row.is-active {
+  background: var(--dsh-wb-nav-item-active-fill);
+}
+
+.dsh-wb-code-review-tree-row:focus-visible {
+  outline: 2px solid var(--dsh-wb-focus-ring);
+  outline-offset: -2px;
+}
+
+.dsh-wb-code-review-tree-row.is-focused {
+  outline: 2px solid var(--dsh-wb-focus-ring);
+  outline-offset: -2px;
+}
+
+.dsh-wb-code-review-tree-row .dsh-wb-tree-chevron {
+  flex: 0 0 14px;
+}
+
+.dsh-wb-code-review-tree-indent {
+  flex: 0 0 14px;
+}
+
+.dsh-wb-code-review-tree-name {
+  display: block;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dsh-wb-code-review-tree-counts {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 4px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dsh-wb-code-review-hunks {
+  min-width: 0;
+  padding: 0 0 24px;
+}
+
+.dsh-wb-code-review-hunks.is-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.dsh-wb-code-review-hunks.is-single-pane {
+  overflow: hidden;
+}
+
+.dsh-wb-code-review-hunks.is-unified {
+  overflow: hidden;
+}
+
+.dsh-wb-code-review-horizontal-pane {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+.dsh-wb-code-review-horizontal-pane + .dsh-wb-code-review-horizontal-pane {
+  border-left: 1px solid var(--dsw-alias-border-l2);
+}
+
+.dsh-wb-code-review-pane-content,
+.dsh-wb-code-review-unified {
+  width: max-content;
+  min-width: 100%;
+}
+
+.dsh-wb-code-review-hunk {
+  width: max-content;
+  min-width: 100%;
+  margin-bottom: 10px;
+}
+
+.dsh-wb-code-review-hunk-head {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  padding: 5px 10px;
+  color: var(--dsw-alias-label-tertiary);
+  background: var(--dsh-wb-diff-neutral-fill);
+  font-family: var(--dsw-font-family-mono, monospace);
+  font-size: 11px;
+}
+
+.dsh-wb-code-review-line {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  min-height: 21px;
+  align-items: stretch;
+  font-family: var(--dsw-font-family-mono, monospace);
+  font-size: 12px;
+  line-height: 21px;
+}
+
+.dsh-wb-code-review-side {
+  display: grid;
+  width: max-content;
+  min-width: 100%;
+  grid-template-columns: 42px max-content;
+  border-right: 1px solid var(--dsw-alias-border-l2);
+}
+
+.dsh-wb-code-review-side.is-add {
+  background: var(--dsh-wb-diff-add-fill);
+}
+
+.dsh-wb-code-review-side.is-delete {
+  background: var(--dsh-wb-diff-delete-fill);
+}
+
+.dsh-wb-code-review-line-number {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--dsw-alias-markdown-code-block);
+  padding-right: 7px;
+  color: var(--dsw-alias-label-tertiary);
+  text-align: right;
+  user-select: none;
+}
+
+.dsh-wb-code-review-line code {
+  display: block;
+  width: max-content;
+  padding-right: 12px;
+  color: var(--dsh-wb-code-label);
+  white-space: pre;
+}
+
+.dsh-wb-code-review-context-toggle {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  width: 100%;
+  min-height: 25px;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 0;
+  color: var(--dsw-alias-label-tertiary);
+  background: var(--dsh-wb-diff-neutral-fill);
+  font-family: var(--dsw-font-family-mono, monospace);
+  font-size: 11px;
+  line-height: 17px;
+  text-align: left;
+}
+
+.dsh-wb-code-review-context-toggle::before,
+.dsh-wb-code-review-context-toggle::after {
+  color: var(--dsw-alias-border-l2);
+  content: "⦚";
+}
+
+.dsh-wb-code-review-context-toggle::before {
+  margin-inline-end: 7px;
+}
+
+.dsh-wb-code-review-context-toggle::after {
+  margin-inline-start: 7px;
+}
+
+.dsh-wb-code-review-context-toggle:hover {
+  color: var(--dsw-alias-label-primary);
+}
+
+.dsh-wb-code-review-unified-line {
+  display: grid;
+  width: max-content;
+  min-width: 100%;
+  min-height: 21px;
+  grid-template-columns: 42px 18px max-content;
+  align-items: stretch;
+  font-family: var(--dsw-font-family-mono, monospace);
+  font-size: 12px;
+  line-height: 21px;
+}
+
+.dsh-wb-code-review-unified-line.is-add {
+  background: var(--dsh-wb-diff-add-fill);
+}
+
+.dsh-wb-code-review-unified-line.is-delete {
+  background: var(--dsh-wb-diff-delete-fill);
+}
+
+.dsh-wb-code-review-line-marker {
+  color: var(--dsw-alias-label-tertiary);
+  text-align: center;
+  user-select: none;
+}
+
+.dsh-wb-code-review-unified-line code {
+  width: max-content;
+  padding-right: 12px;
+  color: var(--dsh-wb-code-label);
+  white-space: pre;
+}
+
+.dsh-wb-code-review-file-section {
+  border-bottom: 1px solid var(--dsw-alias-border-l2);
+  scroll-margin-top: 0;
+}
+
+.dsh-wb-code-review-empty {
+  display: flex;
+  min-width: 0;
+  min-height: 120px;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: var(--dsw-alias-label-tertiary);
+  text-align: center;
+}
+
 /* Reserve space from the app shell, not <body>, so conversation reflows while
    the document-level host layout remains stable. */
 #root.dsh-wb-sidebar-transition {

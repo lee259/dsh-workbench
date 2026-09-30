@@ -51,7 +51,7 @@ export type Workspace = {
   read(requested: string): Promise<DiskFile | WorkspaceError>;
   write(requested: string, content: string, expected: string): Promise<DiskFile | WorkspaceError>;
   list(query?: string, limit?: number): Promise<WorkspaceFile[]>;
-  tree(limit?: number): Promise<WorkspaceTree>;
+  tree(): Promise<WorkspaceTree>;
   searchContent(query: string, limit?: number): Promise<ContentSearchHit[]>;
 };
 
@@ -123,35 +123,37 @@ export function createWorkspace(options: {
         return { ok: false, status: 404, error: "file_not_found" };
       }
     },
-    async tree(limit = 1000) {
+    async tree() {
       const files: WorkspaceFile[] = [];
       const directories: string[] = [];
       const visit = async (absolute: string, relativePath: string): Promise<void> => {
-        if (files.length >= limit) return;
         let entries;
         try {
           entries = await reader.readDir(absolute);
         } catch {
           return;
         }
-        for (const entry of [...entries].sort((left, right) => left.name.localeCompare(right.name))) {
-          if (files.length >= limit) return;
+        const tasks: Promise<void>[] = [];
+        for (const entry of entries) {
           const childAbsolute = join(absolute, entry.name);
           const childRelative = relativePath ? `${relativePath}/${entry.name}` : entry.name;
           if (entry.isDirectory) {
             if (ignoredDirectories.has(entry.name)) continue;
             directories.push(childRelative);
-            await visit(childAbsolute, childRelative);
+            tasks.push(visit(childAbsolute, childRelative));
           } else if (entry.isFile) {
-            let size = 0;
-            try {
-              size = (await reader.stat(childAbsolute)).size;
-            } catch {
-              continue;
-            }
-            files.push({ path: childRelative, size });
+            tasks.push((async () => {
+              try {
+                files.push({ path: childRelative, size: (await reader.stat(childAbsolute)).size });
+              } catch {
+                // Skip entries that disappear mid-walk.
+              }
+            })());
           }
         }
+        // Siblings are independent: walk and stat them concurrently so a large
+        // tree costs one round trip per depth level, not one per directory.
+        await Promise.all(tasks);
       };
       await visit(root, "");
       return {

@@ -78,7 +78,7 @@ function toolRow(toolName, store) {
   });
 }
 
-function collectSlotRegistrations(ui) {
+function collectSlotRegistrations(ui, options) {
   const registrations = [];
   ui.apply({
     slots: {
@@ -93,7 +93,7 @@ function collectSlotRegistrations(ui) {
         return () => {};
       },
     },
-  });
+  }, options);
   return registrations;
 }
 
@@ -133,6 +133,22 @@ test("apply registers the header utility beside Session log", () => {
   expect(header.slot.id).toBe("dsh-workbench");
   expect(header.component).toBe(ui.WorkbenchToggle);
   expect(findElement(ui.WorkbenchRoot(), (node) => node.props?.className === "dsh-wb-toggle")).toBe(undefined);
+});
+
+test("native sidebar mode leaves expansion to the host", () => {
+  const store = createFileStore(async (path) => ({
+    path,
+    content: path,
+    before: null,
+    source: "workspace",
+    revision: 0,
+    size: 1,
+  }));
+  const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
+  const registrations = collectSlotRegistrations(ui, { showToggle: false });
+
+  expect(registrations.some((entry) => entry.slot.name === "conversation.session.header.utilities")).toBe(false);
+  expect(registrations.filter((entry) => entry.slot.name === "tool.call.toolview")).toHaveLength(3);
 });
 
 test("file drawer close button hides the panel", async () => {

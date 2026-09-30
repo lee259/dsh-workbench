@@ -13,6 +13,7 @@ export function followWorkspaceEvents(
   connect: (url: string) => WorkspaceEventSource = (url) => new EventSource(url),
   onWrite: (event: WorkspaceWriteEvent) => void = () => {},
   onActivity: () => void = () => {},
+  onReview: () => void = () => {},
 ): () => void {
   const source = connect(EVENTS_API_PATH);
   source.addEventListener("change", (event) => {
@@ -25,6 +26,7 @@ export function followWorkspaceEvents(
     }
   });
   source.addEventListener("activity", onActivity);
+  source.addEventListener("review", onReview);
   source.addEventListener("write", (event) => {
     if (!event?.data) return;
     try {

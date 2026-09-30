@@ -134,7 +134,7 @@ test("lists matching workspace files while skipping dependency directories", asy
   expect((await workspace.tree()).directories).toEqual(["src"]);
 });
 
-test("searches past the tree file limit", async () => {
+test("tree lists every file and content search works beyond any tree size", async () => {
   const files = {};
   for (let index = 0; index <= 1000; index += 1) {
     files[`/repo/src/file-${String(index).padStart(4, "0")}.ts`] = { isFile: true, content: "x" };
@@ -142,10 +142,31 @@ test("searches past the tree file limit", async () => {
   files["/repo/src/target-after-tree-limit.ts"] = { isFile: true, content: "x" };
   const workspace = createWorkspace({ root: "/repo", fs: memoryFs(files) });
 
-  expect((await workspace.tree()).files.some((file) => file.path === "src/target-after-tree-limit.ts")).toBe(false);
+  const tree = await workspace.tree();
+  expect(tree.files.some((file) => file.path === "src/target-after-tree-limit.ts")).toBe(true);
+  expect(tree.files).toHaveLength(1002);
   expect(await workspace.list("target-after-tree-limit")).toEqual([
     { path: "src/target-after-tree-limit.ts", size: 1 },
   ]);
+});
+
+test("tree keeps folders and files behind a large early directory", async () => {
+  const files = {};
+  for (let index = 0; index < 1050; index += 1) {
+    files[`/repo/.claude/state-${index}.json`] = { isFile: true, content: "x" };
+  }
+  files["/repo/产品规划/roadmap.md"] = { isFile: true, content: "x" };
+  files["/repo/技术学习/notes.md"] = { isFile: true, content: "x" };
+  const workspace = createWorkspace({ root: "/repo", fs: memoryFs(files) });
+
+  const tree = await workspace.tree();
+  expect(tree.directories).toEqual(expect.arrayContaining([".claude", "产品规划", "技术学习"]));
+  expect(tree.files).toEqual(expect.arrayContaining([
+    { path: ".claude/state-0.json", size: 1 },
+    { path: "产品规划/roadmap.md", size: 1 },
+    { path: "技术学习/notes.md", size: 1 },
+  ]));
+  expect(tree.files).toHaveLength(1052);
 });
 
 test("searches file contents while skipping dependency directories", async () => {
